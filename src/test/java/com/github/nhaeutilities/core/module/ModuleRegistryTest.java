@@ -30,11 +30,11 @@ public class ModuleRegistryTest {
     public void registryPreservesStableRegistrationOrder() {
         ModuleRegistry registry = new ModuleRegistry();
 
-        registry.register(new FakeModule("first", true));
-        registry.register(new FakeModule("second", true));
-        registry.register(new FakeModule("third", true));
+        registry.register(new FakeModule("zeta", true));
+        registry.register(new FakeModule("alpha", true));
+        registry.register(new FakeModule("mu", true));
 
-        assertEquals(Arrays.asList("first", "second", "third"), moduleIds(registry.getEnabledModules()));
+        assertEquals(Arrays.asList("zeta", "alpha", "mu"), moduleIds(registry.getEnabledModules()));
     }
 
     private static List<String> moduleIds(List<ModuleDefinition> modules) {

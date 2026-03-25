@@ -46,20 +46,20 @@ public class ModuleLifecycleTest {
         ModuleRegistry registry = new ModuleRegistry();
         List<String> callbacks = new ArrayList<String>();
 
-        registry.register(new RecordingModule("first", true, callbacks));
-        registry.register(new RecordingModule("second", true, callbacks));
+        registry.register(new RecordingModule("zeta", true, callbacks));
+        registry.register(new RecordingModule("alpha", true, callbacks));
 
         registry.preInit(null);
         registry.init(null, new Object());
         registry.postInit(null);
 
         assertEquals(Arrays.asList(
-            "first:PRE_INIT",
-            "second:PRE_INIT",
-            "first:INIT",
-            "second:INIT",
-            "first:POST_INIT",
-            "second:POST_INIT"),
+            "zeta:PRE_INIT",
+            "alpha:PRE_INIT",
+            "zeta:INIT",
+            "alpha:INIT",
+            "zeta:POST_INIT",
+            "alpha:POST_INIT"),
             callbacks);
     }
 
