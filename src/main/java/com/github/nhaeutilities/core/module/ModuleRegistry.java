@@ -13,19 +13,31 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
 public class ModuleRegistry {
 
     private final List<ModuleDefinition> modules = new ArrayList<ModuleDefinition>();
+    private List<ModuleDefinition> bootstrapModules;
 
     public void register(ModuleDefinition module) {
         modules.add(Objects.requireNonNull(module, "module"));
     }
 
     public List<ModuleDefinition> getEnabledModules() {
+        return Collections.unmodifiableList(filterEnabledModules());
+    }
+
+    private List<ModuleDefinition> filterEnabledModules() {
         List<ModuleDefinition> enabledModules = new ArrayList<ModuleDefinition>();
         for (ModuleDefinition module : modules) {
             if (module.isEnabled()) {
                 enabledModules.add(module);
             }
         }
-        return Collections.unmodifiableList(enabledModules);
+        return enabledModules;
+    }
+
+    private List<ModuleDefinition> getBootstrapModules() {
+        if (bootstrapModules == null) {
+            bootstrapModules = Collections.unmodifiableList(filterEnabledModules());
+        }
+        return bootstrapModules;
     }
 
     public void preInit(FMLPreInitializationEvent event) {
@@ -46,7 +58,7 @@ public class ModuleRegistry {
 
     void dispatch(ModuleBootstrapPhase phase, Object event, Object modInstance) {
         Objects.requireNonNull(phase, "phase");
-        for (ModuleDefinition module : getEnabledModules()) {
+        for (ModuleDefinition module : getBootstrapModules()) {
             phase.dispatch(module, event, modInstance);
         }
     }

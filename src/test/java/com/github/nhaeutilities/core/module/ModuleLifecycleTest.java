@@ -1,6 +1,7 @@
 package com.github.nhaeutilities.core.module;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 import java.util.ArrayList;
@@ -21,13 +22,14 @@ public class ModuleLifecycleTest {
         ModuleRegistry registry = new ModuleRegistry();
         List<String> callbacks = new ArrayList<String>();
         RecordingModule enabledModule = new RecordingModule("enabled", true, callbacks);
-        RecordingModule disabledModule = new RecordingModule("disabled", false, callbacks);
+        RecordingModule disabledModule = new RecordingModule("lateEnabled", false, callbacks);
         Object modInstance = new Object();
 
         registry.register(enabledModule);
         registry.register(disabledModule);
 
         registry.preInit(null);
+        disabledModule.setEnabled(true);
         registry.init(null, modInstance);
         registry.postInit(null);
         registry.serverStarting(null);
@@ -39,6 +41,7 @@ public class ModuleLifecycleTest {
             "enabled:SERVER_STARTING"),
             callbacks);
         assertSame(modInstance, enabledModule.lastModInstance);
+        assertNull(disabledModule.lastModInstance);
     }
 
     @Test
@@ -66,7 +69,7 @@ public class ModuleLifecycleTest {
     private static final class RecordingModule implements ModuleDefinition {
 
         private final String id;
-        private final boolean enabled;
+        private boolean enabled;
         private final List<String> callbacks;
         private Object lastModInstance;
 
@@ -84,6 +87,10 @@ public class ModuleLifecycleTest {
         @Override
         public boolean isEnabled() {
             return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
 
         @Override
