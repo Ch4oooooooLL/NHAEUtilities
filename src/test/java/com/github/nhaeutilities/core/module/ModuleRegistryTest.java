@@ -37,6 +37,31 @@ public class ModuleRegistryTest {
         assertEquals(Arrays.asList("zeta", "alpha", "mu"), moduleIds(registry.getEnabledModules()));
     }
 
+    @Test
+    public void enabledModuleViewUsesFrozenBootstrapSnapshot() {
+        ModuleRegistry registry = new ModuleRegistry();
+        FakeModule enabledAtStartup = new FakeModule("enabledAtStartup", true);
+        FakeModule disabledAtStartup = new FakeModule("disabledAtStartup", false);
+
+        registry.register(enabledAtStartup);
+        registry.register(disabledAtStartup);
+
+        registry.preInit(null);
+        enabledAtStartup.setEnabled(false);
+        disabledAtStartup.setEnabled(true);
+
+        assertEquals(Arrays.asList("enabledAtStartup"), moduleIds(registry.getEnabledModules()));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void registryRejectsRegistrationAfterBootstrapBegins() {
+        ModuleRegistry registry = new ModuleRegistry();
+
+        registry.register(new FakeModule("alpha", true));
+        registry.preInit(null);
+        registry.register(new FakeModule("beta", true));
+    }
+
     private static List<String> moduleIds(List<ModuleDefinition> modules) {
         return modules.stream().map(ModuleDefinition::id).collect(Collectors.toList());
     }
@@ -44,7 +69,7 @@ public class ModuleRegistryTest {
     private static final class FakeModule implements ModuleDefinition {
 
         private final String id;
-        private final boolean enabled;
+        private boolean enabled;
 
         private FakeModule(String id, boolean enabled) {
             this.id = id;
@@ -59,6 +84,10 @@ public class ModuleRegistryTest {
         @Override
         public boolean isEnabled() {
             return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
         }
 
         @Override

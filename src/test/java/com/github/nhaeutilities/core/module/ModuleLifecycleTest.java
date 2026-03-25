@@ -45,16 +45,21 @@ public class ModuleLifecycleTest {
     }
 
     @Test
-    public void enabledModulesReceivePreInitInitPostInitInOrder() {
+    public void enabledModulesReceiveAllLifecycleCallbacksInOrderEvenIfDisabledLater() {
         ModuleRegistry registry = new ModuleRegistry();
         List<String> callbacks = new ArrayList<String>();
+        RecordingModule firstModule = new RecordingModule("zeta", true, callbacks);
+        RecordingModule secondModule = new RecordingModule("alpha", true, callbacks);
+        Object modInstance = new Object();
 
-        registry.register(new RecordingModule("zeta", true, callbacks));
-        registry.register(new RecordingModule("alpha", true, callbacks));
+        registry.register(firstModule);
+        registry.register(secondModule);
 
         registry.preInit(null);
-        registry.init(null, new Object());
+        firstModule.setEnabled(false);
+        registry.init(null, modInstance);
         registry.postInit(null);
+        registry.serverStarting(null);
 
         assertEquals(Arrays.asList(
             "zeta:PRE_INIT",
@@ -62,8 +67,12 @@ public class ModuleLifecycleTest {
             "zeta:INIT",
             "alpha:INIT",
             "zeta:POST_INIT",
-            "alpha:POST_INIT"),
+            "alpha:POST_INIT",
+            "zeta:SERVER_STARTING",
+            "alpha:SERVER_STARTING"),
             callbacks);
+        assertSame(modInstance, firstModule.lastModInstance);
+        assertSame(modInstance, secondModule.lastModInstance);
     }
 
     private static final class RecordingModule implements ModuleDefinition {

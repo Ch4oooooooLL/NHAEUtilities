@@ -16,10 +16,16 @@ public class ModuleRegistry {
     private List<ModuleDefinition> bootstrapModules;
 
     public void register(ModuleDefinition module) {
+        if (isFrozen()) {
+            throw new IllegalStateException("Cannot register modules after bootstrap has started");
+        }
         modules.add(Objects.requireNonNull(module, "module"));
     }
 
     public List<ModuleDefinition> getEnabledModules() {
+        if (isFrozen()) {
+            return bootstrapModules;
+        }
         return Collections.unmodifiableList(filterEnabledModules());
     }
 
@@ -33,11 +39,15 @@ public class ModuleRegistry {
         return enabledModules;
     }
 
-    private List<ModuleDefinition> getBootstrapModules() {
+    private List<ModuleDefinition> freezeBootstrapModules() {
         if (bootstrapModules == null) {
             bootstrapModules = Collections.unmodifiableList(filterEnabledModules());
         }
         return bootstrapModules;
+    }
+
+    private boolean isFrozen() {
+        return bootstrapModules != null;
     }
 
     public void preInit(FMLPreInitializationEvent event) {
@@ -58,7 +68,7 @@ public class ModuleRegistry {
 
     void dispatch(ModuleBootstrapPhase phase, Object event, Object modInstance) {
         Objects.requireNonNull(phase, "phase");
-        for (ModuleDefinition module : getBootstrapModules()) {
+        for (ModuleDefinition module : freezeBootstrapModules()) {
             phase.dispatch(module, event, modInstance);
         }
     }
