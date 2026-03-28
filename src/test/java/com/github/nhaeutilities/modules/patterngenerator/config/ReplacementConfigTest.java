@@ -15,8 +15,10 @@ import org.junit.Test;
 public class ReplacementConfigTest {
 
     @Test
-    public void configFileUsesExpectedLocalFileName() {
-        assertEquals("nhaeutilities_replacements.cfg", ReplacementConfig.getConfigFile().getName());
+    public void explicitConfigFileHelperUsesExpectedLocalFileName() {
+        assertEquals(
+            "nhaeutilities_replacements.cfg",
+            ReplacementConfig.resolveConfigFile(new File("config")).getName());
     }
 
     @Test
