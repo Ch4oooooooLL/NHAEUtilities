@@ -4,6 +4,10 @@ import java.util.Objects;
 
 import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleDefinition;
+import com.github.nhaeutilities.modules.patterngenerator.command.CommandPatternGen;
+import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
+import com.github.nhaeutilities.modules.patterngenerator.config.ReplacementConfig;
+import com.github.nhaeutilities.modules.patterngenerator.network.NetworkHandler;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
@@ -29,7 +33,11 @@ public class PatternGeneratorModule implements ModuleDefinition {
     }
 
     @Override
-    public void preInit(FMLPreInitializationEvent event) {}
+    public void preInit(FMLPreInitializationEvent event) {
+        ForgeConfig.load(event.getSuggestedConfigurationFile());
+        ReplacementConfig.load();
+        NetworkHandler.init();
+    }
 
     @Override
     public void init(FMLInitializationEvent event, Object modInstance) {}
@@ -38,5 +46,7 @@ public class PatternGeneratorModule implements ModuleDefinition {
     public void postInit(FMLPostInitializationEvent event) {}
 
     @Override
-    public void serverStarting(FMLServerStartingEvent event) {}
+    public void serverStarting(FMLServerStartingEvent event) {
+        event.registerServerCommand(new CommandPatternGen());
+    }
 }
