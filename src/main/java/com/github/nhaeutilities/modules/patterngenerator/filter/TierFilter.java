@@ -40,4 +40,3 @@ public class TierFilter implements IRecipeFilter {
         return tier;
     }
 }
-

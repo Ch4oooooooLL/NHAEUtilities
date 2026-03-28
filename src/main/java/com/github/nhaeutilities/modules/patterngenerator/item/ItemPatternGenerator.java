@@ -89,7 +89,8 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
                 "[NHAEUtilities] SERVER SIDE: Requesting GUI %d for player %s",
                 guiId,
                 player.getCommandSenderName());
-            player.openGui(NHAEUtilities.instance, guiId, world, (int) player.posX, (int) player.posY, (int) player.posZ);
+            player
+                .openGui(NHAEUtilities.instance, guiId, world, (int) player.posX, (int) player.posY, (int) player.posZ);
         }
         return stack;
     }
@@ -116,8 +117,11 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
             RecipeMap<?> recipeMap = resolveRecipeMap(mte);
             if (recipeMap != null) {
                 saveField(stack, NBT_RECIPE_MAP, recipeMap.unlocalizedName);
-                player.addChatMessage(msg(EnumChatFormatting.GREEN, "nhaeutilities.msg.item.detected_recipe_map",
-                    recipeMap.unlocalizedName));
+                player.addChatMessage(
+                    msg(
+                        EnumChatFormatting.GREEN,
+                        "nhaeutilities.msg.item.detected_recipe_map",
+                        recipeMap.unlocalizedName));
                 return true;
             }
         }
@@ -193,7 +197,8 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
         }
 
         try {
-            Method method = mte.getClass().getMethod("getRecipeMap");
+            Method method = mte.getClass()
+                .getMethod("getRecipeMap");
             Object result = method.invoke(mte);
             if (result instanceof RecipeMap<?>) {
                 return (RecipeMap<?>) result;
@@ -687,14 +692,19 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
         if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }
-        stack.getTagCompound().setString(key, value != null ? value : "");
+        stack.getTagCompound()
+            .setString(key, value != null ? value : "");
     }
 
     public static int getSavedInt(ItemStack stack, String key, int def) {
         if (stack == null || !stack.hasTagCompound()) {
             return def;
         }
-        return stack.getTagCompound().hasKey(key) ? stack.getTagCompound().getInteger(key) : def;
+        return stack.getTagCompound()
+            .hasKey(key)
+                ? stack.getTagCompound()
+                    .getInteger(key)
+                : def;
     }
 
     public static void saveInt(ItemStack stack, String key, int value) {
@@ -704,7 +714,8 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
         if (!stack.hasTagCompound()) {
             stack.setTagCompound(new NBTTagCompound());
         }
-        stack.getTagCompound().setInteger(key, value);
+        stack.getTagCompound()
+            .setInteger(key, value);
     }
 
     public static void saveAllFields(ItemStack stack, String recipeMap, String outputOre, String inputOre,
@@ -722,7 +733,8 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
     @Override
     public String getEncryptionKey(ItemStack item) {
         if (item != null && item.hasTagCompound()) {
-            return item.getTagCompound().getString("encryptionKey");
+            return item.getTagCompound()
+                .getString("encryptionKey");
         }
         return "";
     }
@@ -733,7 +745,8 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
             if (!item.hasTagCompound()) {
                 item.setTagCompound(new NBTTagCompound());
             }
-            item.getTagCompound().setString("encryptionKey", encKey);
+            item.getTagCompound()
+                .setString("encryptionKey", encKey);
         }
     }
 

@@ -70,7 +70,9 @@ public class LangKeyCompletenessTest {
             if (idx <= 0) {
                 continue;
             }
-            keys.add(line.substring(0, idx).trim());
+            keys.add(
+                line.substring(0, idx)
+                    .trim());
         }
         return keys;
     }

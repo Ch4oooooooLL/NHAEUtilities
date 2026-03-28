@@ -18,7 +18,8 @@ public class ReplacementConfigTest {
     public void explicitConfigFileHelperUsesExpectedLocalFileName() {
         assertEquals(
             "nhaeutilities_replacements.cfg",
-            ReplacementConfig.resolveConfigFile(new File("config")).getName());
+            ReplacementConfig.resolveConfigFile(new File("config"))
+                .getName());
     }
 
     @Test
@@ -27,7 +28,10 @@ public class ReplacementConfigTest {
 
         File configFile = ReplacementConfig.resolveConfigFile(configDir);
 
-        assertEquals(configDir.getPath(), configFile.getParentFile().getPath());
+        assertEquals(
+            configDir.getPath(),
+            configFile.getParentFile()
+                .getPath());
         assertEquals("nhaeutilities_replacements.cfg", configFile.getName());
     }
 
@@ -43,7 +47,9 @@ public class ReplacementConfigTest {
         } finally {
             Files.walk(tempDir)
                 .sorted(Comparator.reverseOrder())
-                .forEach(path -> path.toFile().delete());
+                .forEach(
+                    path -> path.toFile()
+                        .delete());
         }
     }
 }

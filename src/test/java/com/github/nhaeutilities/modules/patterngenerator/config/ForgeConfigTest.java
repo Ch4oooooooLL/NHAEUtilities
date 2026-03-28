@@ -25,7 +25,10 @@ public class ForgeConfigTest {
 
     @Test
     public void defaultConfigFileUsesExpectedPathAndName() {
-        assertEquals(new File("config", "nhaeutilities.cfg").getPath(), ForgeConfig.resolveConfigFile(null).getPath());
+        assertEquals(
+            new File("config", "nhaeutilities.cfg").getPath(),
+            ForgeConfig.resolveConfigFile(null)
+                .getPath());
     }
 
     @Test

@@ -54,9 +54,11 @@ final class PatternGenerationRequestGate {
 
     private static void cleanupExpired(long nowMillis) {
         long duplicateWindow = ForgeConfig.getDuplicateWindowMs();
-        Iterator<Map.Entry<UUID, RecentRequest>> iterator = RECENT_REQUESTS.entrySet().iterator();
+        Iterator<Map.Entry<UUID, RecentRequest>> iterator = RECENT_REQUESTS.entrySet()
+            .iterator();
         while (iterator.hasNext()) {
-            RecentRequest request = iterator.next().getValue();
+            RecentRequest request = iterator.next()
+                .getValue();
             if (nowMillis - request.timestampMillis > duplicateWindow) {
                 iterator.remove();
             }

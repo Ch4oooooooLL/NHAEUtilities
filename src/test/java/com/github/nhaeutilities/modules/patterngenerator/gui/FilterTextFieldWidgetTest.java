@@ -63,7 +63,8 @@ public class FilterTextFieldWidgetTest {
 
     private Object newWidget(Function<ItemStack, String> formatter) {
         try {
-            Class<?> clazz = Class.forName("com.github.nhaeutilities.modules.patterngenerator.gui.FilterTextFieldWidget");
+            Class<?> clazz = Class
+                .forName("com.github.nhaeutilities.modules.patterngenerator.gui.FilterTextFieldWidget");
             Constructor<?> ctor = clazz.getDeclaredConstructor(Function.class);
             ctor.setAccessible(true);
             return ctor.newInstance(formatter);
@@ -84,7 +85,8 @@ public class FilterTextFieldWidgetTest {
 
     private boolean invokeHandleDragAndDrop(Object widget, ItemStack stack, int button) {
         try {
-            Method method = widget.getClass().getMethod("handleDragAndDrop", ItemStack.class, int.class);
+            Method method = widget.getClass()
+                .getMethod("handleDragAndDrop", ItemStack.class, int.class);
             return ((Boolean) method.invoke(widget, stack, button)).booleanValue();
         } catch (NoSuchMethodException e) {
             fail("Expected FilterTextFieldWidget.handleDragAndDrop(ItemStack, int)");
@@ -99,7 +101,8 @@ public class FilterTextFieldWidgetTest {
 
     private void invokeSetText(Object widget, String text) {
         try {
-            Method method = widget.getClass().getMethod("setText", String.class);
+            Method method = widget.getClass()
+                .getMethod("setText", String.class);
             method.invoke(widget, text);
         } catch (NoSuchMethodException e) {
             fail("Expected TextFieldWidget.setText(String)");
@@ -113,7 +116,8 @@ public class FilterTextFieldWidgetTest {
 
     private String invokeGetText(Object widget) {
         try {
-            Method method = widget.getClass().getMethod("getText");
+            Method method = widget.getClass()
+                .getMethod("getText");
             return (String) method.invoke(widget);
         } catch (NoSuchMethodException e) {
             fail("Expected TextFieldWidget.getText()");
@@ -128,7 +132,8 @@ public class FilterTextFieldWidgetTest {
 
     private void invokeSetDropChoicesListener(Object widget, java.util.function.Consumer<Object> listener) {
         try {
-            Method method = widget.getClass().getDeclaredMethod("setDropChoicesListener", java.util.function.Consumer.class);
+            Method method = widget.getClass()
+                .getDeclaredMethod("setDropChoicesListener", java.util.function.Consumer.class);
             method.setAccessible(true);
             method.invoke(widget, listener);
         } catch (NoSuchMethodException e) {
@@ -144,16 +149,19 @@ public class FilterTextFieldWidgetTest {
     @SuppressWarnings("unchecked")
     private String invokeDefaultChoiceToken(Object choices) {
         try {
-            Method indexMethod = choices.getClass().getDeclaredMethod("getDefaultIndex");
+            Method indexMethod = choices.getClass()
+                .getDeclaredMethod("getDefaultIndex");
             indexMethod.setAccessible(true);
             int index = ((Integer) indexMethod.invoke(choices)).intValue();
 
-            Method optionsMethod = choices.getClass().getDeclaredMethod("getOptions");
+            Method optionsMethod = choices.getClass()
+                .getDeclaredMethod("getOptions");
             optionsMethod.setAccessible(true);
             java.util.List<Object> options = (java.util.List<Object>) optionsMethod.invoke(choices);
             Object option = options.get(index);
 
-            Method tokenMethod = option.getClass().getDeclaredMethod("getToken");
+            Method tokenMethod = option.getClass()
+                .getDeclaredMethod("getToken");
             tokenMethod.setAccessible(true);
             return (String) tokenMethod.invoke(option);
         } catch (NoSuchMethodException e) {

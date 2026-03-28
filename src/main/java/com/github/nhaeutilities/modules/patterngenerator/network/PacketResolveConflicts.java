@@ -83,7 +83,11 @@ public class PacketResolveConflicts implements IMessage {
             }
 
             if (message.recipeIndex < 0 || message.recipeIndex >= currentRecipes.size()) {
-                send(player, EnumChatFormatting.RED, "nhaeutilities.msg.conflict.invalid_selection", message.recipeIndex);
+                send(
+                    player,
+                    EnumChatFormatting.RED,
+                    "nhaeutilities.msg.conflict.invalid_selection",
+                    message.recipeIndex);
                 ConflictResolutionService.sendCurrentBatch(player, session);
                 return null;
             }

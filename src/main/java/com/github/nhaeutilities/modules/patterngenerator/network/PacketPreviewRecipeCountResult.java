@@ -60,43 +60,42 @@ public class PacketPreviewRecipeCountResult implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketPreviewRecipeCountResult message, MessageContext ctx) {
-            Minecraft.getMinecraft().func_152344_a(() -> {
-                if (Minecraft.getMinecraft().thePlayer == null) {
-                    return;
-                }
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> {
+                    if (Minecraft.getMinecraft().thePlayer == null) {
+                        return;
+                    }
 
-                if (!message.cacheValid) {
-                    GuiPatternGenStatusBridge.setStatus("Recipe cache is missing or invalid.");
-                    Minecraft.getMinecraft().thePlayer.addChatMessage(
-                        new ChatComponentText(
-                            EnumChatFormatting.RED
-                                + I18nUtil.trOr(
+                    if (!message.cacheValid) {
+                        GuiPatternGenStatusBridge.setStatus("Recipe cache is missing or invalid.");
+                        Minecraft.getMinecraft().thePlayer.addChatMessage(
+                            new ChatComponentText(
+                                EnumChatFormatting.RED + I18nUtil.trOr(
                                     "nhaeutilities.msg.cache.missing_or_invalid",
                                     "Recipe cache is missing or invalid. Please build the cache first.")));
-                    return;
-                }
+                        return;
+                    }
 
-                if (message.matchedMapCount <= 0) {
-                    GuiPatternGenStatusBridge.setStatus("No matching recipe map.");
-                    Minecraft.getMinecraft().thePlayer.addChatMessage(
-                        new ChatComponentText(
-                            EnumChatFormatting.RED
-                                + I18nUtil.trOr(
+                    if (message.matchedMapCount <= 0) {
+                        GuiPatternGenStatusBridge.setStatus("No matching recipe map.");
+                        Minecraft.getMinecraft().thePlayer.addChatMessage(
+                            new ChatComponentText(
+                                EnumChatFormatting.RED + I18nUtil.trOr(
                                     "nhaeutilities.msg.generate.no_matching_map",
                                     "No matching recipe map: %s",
                                     message.requestedKeyword)));
-                    return;
-                }
+                        return;
+                    }
 
-                GuiPatternGenStatusBridge.setStatus(
-                    String.format("Filter result: %s -> %s", message.totalLoadedCount, message.totalFilteredCount));
-                Minecraft.getMinecraft().thePlayer.addChatMessage(
-                    new ChatComponentText(
-                        EnumChatFormatting.GRAY + I18nUtil.tr(
-                            "nhaeutilities.gui.pattern_gen.status.filter_result",
-                            message.totalLoadedCount,
-                            message.totalFilteredCount)));
-            });
+                    GuiPatternGenStatusBridge.setStatus(
+                        String.format("Filter result: %s -> %s", message.totalLoadedCount, message.totalFilteredCount));
+                    Minecraft.getMinecraft().thePlayer.addChatMessage(
+                        new ChatComponentText(
+                            EnumChatFormatting.GRAY + I18nUtil.tr(
+                                "nhaeutilities.gui.pattern_gen.status.filter_result",
+                                message.totalLoadedCount,
+                                message.totalFilteredCount)));
+                });
             return null;
         }
     }

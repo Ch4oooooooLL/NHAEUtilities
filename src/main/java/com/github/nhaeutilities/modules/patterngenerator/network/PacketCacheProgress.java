@@ -60,46 +60,47 @@ public class PacketCacheProgress implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketCacheProgress message, MessageContext ctx) {
-            Minecraft.getMinecraft().func_152344_a(() -> {
-                if (Minecraft.getMinecraft().thePlayer == null) {
-                    return;
-                }
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> {
+                    if (Minecraft.getMinecraft().thePlayer == null) {
+                        return;
+                    }
 
-                String text;
-                switch (message.stage) {
-                    case STAGE_STARTED:
-                        text = EnumChatFormatting.GRAY
-                            + I18nUtil.trOr("nhaeutilities.msg.cache.build_started", "Recipe cache build started.");
-                        GuiPatternGenStatusBridge.setStatus("Recipe cache build started.");
-                        break;
-                    case STAGE_ALREADY_RUNNING:
-                        text = EnumChatFormatting.YELLOW
-                            + I18nUtil.trOr(
+                    String text;
+                    switch (message.stage) {
+                        case STAGE_STARTED:
+                            text = EnumChatFormatting.GRAY
+                                + I18nUtil.trOr("nhaeutilities.msg.cache.build_started", "Recipe cache build started.");
+                            GuiPatternGenStatusBridge.setStatus("Recipe cache build started.");
+                            break;
+                        case STAGE_ALREADY_RUNNING:
+                            text = EnumChatFormatting.YELLOW + I18nUtil.trOr(
                                 "nhaeutilities.msg.cache.build_already_running",
                                 "Recipe cache build is already running.");
-                        GuiPatternGenStatusBridge.setStatus("Recipe cache build is already running.");
-                        break;
-                    case STAGE_PROGRESS:
-                        text = EnumChatFormatting.GRAY
-                            + I18nUtil.trOr(
+                            GuiPatternGenStatusBridge.setStatus("Recipe cache build is already running.");
+                            break;
+                        case STAGE_PROGRESS:
+                            text = EnumChatFormatting.GRAY + I18nUtil.trOr(
                                 "nhaeutilities.msg.cache.progress",
                                 "Caching %s (%s/%s)",
                                 message.detail,
                                 message.current,
                                 message.total);
-                        GuiPatternGenStatusBridge.setStatus(
-                            String.format("Caching %s (%s/%s)", message.detail, message.current, message.total));
-                        break;
-                    case STAGE_ERROR:
-                    default:
-                        text = EnumChatFormatting.RED
-                            + I18nUtil.trOr("nhaeutilities.msg.cache.build_failed", "Recipe cache build failed: %s", message.detail);
-                        GuiPatternGenStatusBridge.setStatus(String.format("Cache failed: %s", message.detail));
-                        break;
-                }
+                            GuiPatternGenStatusBridge.setStatus(
+                                String.format("Caching %s (%s/%s)", message.detail, message.current, message.total));
+                            break;
+                        case STAGE_ERROR:
+                        default:
+                            text = EnumChatFormatting.RED + I18nUtil.trOr(
+                                "nhaeutilities.msg.cache.build_failed",
+                                "Recipe cache build failed: %s",
+                                message.detail);
+                            GuiPatternGenStatusBridge.setStatus(String.format("Cache failed: %s", message.detail));
+                            break;
+                    }
 
-                Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(text));
-            });
+                    Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(text));
+                });
             return null;
         }
     }

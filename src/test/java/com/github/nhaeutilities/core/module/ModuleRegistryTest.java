@@ -63,7 +63,9 @@ public class ModuleRegistryTest {
     }
 
     private static List<String> moduleIds(List<ModuleDefinition> modules) {
-        return modules.stream().map(ModuleDefinition::id).collect(Collectors.toList());
+        return modules.stream()
+            .map(ModuleDefinition::id)
+            .collect(Collectors.toList());
     }
 
     private static final class FakeModule implements ModuleDefinition {

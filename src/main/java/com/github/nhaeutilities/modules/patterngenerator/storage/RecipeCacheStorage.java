@@ -558,4 +558,3 @@ public final class RecipeCacheStorage {
         File getWorldSaveRoot();
     }
 }
-

@@ -1,3 +1,26 @@
+# NHAEUtilities
+
+## Migration Status
+
+This repository now hosts `NHAEUtilities`, a modular GTNH utility mod.
+
+Current migrated module:
+- `pattern-generator`
+
+Included in the migrated `pattern-generator` module:
+- recipe cache build / refresh
+- preview count and generate flow
+- conflict detection and batch conflict picker UI
+- virtual pattern storage, detail view, extract / clear / delete actions
+- item, GUI, command, recipe, AE2 wireless binding, and export-to-target flow
+
+Not migrated yet:
+- AE crafting preview recursive analysis
+- Pattern Warehouse item / GUI / packet flow
+- unfinished AE crafting-screen integration codepaths
+
+The rest of this README is preserved from the old `AE2PatternGen` project for feature reference during migration.
+
 # AE2 Pattern Generator
 
 AE2 Pattern Generator 是一个专为 Minecraft 1.7.10 (如 GregTech New Horizons 等注重复杂合成的模组环境) 开发的实用辅助模组。

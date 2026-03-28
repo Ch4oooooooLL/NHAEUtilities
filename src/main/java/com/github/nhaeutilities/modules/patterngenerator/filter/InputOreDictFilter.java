@@ -44,4 +44,3 @@ public class InputOreDictFilter implements IRecipeFilter {
         return matchSource;
     }
 }
-

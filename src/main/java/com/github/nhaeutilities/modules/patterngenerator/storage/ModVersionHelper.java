@@ -328,4 +328,3 @@ public final class ModVersionHelper {
         List<File> get();
     }
 }
-

@@ -126,11 +126,19 @@ public class PacketGeneratePatterns implements IMessage {
 
                 List<String> matchedMaps = queryResult.matchedMapIds;
                 if (matchedMaps.isEmpty()) {
-                    send(player, EnumChatFormatting.RED, "nhaeutilities.msg.generate.no_matching_map", message.recipeMapId);
+                    send(
+                        player,
+                        EnumChatFormatting.RED,
+                        "nhaeutilities.msg.generate.no_matching_map",
+                        message.recipeMapId);
                     return null;
                 }
 
-                send(player, EnumChatFormatting.GRAY, "nhaeutilities.msg.generate.matched_maps", String.join(", ", matchedMaps));
+                send(
+                    player,
+                    EnumChatFormatting.GRAY,
+                    "nhaeutilities.msg.generate.matched_maps",
+                    String.join(", ", matchedMaps));
 
                 List<RecipeEntry> filtered = new ArrayList<RecipeEntry>(queryResult.recipes);
 
@@ -174,8 +182,8 @@ public class PacketGeneratePatterns implements IMessage {
                         key = ItemStackUtil.getSafeDisplayName(recipe.outputs[0]);
                     } else if (recipe.fluidOutputs != null && recipe.fluidOutputs.length > 0
                         && recipe.fluidOutputs[0] != null) {
-                        key = recipe.fluidOutputs[0].getLocalizedName();
-                    }
+                            key = recipe.fluidOutputs[0].getLocalizedName();
+                        }
                     List<RecipeEntry> recipes = groups.get(key);
                     if (recipes == null) {
                         recipes = new ArrayList<RecipeEntry>();
@@ -187,7 +195,8 @@ public class PacketGeneratePatterns implements IMessage {
                 List<RecipeEntry> nonConflicts = new ArrayList<RecipeEntry>();
                 Map<String, List<RecipeEntry>> conflicts = new LinkedHashMap<String, List<RecipeEntry>>();
                 for (Map.Entry<String, List<RecipeEntry>> entry : groups.entrySet()) {
-                    if (entry.getValue().size() > 1) {
+                    if (entry.getValue()
+                        .size() > 1) {
                         conflicts.put(entry.getKey(), entry.getValue());
                     } else {
                         nonConflicts.addAll(entry.getValue());

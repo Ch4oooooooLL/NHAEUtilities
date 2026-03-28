@@ -28,7 +28,8 @@ class FilterTextFieldWidget extends TextFieldWidget implements IDragAndDropHandl
         this.dropChoicesBuilder = dropChoicesBuilder;
     }
 
-    FilterTextFieldWidget setDropChoicesListener(Consumer<ExplicitFilterDropFormatter.DropChoices> dropChoicesListener) {
+    FilterTextFieldWidget setDropChoicesListener(
+        Consumer<ExplicitFilterDropFormatter.DropChoices> dropChoicesListener) {
         this.dropChoicesListener = dropChoicesListener;
         return this;
     }

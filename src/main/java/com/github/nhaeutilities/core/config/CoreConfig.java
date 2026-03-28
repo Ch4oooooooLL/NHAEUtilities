@@ -19,11 +19,8 @@ public final class CoreConfig {
         Configuration configuration = new Configuration(configFile);
         configuration.load();
 
-        boolean patternGeneratorEnabled = configuration.getBoolean(
-            ENABLED_PROPERTY,
-            PATTERN_GENERATOR_CATEGORY,
-            true,
-            "Enable the pattern generator module.");
+        boolean patternGeneratorEnabled = configuration
+            .getBoolean(ENABLED_PROPERTY, PATTERN_GENERATOR_CATEGORY, true, "Enable the pattern generator module.");
 
         if (configuration.hasChanged()) {
             configuration.save();

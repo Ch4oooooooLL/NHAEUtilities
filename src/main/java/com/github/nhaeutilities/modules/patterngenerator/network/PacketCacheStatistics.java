@@ -55,25 +55,26 @@ public class PacketCacheStatistics implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketCacheStatistics message, MessageContext ctx) {
-            Minecraft.getMinecraft().func_152344_a(() -> {
-                if (Minecraft.getMinecraft().thePlayer != null) {
-                    GuiPatternGenStatusBridge.setStatus(
-                        String.format(
-                            "Cache ready: %s map(s), %s recipe(s), %s mod(s), %s bytes",
-                            message.totalRecipeMaps,
-                            message.totalRecipeCount,
-                            message.totalModCount,
-                            message.directoryBytes));
-                    Minecraft.getMinecraft().thePlayer.addChatMessage(
-                        new ChatComponentText(
-                            EnumChatFormatting.GREEN + I18nUtil.tr(
-                                "nhaeutilities.msg.cache.statistics",
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> {
+                    if (Minecraft.getMinecraft().thePlayer != null) {
+                        GuiPatternGenStatusBridge.setStatus(
+                            String.format(
+                                "Cache ready: %s map(s), %s recipe(s), %s mod(s), %s bytes",
                                 message.totalRecipeMaps,
                                 message.totalRecipeCount,
                                 message.totalModCount,
-                                message.directoryBytes)));
-                }
-            });
+                                message.directoryBytes));
+                        Minecraft.getMinecraft().thePlayer.addChatMessage(
+                            new ChatComponentText(
+                                EnumChatFormatting.GREEN + I18nUtil.tr(
+                                    "nhaeutilities.msg.cache.statistics",
+                                    message.totalRecipeMaps,
+                                    message.totalRecipeCount,
+                                    message.totalModCount,
+                                    message.directoryBytes)));
+                    }
+                });
             return null;
         }
     }

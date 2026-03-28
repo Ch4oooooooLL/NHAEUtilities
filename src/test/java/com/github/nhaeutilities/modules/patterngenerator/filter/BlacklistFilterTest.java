@@ -73,4 +73,3 @@ public class BlacklistFilterTest {
         assertFalse(matcher.matches("Copper Dust", 8119, 12, new String[] { "dustCopper" }));
     }
 }
-

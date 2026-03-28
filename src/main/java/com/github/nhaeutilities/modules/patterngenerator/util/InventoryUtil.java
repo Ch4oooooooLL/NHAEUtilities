@@ -17,7 +17,8 @@ public class InventoryUtil {
         IInventory inv = player.inventory;
         for (int i = 0; i < inv.getSizeInventory(); i++) {
             ItemStack stack = inv.getStackInSlot(i);
-            if (stack != null && stack.getItem() == target.getItem() && stack.getItemDamage() == target.getItemDamage()) {
+            if (stack != null && stack.getItem() == target.getItem()
+                && stack.getItemDamage() == target.getItemDamage()) {
                 count += stack.stackSize;
             }
         }
@@ -37,7 +38,8 @@ public class InventoryUtil {
             }
 
             ItemStack stack = inv.getStackInSlot(i);
-            if (stack != null && stack.getItem() == target.getItem() && stack.getItemDamage() == target.getItemDamage()) {
+            if (stack != null && stack.getItem() == target.getItem()
+                && stack.getItemDamage() == target.getItemDamage()) {
                 if (stack.stackSize <= remainToConsume) {
                     remainToConsume -= stack.stackSize;
                     inv.setInventorySlotContents(i, null);

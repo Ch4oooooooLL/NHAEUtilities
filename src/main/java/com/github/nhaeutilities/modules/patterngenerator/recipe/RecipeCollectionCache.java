@@ -25,4 +25,3 @@ final class RecipeCollectionCache<K, V> {
         cache.clear();
     }
 }
-

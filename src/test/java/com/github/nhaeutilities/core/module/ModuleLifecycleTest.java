@@ -34,11 +34,8 @@ public class ModuleLifecycleTest {
         registry.postInit(null);
         registry.serverStarting(null);
 
-        assertEquals(Arrays.asList(
-            "enabled:PRE_INIT",
-            "enabled:INIT",
-            "enabled:POST_INIT",
-            "enabled:SERVER_STARTING"),
+        assertEquals(
+            Arrays.asList("enabled:PRE_INIT", "enabled:INIT", "enabled:POST_INIT", "enabled:SERVER_STARTING"),
             callbacks);
         assertSame(modInstance, enabledModule.lastModInstance);
         assertNull(disabledModule.lastModInstance);
@@ -61,15 +58,16 @@ public class ModuleLifecycleTest {
         registry.postInit(null);
         registry.serverStarting(null);
 
-        assertEquals(Arrays.asList(
-            "zeta:PRE_INIT",
-            "alpha:PRE_INIT",
-            "zeta:INIT",
-            "alpha:INIT",
-            "zeta:POST_INIT",
-            "alpha:POST_INIT",
-            "zeta:SERVER_STARTING",
-            "alpha:SERVER_STARTING"),
+        assertEquals(
+            Arrays.asList(
+                "zeta:PRE_INIT",
+                "alpha:PRE_INIT",
+                "zeta:INIT",
+                "alpha:INIT",
+                "zeta:POST_INIT",
+                "alpha:POST_INIT",
+                "zeta:SERVER_STARTING",
+                "alpha:SERVER_STARTING"),
             callbacks);
         assertSame(modInstance, firstModule.lastModInstance);
         assertSame(modInstance, secondModule.lastModInstance);

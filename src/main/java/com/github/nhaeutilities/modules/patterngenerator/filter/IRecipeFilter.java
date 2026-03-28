@@ -20,4 +20,3 @@ public interface IRecipeFilter {
      */
     String getDescription();
 }
-

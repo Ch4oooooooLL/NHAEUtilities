@@ -34,7 +34,8 @@ public class PatternStorage {
             File file = getStorageFile(playerUUID);
             File parent = file.getParentFile();
             if (parent != null && !parent.exists() && !parent.mkdirs()) {
-                System.err.println("[NHAEUtilities] Failed to create pattern storage directory: " + parent.getAbsolutePath());
+                System.err
+                    .println("[NHAEUtilities] Failed to create pattern storage directory: " + parent.getAbsolutePath());
                 return false;
             }
 
@@ -262,9 +263,11 @@ public class PatternStorage {
             for (int i = 0; i < inList.tagCount(); i++) {
                 ItemStack item = ItemStack.loadItemStackFromNBT(inList.getCompoundTagAt(i));
                 if (item != null) {
-                    long count = inList.getCompoundTagAt(i).hasKey("Cnt")
-                        ? inList.getCompoundTagAt(i).getLong("Cnt")
-                        : item.stackSize;
+                    long count = inList.getCompoundTagAt(i)
+                        .hasKey("Cnt")
+                            ? inList.getCompoundTagAt(i)
+                                .getLong("Cnt")
+                            : item.stackSize;
                     if (count <= 0) {
                         count = 1;
                     }
@@ -276,9 +279,11 @@ public class PatternStorage {
             for (int i = 0; i < outList.tagCount(); i++) {
                 ItemStack item = ItemStack.loadItemStackFromNBT(outList.getCompoundTagAt(i));
                 if (item != null) {
-                    long count = outList.getCompoundTagAt(i).hasKey("Cnt")
-                        ? outList.getCompoundTagAt(i).getLong("Cnt")
-                        : item.stackSize;
+                    long count = outList.getCompoundTagAt(i)
+                        .hasKey("Cnt")
+                            ? outList.getCompoundTagAt(i)
+                                .getLong("Cnt")
+                            : item.stackSize;
                     if (count <= 0) {
                         count = 1;
                     }
@@ -309,15 +314,18 @@ public class PatternStorage {
                 if (sb.length() > 0) {
                     sb.append(", ");
                 }
-                long count = outList.getCompoundTagAt(i).hasKey("Cnt")
-                    ? outList.getCompoundTagAt(i).getLong("Cnt")
-                    : item.stackSize;
+                long count = outList.getCompoundTagAt(i)
+                    .hasKey("Cnt")
+                        ? outList.getCompoundTagAt(i)
+                            .getLong("Cnt")
+                        : item.stackSize;
                 if (count <= 0) {
                     count = 1;
                 }
                 sb.append(item.getDisplayName());
                 if (count > 1) {
-                    sb.append(" x").append(count);
+                    sb.append(" x")
+                        .append(count);
                 }
             }
         }

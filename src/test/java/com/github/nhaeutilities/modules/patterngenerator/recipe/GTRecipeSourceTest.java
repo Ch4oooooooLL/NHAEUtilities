@@ -1,18 +1,19 @@
 package com.github.nhaeutilities.modules.patterngenerator.recipe;
 
 import static org.junit.Assert.assertEquals;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
+
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class GTRecipeSourceTest {
 
@@ -41,17 +42,29 @@ public class GTRecipeSourceTest {
     @Test
     public void invalidateCollectionCacheDropsPreviouslyCollectedResults() {
         MutableRecipeMap furnaceMap = new MutableRecipeMap("gt.recipe.furnace", "furnace");
-        furnaceMap.staticRecipes = Collections.singletonList(recipe(20, new ItemStack[] { new ItemStack(new TestItem(), 1, 0) }));
+        furnaceMap.staticRecipes = Collections
+            .singletonList(recipe(20, new ItemStack[] { new ItemStack(new TestItem(), 1, 0) }));
         GTRecipeSource.setRecipeMapRegistry(new FakeRegistry(furnaceMap));
 
-        assertEquals(20, GTRecipeSource.collectRecipes("furnace").get(0).duration);
+        assertEquals(
+            20,
+            GTRecipeSource.collectRecipes("furnace")
+                .get(0).duration);
 
-        furnaceMap.staticRecipes = Collections.singletonList(recipe(40, new ItemStack[] { new ItemStack(new TestItem(), 1, 0) }));
-        assertEquals("cached value should still be returned before invalidation", 20, GTRecipeSource.collectRecipes("furnace").get(0).duration);
+        furnaceMap.staticRecipes = Collections
+            .singletonList(recipe(40, new ItemStack[] { new ItemStack(new TestItem(), 1, 0) }));
+        assertEquals(
+            "cached value should still be returned before invalidation",
+            20,
+            GTRecipeSource.collectRecipes("furnace")
+                .get(0).duration);
 
         GTRecipeSource.invalidateCollectionCache();
 
-        assertEquals(40, GTRecipeSource.collectRecipes("furnace").get(0).duration);
+        assertEquals(
+            40,
+            GTRecipeSource.collectRecipes("furnace")
+                .get(0).duration);
     }
 
     @Test
@@ -61,7 +74,9 @@ public class GTRecipeSourceTest {
                 new MutableRecipeMap("gt.recipe.assembler", "assembler"),
                 new MutableRecipeMap("gt.recipe.microwave", "microwave")));
 
-        assertEquals(Collections.singletonList("gt.recipe.assembler"), GTRecipeSource.findMatchingRecipeMaps("gt.recipe.assembler"));
+        assertEquals(
+            Collections.singletonList("gt.recipe.assembler"),
+            GTRecipeSource.findMatchingRecipeMaps("gt.recipe.assembler"));
     }
 
     @Test
@@ -82,7 +97,9 @@ public class GTRecipeSourceTest {
         legacyMappings.put("legacy_blast_identifier", blastMap);
         GTRecipeSource.setRecipeMapRegistry(new FakeRegistry(legacyMappings, blastMap));
 
-        assertEquals(Collections.singletonList("gt.recipe.blastfurnace"), GTRecipeSource.findMatchingRecipeMaps("legacy_blast_identifier"));
+        assertEquals(
+            Collections.singletonList("gt.recipe.blastfurnace"),
+            GTRecipeSource.findMatchingRecipeMaps("legacy_blast_identifier"));
     }
 
     @Test
@@ -92,7 +109,8 @@ public class GTRecipeSourceTest {
         Item outputItem = new TestItem();
         ItemStack input = new ItemStack(inputItem, 1, 0);
         ItemStack output = new ItemStack(outputItem, 1, 0);
-        furnaceMap.dynamicRecipes.put(stackKey(input), recipe(120, new ItemStack[] { input.copy() }, new ItemStack[] { output.copy() }));
+        furnaceMap.dynamicRecipes
+            .put(stackKey(input), recipe(120, new ItemStack[] { input.copy() }, new ItemStack[] { output.copy() }));
         GTRecipeSource.setRecipeMapRegistry(new FakeRegistry(furnaceMap));
         GTRecipeSource.setSmeltingRecipeProvider(() -> {
             Map<ItemStack, ItemStack> smelting = new LinkedHashMap<ItemStack, ItemStack>();
@@ -139,7 +157,15 @@ public class GTRecipeSourceTest {
     }
 
     private static FakeRecipe recipe(int duration, ItemStack[] inputs, ItemStack[] outputs) {
-        return new FakeRecipe(true, inputs, outputs, new FluidStack[0], new FluidStack[0], new ItemStack[0], duration, 8);
+        return new FakeRecipe(
+            true,
+            inputs,
+            outputs,
+            new FluidStack[0],
+            new FluidStack[0],
+            new ItemStack[0],
+            duration,
+            8);
     }
 
     private static String stackKey(ItemStack stack) {
@@ -149,7 +175,8 @@ public class GTRecipeSourceTest {
         return stack.getItem() + "@" + stack.getItemDamage() + "@" + stack.stackSize;
     }
 
-    private static final class TestItem extends Item {}
+    private static final class TestItem extends Item {
+    }
 
     private static final class FakeRegistry implements GTRecipeSource.RecipeMapRegistry {
 

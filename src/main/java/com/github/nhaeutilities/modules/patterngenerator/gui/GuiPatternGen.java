@@ -38,7 +38,8 @@ public class GuiPatternGen {
         ModularWindow.Builder builder = ModularWindow.builder(guiWidth, guiHeight);
         builder.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BACKGROUND);
 
-        TextWidget titleText = new TextWidget(EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.title", "Pattern Generator"));
+        TextWidget titleText = new TextWidget(
+            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.title", "Pattern Generator"));
         titleText.setScale(1.2f);
         titleText.setSize(guiWidth - 16, 20);
         titleText.setPos(8, 8);
@@ -53,7 +54,8 @@ public class GuiPatternGen {
         int fullFieldW = guiWidth - 16 - 12;
         int inputX = 80;
 
-        TextWidget labelRecipe = new TextWidget(EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.recipe", "Recipe"));
+        TextWidget labelRecipe = new TextWidget(
+            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.recipe", "Recipe"));
         labelRecipe.setPos(6, refY + 3);
         scrollable.widget(labelRecipe);
 
@@ -67,7 +69,8 @@ public class GuiPatternGen {
         scrollable.widget(tfRecipeMap);
         refY += 38;
 
-        TextWidget labelFilter = new TextWidget(EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.filter", "Filters"));
+        TextWidget labelFilter = new TextWidget(
+            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.filter", "Filters"));
         labelFilter.setPos(6, refY + 3);
         scrollable.widget(labelFilter);
 
@@ -117,8 +120,23 @@ public class GuiPatternGen {
         labelTier.setPos(6, refY + 68 + 3);
         scrollable.widget(labelTier);
 
-        final List<String> tiers = Arrays.asList("Any", "ULV", "LV", "MV", "HV", "EV", "IV", "LuV", "ZPM", "UV",
-            "UHV", "UEV", "UIV", "UMV", "UXV", "MAX");
+        final List<String> tiers = Arrays.asList(
+            "Any",
+            "ULV",
+            "LV",
+            "MV",
+            "HV",
+            "EV",
+            "IV",
+            "LuV",
+            "ZPM",
+            "UV",
+            "UHV",
+            "UEV",
+            "UIV",
+            "UMV",
+            "UXV",
+            "MAX");
         int savedTier = getSavedInt(held, PacketSaveFields.NBT_TARGET_TIER, -1);
         final int[] currentTierIndex = new int[] { Math.max(0, Math.min(tiers.size() - 1, savedTier + 1)) };
 
@@ -143,11 +161,13 @@ public class GuiPatternGen {
 
         refY += 84;
 
-        TextWidget labelBL = new TextWidget(EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.blacklist", "Blacklist"));
+        TextWidget labelBL = new TextWidget(
+            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.blacklist", "Blacklist"));
         labelBL.setPos(6, refY + 3);
         scrollable.widget(labelBL);
 
-        TextWidget labelBLIn = new TextWidget(t("nhaeutilities.gui.pattern_gen.label.blacklist_input", "Blacklist input"));
+        TextWidget labelBLIn = new TextWidget(
+            t("nhaeutilities.gui.pattern_gen.label.blacklist_input", "Blacklist input"));
         labelBLIn.setPos(6, refY + 14 + 3);
         scrollable.widget(labelBLIn);
 
@@ -161,7 +181,8 @@ public class GuiPatternGen {
         scrollable.widget(tfBlacklistIn);
         attachDragChoiceSelector(scrollable, tfBlacklistIn, inputX, refY + 14, fieldW);
 
-        TextWidget labelBLOut = new TextWidget(t("nhaeutilities.gui.pattern_gen.label.blacklist_output", "Blacklist output"));
+        TextWidget labelBLOut = new TextWidget(
+            t("nhaeutilities.gui.pattern_gen.label.blacklist_output", "Blacklist output"));
         labelBLOut.setPos(6, refY + 32 + 3);
         scrollable.widget(labelBLOut);
 
@@ -175,21 +196,23 @@ public class GuiPatternGen {
         scrollable.widget(tfBlacklistOut);
         attachDragChoiceSelector(scrollable, tfBlacklistOut, inputX, refY + 32, fieldW);
 
-        TextWidget regexHint = new TextWidget(EnumChatFormatting.DARK_GRAY + t(
-            "nhaeutilities.gui.pattern_gen.hint.regex",
-            "Regex, ore dict, or display name tokens are supported."));
+        TextWidget regexHint = new TextWidget(
+            EnumChatFormatting.DARK_GRAY + t(
+                "nhaeutilities.gui.pattern_gen.hint.regex",
+                "Regex, ore dict, or display name tokens are supported."));
         regexHint.setPos(6, refY + 50 + 3);
         scrollable.widget(regexHint);
 
-        TextWidget blacklistHint = new TextWidget(EnumChatFormatting.DARK_GRAY + t(
-            "nhaeutilities.gui.pattern_gen.hint.blacklist",
-            "Blacklist fields exclude matching stacks."));
+        TextWidget blacklistHint = new TextWidget(
+            EnumChatFormatting.DARK_GRAY
+                + t("nhaeutilities.gui.pattern_gen.hint.blacklist", "Blacklist fields exclude matching stacks."));
         blacklistHint.setPos(6, refY + 60 + 3);
         scrollable.widget(blacklistHint);
 
-        TextWidget blacklistExamples = new TextWidget(EnumChatFormatting.DARK_GRAY + t(
-            "nhaeutilities.gui.pattern_gen.hint.blacklist_examples",
-            "Examples: [itemId], (oreName), {Display Name}"));
+        TextWidget blacklistExamples = new TextWidget(
+            EnumChatFormatting.DARK_GRAY + t(
+                "nhaeutilities.gui.pattern_gen.hint.blacklist_examples",
+                "Examples: [itemId], (oreName), {Display Name}"));
         blacklistExamples.setPos(6, refY + 70 + 3);
         scrollable.widget(blacklistExamples);
 
@@ -197,11 +220,13 @@ public class GuiPatternGen {
 
         int loadedRuleCount = ReplacementConfig.load();
 
-        TextWidget labelRep = new TextWidget(EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.replacements", "Replacement rules"));
+        TextWidget labelRep = new TextWidget(
+            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.replacements", "Replacement rules"));
         labelRep.setPos(6, refY + 3);
         scrollable.widget(labelRep);
 
-        TextWidget labelRepCount = new TextWidget(t("nhaeutilities.gui.pattern_gen.replacements.count", "Loaded rules: %s", loadedRuleCount));
+        TextWidget labelRepCount = new TextWidget(
+            t("nhaeutilities.gui.pattern_gen.replacements.count", "Loaded rules: %s", loadedRuleCount));
         labelRepCount.setPos(6, refY + 20);
         scrollable.widget(labelRepCount);
 
@@ -348,8 +373,9 @@ public class GuiPatternGen {
 
             int direction = clickData.mouseButton == 1 ? -1 : 1;
             currentIndex[0] = cycleIndex(currentIndex[0], currentChoices[0].size(), direction);
-            field.applyDropChoice(currentChoices[0].getOptions()
-                .get(currentIndex[0]));
+            field.applyDropChoice(
+                currentChoices[0].getOptions()
+                    .get(currentIndex[0]));
         });
         scrollable.widget(selector);
 
@@ -413,8 +439,10 @@ public class GuiPatternGen {
             return "";
         }
         return stack.getTagCompound()
-            .hasKey(key) ? stack.getTagCompound()
-                .getString(key) : "";
+            .hasKey(key)
+                ? stack.getTagCompound()
+                    .getString(key)
+                : "";
     }
 
     private static int getSavedInt(ItemStack stack, String key, int def) {
@@ -422,8 +450,10 @@ public class GuiPatternGen {
             return def;
         }
         return stack.getTagCompound()
-            .hasKey(key) ? stack.getTagCompound()
-                .getInteger(key) : def;
+            .hasKey(key)
+                ? stack.getTagCompound()
+                    .getInteger(key)
+                : def;
     }
 
     private static String t(String key, String fallback, Object... args) {

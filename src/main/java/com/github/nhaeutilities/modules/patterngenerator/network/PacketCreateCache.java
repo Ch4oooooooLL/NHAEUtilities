@@ -48,7 +48,8 @@ public class PacketCreateCache implements IMessage {
             });
 
             if (started) {
-                NetworkHandler.INSTANCE.sendTo(new PacketCacheProgress(PacketCacheProgress.STAGE_STARTED, "", 0, 0), player);
+                NetworkHandler.INSTANCE
+                    .sendTo(new PacketCacheProgress(PacketCacheProgress.STAGE_STARTED, "", 0, 0), player);
             } else {
                 NetworkHandler.INSTANCE
                     .sendTo(new PacketCacheProgress(PacketCacheProgress.STAGE_ALREADY_RUNNING, "", 0, 0), player);

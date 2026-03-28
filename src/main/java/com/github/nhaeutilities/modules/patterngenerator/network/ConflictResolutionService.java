@@ -30,7 +30,9 @@ public final class ConflictResolutionService {
         for (String key : session.groupKeys) {
             Integer index = session.selections.get(key);
             if (index != null) {
-                finalRecipes.add(session.conflictGroups.get(key).get(index));
+                finalRecipes.add(
+                    session.conflictGroups.get(key)
+                        .get(index));
             }
         }
         return finalRecipes;

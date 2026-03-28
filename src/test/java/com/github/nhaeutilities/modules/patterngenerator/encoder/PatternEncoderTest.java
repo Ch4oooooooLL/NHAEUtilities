@@ -4,11 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -16,8 +13,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
 
 public class PatternEncoderTest {
 
@@ -63,9 +63,11 @@ public class PatternEncoderTest {
         NBTTagCompound inputTag = inputList.getCompoundTagAt(0);
         assertEquals(300, inputTag.getInteger("Count"));
         assertEquals(300L, inputTag.getLong("Cnt"));
-        assertEquals(1, encoded.getTagCompound()
-            .getTagList("out", 10)
-            .tagCount());
+        assertEquals(
+            1,
+            encoded.getTagCompound()
+                .getTagList("out", 10)
+                .tagCount());
     }
 
     @Test

@@ -22,8 +22,7 @@ public final class ItemStackUtil {
             if (displayName != null && !displayName.isEmpty()) {
                 return displayName;
             }
-        } catch (RuntimeException ignored) {
-        }
+        } catch (RuntimeException ignored) {}
 
         Object registryName = Item.itemRegistry.getNameForObject(item);
         if (registryName != null) {

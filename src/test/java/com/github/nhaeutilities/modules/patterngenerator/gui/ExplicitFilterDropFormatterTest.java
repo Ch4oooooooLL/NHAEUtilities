@@ -60,7 +60,8 @@ public class ExplicitFilterDropFormatterTest {
 
     private String invokeFormat(int itemId, Integer meta, String[] oreNames, String displayName) {
         try {
-            Class<?> clazz = Class.forName("com.github.nhaeutilities.modules.patterngenerator.gui.ExplicitFilterDropFormatter");
+            Class<?> clazz = Class
+                .forName("com.github.nhaeutilities.modules.patterngenerator.gui.ExplicitFilterDropFormatter");
             Method method = clazz.getDeclaredMethod("format", int.class, Integer.class, String[].class, String.class);
             method.setAccessible(true);
             return (String) method.invoke(null, itemId, meta, oreNames, displayName);
@@ -79,8 +80,10 @@ public class ExplicitFilterDropFormatterTest {
 
     private Object invokeBuildChoices(int itemId, Integer meta, String[] oreNames, String displayName) {
         try {
-            Class<?> clazz = Class.forName("com.github.nhaeutilities.modules.patterngenerator.gui.ExplicitFilterDropFormatter");
-            Method method = clazz.getDeclaredMethod("buildChoices", int.class, Integer.class, String[].class, String.class);
+            Class<?> clazz = Class
+                .forName("com.github.nhaeutilities.modules.patterngenerator.gui.ExplicitFilterDropFormatter");
+            Method method = clazz
+                .getDeclaredMethod("buildChoices", int.class, Integer.class, String[].class, String.class);
             method.setAccessible(true);
             return method.invoke(null, itemId, meta, oreNames, displayName);
         } catch (ClassNotFoundException e) {
@@ -98,7 +101,8 @@ public class ExplicitFilterDropFormatterTest {
 
     private int invokeDefaultIndex(Object choices) {
         try {
-            Method method = choices.getClass().getDeclaredMethod("getDefaultIndex");
+            Method method = choices.getClass()
+                .getDeclaredMethod("getDefaultIndex");
             method.setAccessible(true);
             return ((Integer) method.invoke(choices)).intValue();
         } catch (NoSuchMethodException e) {
@@ -115,12 +119,14 @@ public class ExplicitFilterDropFormatterTest {
     @SuppressWarnings("unchecked")
     private List<String> invokeChoiceTokens(Object choices) {
         try {
-            Method method = choices.getClass().getDeclaredMethod("getOptions");
+            Method method = choices.getClass()
+                .getDeclaredMethod("getOptions");
             method.setAccessible(true);
             List<Object> options = (List<Object>) method.invoke(choices);
             List<String> tokens = new ArrayList<String>();
             for (Object option : options) {
-                Method tokenMethod = option.getClass().getDeclaredMethod("getToken");
+                Method tokenMethod = option.getClass()
+                    .getDeclaredMethod("getToken");
                 tokenMethod.setAccessible(true);
                 tokens.add((String) tokenMethod.invoke(option));
             }
@@ -139,12 +145,14 @@ public class ExplicitFilterDropFormatterTest {
     @SuppressWarnings("unchecked")
     private List<String> invokeChoiceSources(Object choices) {
         try {
-            Method method = choices.getClass().getDeclaredMethod("getOptions");
+            Method method = choices.getClass()
+                .getDeclaredMethod("getOptions");
             method.setAccessible(true);
             List<Object> options = (List<Object>) method.invoke(choices);
             List<String> sources = new ArrayList<String>();
             for (Object option : options) {
-                Method sourceMethod = option.getClass().getDeclaredMethod("getSource");
+                Method sourceMethod = option.getClass()
+                    .getDeclaredMethod("getSource");
                 sourceMethod.setAccessible(true);
                 Object source = sourceMethod.invoke(option);
                 sources.add(String.valueOf(source));

@@ -68,4 +68,3 @@ public class RecipeCacheMetadataTest {
         assertTrue(metadata.lastUpdated > original);
     }
 }
-

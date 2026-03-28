@@ -51,4 +51,3 @@ public class NCItemFilter implements IRecipeFilter {
         return matchSource;
     }
 }
-

@@ -55,7 +55,8 @@ public class GuiPatternStorage {
         ModularWindow.Builder builder = ModularWindow.builder(GUI_W, GUI_H);
         builder.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BACKGROUND);
 
-        TextWidget titleText = new TextWidget(EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_storage.title", "Pattern Storage"));
+        TextWidget titleText = new TextWidget(
+            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_storage.title", "Pattern Storage"));
         titleText.setScale(1.2f);
         titleText.setSize(GUI_W - 16, 20);
         titleText.setPos(8, 8);
@@ -68,24 +69,28 @@ public class GuiPatternStorage {
             builder.widget(emptyText);
         } else {
             int y = 24;
-            TextWidget statsTitle = new TextWidget(EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_storage.stats.title", "Storage details"));
+            TextWidget statsTitle = new TextWidget(
+                EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_storage.stats.title", "Storage details"));
             statsTitle.setPos(8, y);
             builder.widget(statsTitle);
             y += 14;
 
-            TextWidget countText = new TextWidget(t("nhaeutilities.gui.pattern_storage.stats.count", "Pattern count: %s", summary.count));
+            TextWidget countText = new TextWidget(
+                t("nhaeutilities.gui.pattern_storage.stats.count", "Pattern count: %s", summary.count));
             countText.setPos(14, y);
             builder.widget(countText);
             y += 12;
 
-            TextWidget sourceText = new TextWidget(t("nhaeutilities.gui.pattern_storage.stats.source", "Source: %s", summary.source));
+            TextWidget sourceText = new TextWidget(
+                t("nhaeutilities.gui.pattern_storage.stats.source", "Source: %s", summary.source));
             sourceText.setPos(14, y);
             builder.widget(sourceText);
             y += 12;
 
             String timeStr = summary.timestamp <= 0 ? t("nhaeutilities.gui.common.na", "N/A")
                 : new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(summary.timestamp));
-            TextWidget timeText = new TextWidget(t("nhaeutilities.gui.pattern_storage.stats.time", "Stored at: %s", timeStr));
+            TextWidget timeText = new TextWidget(
+                t("nhaeutilities.gui.pattern_storage.stats.time", "Stored at: %s", timeStr));
             timeText.setPos(14, y);
             builder.widget(timeText);
             y += 16;
@@ -176,7 +181,8 @@ public class GuiPatternStorage {
                     rowText.setPos(4, listY + 3);
 
                     rowBtn.setOnClick((cd, w) -> {
-                        PatternStorage.PatternDetail detail = PatternStorage.getPatternDetail(player.getUniqueID(), actualIndex);
+                        PatternStorage.PatternDetail detail = PatternStorage
+                            .getPatternDetail(player.getUniqueID(), actualIndex);
                         if (detail != null) {
                             GuiPatternDetail.open(player, actualIndex, detail.inputs, detail.outputs);
                         }
@@ -203,7 +209,8 @@ public class GuiPatternStorage {
         btnExtText.setPos(GUI_W / 2 - btnW - 4 + 16, btnY + 6);
         btnExtract.setOnClick((cd, w) -> {
             NetworkHandler.INSTANCE.sendToServer(new PacketStorageAction(PacketStorageAction.ACTION_EXTRACT));
-            Minecraft.getMinecraft().displayGuiScreen(null);
+            Minecraft.getMinecraft()
+                .displayGuiScreen(null);
         });
         builder.widget(btnExtract);
         builder.widget(btnExtText);
@@ -216,14 +223,16 @@ public class GuiPatternStorage {
         btnClrText.setPos(GUI_W / 2 + 4 + 20, btnY + 6);
         btnClear.setOnClick((cd, w) -> {
             NetworkHandler.INSTANCE.sendToServer(new PacketStorageAction(PacketStorageAction.ACTION_CLEAR));
-            Minecraft.getMinecraft().displayGuiScreen(null);
+            Minecraft.getMinecraft()
+                .displayGuiScreen(null);
         });
         builder.widget(btnClear);
         builder.widget(btnClrText);
 
-        TextWidget footerText = new TextWidget(EnumChatFormatting.GRAY + t(
-            "nhaeutilities.gui.pattern_storage.footer.export_hint",
-            "Sneak-right-click a container to export stored patterns."));
+        TextWidget footerText = new TextWidget(
+            EnumChatFormatting.GRAY + t(
+                "nhaeutilities.gui.pattern_storage.footer.export_hint",
+                "Sneak-right-click a container to export stored patterns."));
         footerText.setPos(8, GUI_H - 12);
         builder.widget(footerText);
 

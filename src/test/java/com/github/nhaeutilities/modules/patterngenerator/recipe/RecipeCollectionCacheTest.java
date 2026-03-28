@@ -53,7 +53,8 @@ public class RecipeCollectionCacheTest {
 
     private Object newCacheInstance() throws Exception {
         try {
-            Class<?> cacheClass = Class.forName("com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeCollectionCache");
+            Class<?> cacheClass = Class
+                .forName("com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeCollectionCache");
             Constructor<?> constructor = cacheClass.getDeclaredConstructor();
             constructor.setAccessible(true);
             return constructor.newInstance();
@@ -78,4 +79,3 @@ public class RecipeCollectionCacheTest {
         return null;
     }
 }
-

@@ -143,8 +143,11 @@ public final class RecipeCacheService {
             }
 
             RecipeCacheMetadata.RecipeMapInfo info;
-            String resolvedModId = resolveSnapshotModId(mapId, currentModVersions, canReuseExisting
-                && existing.recipeMaps.containsKey(mapId) ? existing.recipeMaps.get(mapId).modId : null);
+            String resolvedModId = resolveSnapshotModId(
+                mapId,
+                currentModVersions,
+                canReuseExisting && existing.recipeMaps.containsKey(mapId) ? existing.recipeMaps.get(mapId).modId
+                    : null);
             if (canReuseRecipeMap(existing, mapId)) {
                 RecipeCacheMetadata.RecipeMapInfo oldInfo = existing.recipeMaps.get(mapId);
                 info = new RecipeCacheMetadata.RecipeMapInfo(oldInfo.mapId, oldInfo.modId);
@@ -321,7 +324,8 @@ public final class RecipeCacheService {
         counts[1] += Math.max(0, recipeCount);
     }
 
-    private static String resolveSnapshotModId(String mapId, Map<String, String> currentModVersions, String fallbackModId) {
+    private static String resolveSnapshotModId(String mapId, Map<String, String> currentModVersions,
+        String fallbackModId) {
         String resolved = canonicalizeLoadedModId(environmentInspector.resolveModId(mapId), currentModVersions);
         if (!isBlank(resolved)) {
             return resolved;
@@ -517,4 +521,3 @@ public final class RecipeCacheService {
         }
     }
 }
-

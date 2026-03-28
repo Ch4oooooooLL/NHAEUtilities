@@ -24,7 +24,8 @@ public final class GuiPatternGenStatusBridge {
     }
 
     private static String normalize(String status) {
-        if (status == null || status.trim().isEmpty()) {
+        if (status == null || status.trim()
+            .isEmpty()) {
             return I18nUtil.tr("nhaeutilities.gui.pattern_gen.status.ready");
         }
         return status.trim();

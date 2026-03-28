@@ -82,7 +82,8 @@ public class RecipeCacheStorageTest {
         File file = RecipeCacheStorage.getRecipeMapFile(mapId);
         assertTrue(
             file.getParentFile() == null || file.getParentFile()
-                .mkdirs() || file.getParentFile()
+                .mkdirs()
+                || file.getParentFile()
                     .exists());
 
         NBTTagCompound root = new NBTTagCompound();
@@ -296,4 +297,3 @@ public class RecipeCacheStorageTest {
         return new NBTTagList();
     }
 }
-

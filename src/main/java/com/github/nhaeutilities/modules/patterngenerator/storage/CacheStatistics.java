@@ -26,4 +26,3 @@ public class CacheStatistics {
         this.lastUpdated = lastUpdated;
     }
 }
-

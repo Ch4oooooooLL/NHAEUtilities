@@ -77,7 +77,12 @@ public class CommandPatternGen extends CommandBase {
         send(sender, EnumChatFormatting.GOLD, "nhaeutilities.command.list.available_maps", maps.size());
 
         for (Map.Entry<String, String> entry : maps.entrySet()) {
-            send(sender, EnumChatFormatting.GREEN, "nhaeutilities.command.list.entry", entry.getKey(), entry.getValue());
+            send(
+                sender,
+                EnumChatFormatting.GREEN,
+                "nhaeutilities.command.list.entry",
+                entry.getKey(),
+                entry.getValue());
         }
     }
 

@@ -4,12 +4,12 @@ import java.util.Objects;
 
 import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleDefinition;
-import com.github.nhaeutilities.proxy.CommonProxy;
 import com.github.nhaeutilities.modules.patterngenerator.command.CommandPatternGen;
 import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
 import com.github.nhaeutilities.modules.patterngenerator.config.ReplacementConfig;
 import com.github.nhaeutilities.modules.patterngenerator.item.ModItems;
 import com.github.nhaeutilities.modules.patterngenerator.network.NetworkHandler;
+import com.github.nhaeutilities.proxy.CommonProxy;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;

@@ -59,4 +59,3 @@ public class CacheQueryResult {
             Collections.<String>emptyList());
     }
 }
-

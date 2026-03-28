@@ -47,4 +47,3 @@ public final class RecipeFilterFactory {
         return value != null && !value.isEmpty() && !"*".equals(value);
     }
 }
-

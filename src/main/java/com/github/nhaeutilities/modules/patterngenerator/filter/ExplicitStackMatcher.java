@@ -558,4 +558,3 @@ public class ExplicitStackMatcher {
         }
     }
 }
-

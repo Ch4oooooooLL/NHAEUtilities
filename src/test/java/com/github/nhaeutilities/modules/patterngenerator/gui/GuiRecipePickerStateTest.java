@@ -32,12 +32,19 @@ public class GuiRecipePickerStateTest {
         assertEquals(2, state.rowCapacity);
         assertEquals(0, state.localIndex);
         assertEquals(0, state.selectedRecipeIndex);
-        assertEquals(1, state.getCurrentRecipes().size());
+        assertEquals(
+            1,
+            state.getCurrentRecipes()
+                .size());
     }
 
     @Test
     public void clientBatchStateRejectsEmptyPackets() {
-        PacketRecipeConflictBatch packet = new PacketRecipeConflictBatch(1, 1, 1, new ArrayList<String>(),
+        PacketRecipeConflictBatch packet = new PacketRecipeConflictBatch(
+            1,
+            1,
+            1,
+            new ArrayList<String>(),
             new ArrayList<List<RecipeEntry>>());
 
         assertTrue(GuiRecipePicker.ClientBatchState.from(packet) == null);

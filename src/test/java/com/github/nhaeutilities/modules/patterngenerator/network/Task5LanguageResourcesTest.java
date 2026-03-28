@@ -31,7 +31,8 @@ public class Task5LanguageResourcesTest {
     }
 
     private static Set<String> loadKeys(String path) throws IOException {
-        InputStream stream = Task5LanguageResourcesTest.class.getClassLoader().getResourceAsStream(path);
+        InputStream stream = Task5LanguageResourcesTest.class.getClassLoader()
+            .getResourceAsStream(path);
         assertNotNull(path + " should exist", stream);
 
         Set<String> keys = new HashSet<String>();

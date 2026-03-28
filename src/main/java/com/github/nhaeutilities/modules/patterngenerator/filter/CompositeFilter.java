@@ -51,4 +51,3 @@ public class CompositeFilter implements IRecipeFilter {
         return sb.toString();
     }
 }
-

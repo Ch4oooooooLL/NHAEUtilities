@@ -61,4 +61,3 @@ public class BlacklistFilter implements IRecipeFilter {
         return "blacklist(" + (checkInputs ? "in" : "") + (checkOutputs ? "out" : "") + "): " + keyword;
     }
 }
-

@@ -45,21 +45,29 @@ public class AE2Util {
             return false;
         }
 
-        Object obj = AEApi.instance().registries().locatable().getLocatableBy(serial);
+        Object obj = AEApi.instance()
+            .registries()
+            .locatable()
+            .getLocatableBy(serial);
         if (obj instanceof IActionHost) {
-            IGrid grid = ((IActionHost) obj).getActionableNode().getGrid();
+            IGrid grid = ((IActionHost) obj).getActionableNode()
+                .getGrid();
             if (grid != null) {
                 IStorageGrid storage = grid.getCache(IStorageGrid.class);
                 IMEMonitor<IAEItemStack> inventory = storage.getItemInventory();
-                IAEItemStack required = AEApi.instance().storage().createItemStack(blankPattern).setStackSize(requiredCount);
+                IAEItemStack required = AEApi.instance()
+                    .storage()
+                    .createItemStack(blankPattern)
+                    .setStackSize(requiredCount);
 
-                IAEItemStack available =
-                    inventory.extractItems(required, Actionable.SIMULATE, new PlayerSource(player, null));
+                IAEItemStack available = inventory
+                    .extractItems(required, Actionable.SIMULATE, new PlayerSource(player, null));
                 if (available != null && available.getStackSize() >= requiredCount) {
                     inventory.extractItems(required, Actionable.MODULATE, new PlayerSource(player, null));
-                    player.addChatMessage(new ChatComponentText(
-                        EnumChatFormatting.AQUA
-                            + "[NHAEUtilities] \u5df2\u4ece\u7ed1\u5b9a\u7684 ME \u7f51\u7edc\u4e2d\u65e0\u7ebf\u63d0\u53d6\u7a7a\u767d\u6837\u677f\u3002"));
+                    player.addChatMessage(
+                        new ChatComponentText(
+                            EnumChatFormatting.AQUA
+                                + "[NHAEUtilities] \u5df2\u4ece\u7ed1\u5b9a\u7684 ME \u7f51\u7edc\u4e2d\u65e0\u7ebf\u63d0\u53d6\u7a7a\u767d\u6837\u677f\u3002"));
                     return true;
                 }
             }

@@ -103,4 +103,3 @@ public class ModVersionHelperTest {
                 .get("gregtech"));
     }
 }
-

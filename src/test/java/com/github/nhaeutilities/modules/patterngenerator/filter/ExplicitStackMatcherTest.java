@@ -1,7 +1,7 @@
 package com.github.nhaeutilities.modules.patterngenerator.filter;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -10,10 +10,10 @@ import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
-import org.junit.Test;
-
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.junit.Test;
 
 public class ExplicitStackMatcherTest {
 
@@ -167,4 +167,3 @@ public class ExplicitStackMatcherTest {
         }
     }
 }
-

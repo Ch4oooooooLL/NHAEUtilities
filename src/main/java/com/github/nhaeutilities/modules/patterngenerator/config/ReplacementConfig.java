@@ -18,7 +18,9 @@ public class ReplacementConfig {
     private static int ruleCount = 0;
 
     public static int load() {
-        return load(Loader.instance().getConfigDir());
+        return load(
+            Loader.instance()
+                .getConfigDir());
     }
 
     static int load(File configDir) {
@@ -72,7 +74,9 @@ public class ReplacementConfig {
     }
 
     public static File getConfigFile() {
-        return resolveConfigFile(Loader.instance().getConfigDir());
+        return resolveConfigFile(
+            Loader.instance()
+                .getConfigDir());
     }
 
     static File resolveConfigFile(File configDir) {
@@ -81,7 +85,8 @@ public class ReplacementConfig {
 
     private static void generateTemplate(File file) {
         try {
-            file.getParentFile().mkdirs();
+            file.getParentFile()
+                .mkdirs();
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
                 writer.write("# NHAEUtilities Pattern Generator - Ore Dictionary replacement rules");
                 writer.newLine();

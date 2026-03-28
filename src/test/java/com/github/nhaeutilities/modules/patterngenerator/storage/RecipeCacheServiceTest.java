@@ -111,7 +111,10 @@ public class RecipeCacheServiceTest {
         assertEquals(1, stats.totalRecipeCount);
         assertEquals(1, collector.collectCalls);
         assertEquals(1, storage.saveRecipeMapCalls);
-        assertEquals(120, storage.persistedRecipeMaps.get("gt.recipe.assembler").get(0).duration);
+        assertEquals(
+            120,
+            storage.persistedRecipeMaps.get("gt.recipe.assembler")
+                .get(0).duration);
         assertTrue(RecipeCacheService.validateCache());
     }
 
@@ -436,7 +439,8 @@ public class RecipeCacheServiceTest {
         public List<RecipeEntry> collectRecipes(String mapId) {
             collectCalls++;
             List<RecipeEntry> recipes = recipeMapRecipes.get(mapId);
-            return recipes != null ? new ArrayList<RecipeEntry>(recipes) : Arrays.asList(sampleRecipe(20), sampleRecipe(40));
+            return recipes != null ? new ArrayList<RecipeEntry>(recipes)
+                : Arrays.asList(sampleRecipe(20), sampleRecipe(40));
         }
     }
 
@@ -468,4 +472,3 @@ public class RecipeCacheServiceTest {
         }
     }
 }
-

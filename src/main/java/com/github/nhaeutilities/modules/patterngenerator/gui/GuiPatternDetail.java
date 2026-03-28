@@ -54,7 +54,8 @@ public class GuiPatternDetail {
 
         int y = 0;
         TextWidget inTitle = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_detail.input.title", "Inputs (%s)", inputNames.size()));
+            EnumChatFormatting.BOLD
+                + t("nhaeutilities.gui.pattern_detail.input.title", "Inputs (%s)", inputNames.size()));
         inTitle.setPos(4, y);
         scrollable.widget(inTitle);
         y += 12;
@@ -75,7 +76,8 @@ public class GuiPatternDetail {
         y += 8;
 
         TextWidget outTitle = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_detail.output.title", "Outputs (%s)", outputNames.size()));
+            EnumChatFormatting.BOLD
+                + t("nhaeutilities.gui.pattern_detail.output.title", "Outputs (%s)", outputNames.size()));
         outTitle.setPos(4, y);
         scrollable.widget(outTitle);
         y += 12;
@@ -106,7 +108,8 @@ public class GuiPatternDetail {
         TextWidget btnDelText = new TextWidget(t("nhaeutilities.gui.pattern_detail.button.delete", "Delete"));
         btnDelText.setPos(GUI_W / 2 - btnW - 4 + 16, btnY + 6);
         btnDelete.setOnClick((cd, w) -> {
-            NetworkHandler.INSTANCE.sendToServer(new PacketStorageAction(PacketStorageAction.ACTION_DELETE, patternIndex));
+            NetworkHandler.INSTANCE
+                .sendToServer(new PacketStorageAction(PacketStorageAction.ACTION_DELETE, patternIndex));
             GuiPatternStorage.open(Minecraft.getMinecraft().thePlayer);
         });
         builder.widget(btnDelete);

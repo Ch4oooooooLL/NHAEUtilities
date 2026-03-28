@@ -113,13 +113,17 @@ public class PacketSaveFields implements IMessage {
             return false;
         }
 
-        if ("ItemPatternGenerator".equals(held.getItem().getClass().getSimpleName())) {
+        if ("ItemPatternGenerator".equals(
+            held.getItem()
+                .getClass()
+                .getSimpleName())) {
             return true;
         }
 
         String unlocalizedName;
         try {
-            unlocalizedName = held.getItem().getUnlocalizedName();
+            unlocalizedName = held.getItem()
+                .getUnlocalizedName();
         } catch (RuntimeException ignored) {
             return false;
         }

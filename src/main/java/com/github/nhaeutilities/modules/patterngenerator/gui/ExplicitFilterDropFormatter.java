@@ -42,8 +42,9 @@ final class ExplicitFilterDropFormatter {
 
         if (itemId >= 0) {
             options.add(
-                new DropChoice(DropChoiceSource.ITEM_ID, meta != null ? "[" + itemId + ":" + meta.intValue() + "]"
-                    : "[" + itemId + "]"));
+                new DropChoice(
+                    DropChoiceSource.ITEM_ID,
+                    meta != null ? "[" + itemId + ":" + meta.intValue() + "]" : "[" + itemId + "]"));
         }
 
         String oreName = firstNonBlank(oreNames);
@@ -74,7 +75,8 @@ final class ExplicitFilterDropFormatter {
         if (stack.getItemDamage() == net.minecraftforge.oredict.OreDictionary.WILDCARD_VALUE) {
             return false;
         }
-        return stack.getItem().getHasSubtypes();
+        return stack.getItem()
+            .getHasSubtypes();
     }
 
     private static String firstNonBlank(String[] values) {

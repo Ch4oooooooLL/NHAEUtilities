@@ -12,13 +12,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class OreDictReplacerTest {
 
@@ -44,7 +44,8 @@ public class OreDictReplacerTest {
 
     @Test
     public void constructorKeepsOnlyWellFormedReplacementRules() throws Exception {
-        OreDictReplacer replacer = new OreDictReplacer(" ingotCopper = dustCopper ; broken ; =missing ; dustTin=dustSmallTin ");
+        OreDictReplacer replacer = new OreDictReplacer(
+            " ingotCopper = dustCopper ; broken ; =missing ; dustTin=dustSmallTin ");
 
         Map<?, ?> rules = readRules(replacer);
 

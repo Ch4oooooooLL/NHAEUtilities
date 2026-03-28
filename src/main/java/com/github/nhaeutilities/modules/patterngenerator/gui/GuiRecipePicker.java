@@ -18,7 +18,6 @@ import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
 import com.github.nhaeutilities.modules.patterngenerator.util.ItemStackUtil;
 import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
-import com.gtnewhorizons.modularui.api.math.Alignment;
 import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
 import com.gtnewhorizons.modularui.api.screen.ModularWindow;
 import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
@@ -98,7 +97,8 @@ public class GuiRecipePicker {
         builder.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BACKGROUND);
 
         TextWidget titleText = new TextWidget("");
-        titleText.setStringSupplier(() -> EnumChatFormatting.BOLD + trimToPixelWidth(buildTitleText(state), guiWidth - 20));
+        titleText
+            .setStringSupplier(() -> EnumChatFormatting.BOLD + trimToPixelWidth(buildTitleText(state), guiWidth - 20));
         titleText.setScale(1.2f);
         titleText.setSize(guiWidth - 16, 20);
         titleText.setPos(8, 8);
@@ -114,8 +114,11 @@ public class GuiRecipePicker {
 
         TextWidget listTitle = new TextWidget("");
         listTitle.setStringSupplier(
-            () -> EnumChatFormatting.BOLD + t("nhaeutilities.gui.recipe_picker.list_title", "Candidates: %s", state.getCurrentRecipes()
-                .size()));
+            () -> EnumChatFormatting.BOLD + t(
+                "nhaeutilities.gui.recipe_picker.list_title",
+                "Candidates: %s",
+                state.getCurrentRecipes()
+                    .size()));
         listTitle.setPos(8, topY - 10);
         builder.widget(listTitle);
 
@@ -142,8 +145,11 @@ public class GuiRecipePicker {
             previewBtn.setSize(previewBtnW, rowHeight);
             previewBtn.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
             previewBtn.setEnabled(
-                widget -> isValidRecipeIndex(recipeIndex, state.getCurrentRecipes()
-                    .size()) && !state.awaitingServer);
+                widget -> isValidRecipeIndex(
+                    recipeIndex,
+                    state.getCurrentRecipes()
+                        .size())
+                    && !state.awaitingServer);
             previewBtn.setOnClick((cd, w) -> {
                 if (state.awaitingServer || state.inputLocked) {
                     return;
@@ -168,8 +174,10 @@ public class GuiRecipePicker {
                 return formatCandidateTitle(recipe, recipeIndex, state.selectedRecipeIndex == recipeIndex);
             });
             rowTitle.setEnabled(
-                widget -> isValidRecipeIndex(recipeIndex, state.getCurrentRecipes()
-                    .size()));
+                widget -> isValidRecipeIndex(
+                    recipeIndex,
+                    state.getCurrentRecipes()
+                        .size()));
             rowTitle.setPos(6, rowY + 6);
             candidateList.widget(rowTitle);
 
@@ -183,8 +191,10 @@ public class GuiRecipePicker {
                 return formatInputPreview(recipe, state.selectedRecipeIndex == recipeIndex);
             });
             rowPreview.setEnabled(
-                widget -> isValidRecipeIndex(recipeIndex, state.getCurrentRecipes()
-                    .size()));
+                widget -> isValidRecipeIndex(
+                    recipeIndex,
+                    state.getCurrentRecipes()
+                        .size()));
             rowPreview.setPos(6, rowY + 18);
             candidateList.widget(rowPreview);
 
@@ -195,8 +205,11 @@ public class GuiRecipePicker {
             selectBtn.setSize(SELECT_BTN_W, rowHeight);
             selectBtn.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
             selectBtn.setEnabled(
-                widget -> isValidRecipeIndex(recipeIndex, state.getCurrentRecipes()
-                    .size()) && !state.awaitingServer);
+                widget -> isValidRecipeIndex(
+                    recipeIndex,
+                    state.getCurrentRecipes()
+                        .size())
+                    && !state.awaitingServer);
             selectBtn.setOnClick((cd, w) -> {
                 if (state.awaitingServer || state.inputLocked) {
                     return;
@@ -245,8 +258,10 @@ public class GuiRecipePicker {
             TextWidget selectBtnText = new TextWidget(
                 EnumChatFormatting.BLACK + t("nhaeutilities.gui.recipe_picker.button.select", "Select"));
             selectBtnText.setEnabled(
-                widget -> isValidRecipeIndex(recipeIndex, state.getCurrentRecipes()
-                    .size()));
+                widget -> isValidRecipeIndex(
+                    recipeIndex,
+                    state.getCurrentRecipes()
+                        .size()));
             selectBtnText.setPos(selectBtnX + (SELECT_BTN_W - chooseLabelW) / 2, rowY + 12);
             candidateList.widget(selectBtnText);
         }
@@ -320,7 +335,10 @@ public class GuiRecipePicker {
 
     private static String formatInputPreview(RecipeEntry recipe, boolean selected) {
         String color = selected ? EnumChatFormatting.DARK_AQUA.toString() : EnumChatFormatting.DARK_GRAY.toString();
-        return color + t("nhaeutilities.gui.recipe_picker.preview.input", "Inputs: %s", trimText(buildInputPreview(recipe, 2), 24));
+        return color + t(
+            "nhaeutilities.gui.recipe_picker.preview.input",
+            "Inputs: %s",
+            trimText(buildInputPreview(recipe, 2), 24));
     }
 
     private static String buildInputPreview(RecipeEntry recipe, int maxParts) {
@@ -383,22 +401,57 @@ public class GuiRecipePicker {
     private static List<String> buildDetailLines(RecipeEntry recipe) {
         ArrayList<String> lines = new ArrayList<String>();
         if (recipe == null) {
-            lines.add(EnumChatFormatting.RED + t("nhaeutilities.gui.recipe_picker.detail.not_selected", "No recipe selected."));
+            lines.add(
+                EnumChatFormatting.RED
+                    + t("nhaeutilities.gui.recipe_picker.detail.not_selected", "No recipe selected."));
             return lines;
         }
 
-        lines.add(EnumChatFormatting.AQUA + "" + EnumChatFormatting.BOLD + t("nhaeutilities.gui.recipe_picker.detail.meta", "Recipe info"));
-        lines.add(EnumChatFormatting.WHITE + t("nhaeutilities.gui.recipe_picker.detail.machine", "Machine: %s", trimText(safeText(recipe.machineDisplayName), 24)));
-        lines.add(EnumChatFormatting.WHITE + t("nhaeutilities.gui.recipe_picker.detail.recipe_map", "Recipe map: %s", trimText(safeText(recipe.recipeMapId), 24)));
-        lines.add(EnumChatFormatting.WHITE + t("nhaeutilities.gui.recipe_picker.detail.duration", "Duration: %s", recipe.duration));
+        lines.add(
+            EnumChatFormatting.AQUA + ""
+                + EnumChatFormatting.BOLD
+                + t("nhaeutilities.gui.recipe_picker.detail.meta", "Recipe info"));
+        lines.add(
+            EnumChatFormatting.WHITE + t(
+                "nhaeutilities.gui.recipe_picker.detail.machine",
+                "Machine: %s",
+                trimText(safeText(recipe.machineDisplayName), 24)));
+        lines.add(
+            EnumChatFormatting.WHITE + t(
+                "nhaeutilities.gui.recipe_picker.detail.recipe_map",
+                "Recipe map: %s",
+                trimText(safeText(recipe.recipeMapId), 24)));
+        lines.add(
+            EnumChatFormatting.WHITE
+                + t("nhaeutilities.gui.recipe_picker.detail.duration", "Duration: %s", recipe.duration));
         lines.add(EnumChatFormatting.WHITE + "EU/t: " + recipe.euPerTick);
         lines.add("");
 
-        appendItemSection(lines, t("nhaeutilities.gui.recipe_picker.detail.input_items", "Input items"), recipe.inputs, 20);
-        appendFluidSection(lines, t("nhaeutilities.gui.recipe_picker.detail.input_fluids", "Input fluids"), recipe.fluidInputs, 20);
-        appendItemSection(lines, t("nhaeutilities.gui.recipe_picker.detail.output_items", "Output items"), recipe.outputs, 20);
-        appendFluidSection(lines, t("nhaeutilities.gui.recipe_picker.detail.output_fluids", "Output fluids"), recipe.fluidOutputs, 20);
-        appendItemSection(lines, t("nhaeutilities.gui.recipe_picker.detail.special_items", "Special items"), recipe.specialItems, 20);
+        appendItemSection(
+            lines,
+            t("nhaeutilities.gui.recipe_picker.detail.input_items", "Input items"),
+            recipe.inputs,
+            20);
+        appendFluidSection(
+            lines,
+            t("nhaeutilities.gui.recipe_picker.detail.input_fluids", "Input fluids"),
+            recipe.fluidInputs,
+            20);
+        appendItemSection(
+            lines,
+            t("nhaeutilities.gui.recipe_picker.detail.output_items", "Output items"),
+            recipe.outputs,
+            20);
+        appendFluidSection(
+            lines,
+            t("nhaeutilities.gui.recipe_picker.detail.output_fluids", "Output fluids"),
+            recipe.fluidOutputs,
+            20);
+        appendItemSection(
+            lines,
+            t("nhaeutilities.gui.recipe_picker.detail.special_items", "Special items"),
+            recipe.specialItems,
+            20);
         return lines;
     }
 
@@ -417,7 +470,8 @@ public class GuiRecipePicker {
             }
             String name = safeText(ItemStackUtil.getSafeDisplayName(stack));
             int amount = stack.stackSize;
-            lines.add(EnumChatFormatting.GRAY + " - " + EnumChatFormatting.WHITE + trimText(name, maxLen) + " x" + amount);
+            lines.add(
+                EnumChatFormatting.GRAY + " - " + EnumChatFormatting.WHITE + trimText(name, maxLen) + " x" + amount);
         }
         lines.add("");
     }
@@ -437,8 +491,13 @@ public class GuiRecipePicker {
             }
             String name = safeText(fluid.getLocalizedName());
             lines.add(
-                EnumChatFormatting.GRAY + " - " + EnumChatFormatting.AQUA + trimText(name, maxLen) + EnumChatFormatting.GRAY + " "
-                    + Math.max(0, fluid.amount) + "L");
+                EnumChatFormatting.GRAY + " - "
+                    + EnumChatFormatting.AQUA
+                    + trimText(name, maxLen)
+                    + EnumChatFormatting.GRAY
+                    + " "
+                    + Math.max(0, fluid.amount)
+                    + "L");
         }
         lines.add("");
     }
@@ -568,7 +627,11 @@ public class GuiRecipePicker {
         int current = state.currentConflictIndex();
         int total = state.totalConflicts;
         int remaining = current > 0 ? Math.max(0, total - current + 1) : Math.max(0, total);
-        return t("nhaeutilities.gui.recipe_picker.title", "Conflict selection: %s (%s remaining)", productName, remaining);
+        return t(
+            "nhaeutilities.gui.recipe_picker.title",
+            "Conflict selection: %s (%s remaining)",
+            productName,
+            remaining);
     }
 
     private static String buildDefaultStatusText(ClientBatchState state) {
@@ -576,8 +639,9 @@ public class GuiRecipePicker {
             .size();
         int current = state.currentConflictIndex();
         int total = state.totalConflicts;
-        return recipeCount > 0 ? EnumChatFormatting.DARK_GRAY
-            + t("nhaeutilities.gui.recipe_picker.status.default", "Conflict %s/%s", current, total)
+        return recipeCount > 0
+            ? EnumChatFormatting.DARK_GRAY
+                + t("nhaeutilities.gui.recipe_picker.status.default", "Conflict %s/%s", current, total)
             : EnumChatFormatting.RED + t("nhaeutilities.gui.recipe_picker.status.default_empty", "No candidates.");
     }
 
