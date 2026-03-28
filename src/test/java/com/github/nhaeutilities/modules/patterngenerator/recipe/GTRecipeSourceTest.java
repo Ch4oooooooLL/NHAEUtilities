@@ -55,6 +55,37 @@ public class GTRecipeSourceTest {
     }
 
     @Test
+    public void findMatchingRecipeMapsReturnsExactMapIdMatch() {
+        GTRecipeSource.setRecipeMapRegistry(
+            new FakeRegistry(
+                new MutableRecipeMap("gt.recipe.assembler", "assembler"),
+                new MutableRecipeMap("gt.recipe.microwave", "microwave")));
+
+        assertEquals(Collections.singletonList("gt.recipe.assembler"), GTRecipeSource.findMatchingRecipeMaps("gt.recipe.assembler"));
+    }
+
+    @Test
+    public void findMatchingRecipeMapsMatchesSubstringAgainstMapIdAndTransferId() {
+        GTRecipeSource.setRecipeMapRegistry(
+            new FakeRegistry(
+                new MutableRecipeMap("gt.recipe.furnace", "smelting"),
+                new MutableRecipeMap("gt.recipe.microwave", "microwave")));
+
+        assertEquals(Collections.singletonList("gt.recipe.microwave"), GTRecipeSource.findMatchingRecipeMaps("micro"));
+        assertEquals(Collections.singletonList("gt.recipe.furnace"), GTRecipeSource.findMatchingRecipeMaps("smelt"));
+    }
+
+    @Test
+    public void findMatchingRecipeMapsResolvesLegacyIdentifiers() {
+        MutableRecipeMap blastMap = new MutableRecipeMap("gt.recipe.blastfurnace", "blast");
+        Map<String, GTRecipeSource.RecipeMapView> legacyMappings = new LinkedHashMap<String, GTRecipeSource.RecipeMapView>();
+        legacyMappings.put("legacy_blast_identifier", blastMap);
+        GTRecipeSource.setRecipeMapRegistry(new FakeRegistry(legacyMappings, blastMap));
+
+        assertEquals(Collections.singletonList("gt.recipe.blastfurnace"), GTRecipeSource.findMatchingRecipeMaps("legacy_blast_identifier"));
+    }
+
+    @Test
     public void collectRecipesIncludesDynamicFurnaceRecipesFromSmeltingList() {
         MutableRecipeMap furnaceMap = new MutableRecipeMap("gt.recipe.furnace", "furnace");
         Item inputItem = new TestItem();
@@ -77,6 +108,32 @@ public class GTRecipeSourceTest {
         assertEquals(outputItem, collected.get(0).outputs[0].getItem());
     }
 
+    @Test
+    public void collectRecipesIncludesMicrowaveBookFallbackRecipe() {
+        MutableRecipeMap microwaveMap = new MutableRecipeMap("gt.recipe.microwave", "microwave");
+        ItemStack bookInput = new ItemStack(net.minecraft.init.Items.book, 1, 0);
+        ItemStack bookOutput = new ItemStack(new TestItem(), 1, 0);
+        ItemStack unrelatedInput = new ItemStack(new TestItem(), 1, 0);
+        ItemStack unrelatedOutput = new ItemStack(new TestItem(), 1, 0);
+        microwaveMap.dynamicRecipes.put(
+            stackKey(bookInput),
+            recipe(60, new ItemStack[] { bookInput.copy() }, new ItemStack[] { bookOutput.copy() }));
+        GTRecipeSource.setRecipeMapRegistry(new FakeRegistry(microwaveMap));
+        GTRecipeSource.setSmeltingRecipeProvider(() -> {
+            Map<ItemStack, ItemStack> smelting = new LinkedHashMap<ItemStack, ItemStack>();
+            smelting.put(unrelatedInput.copy(), unrelatedOutput.copy());
+            return smelting;
+        });
+
+        java.util.List<RecipeEntry> collected = GTRecipeSource.collectRecipes("microwave");
+
+        assertEquals(1, collected.size());
+        assertEquals("gt.recipe.microwave", collected.get(0).recipeMapId);
+        assertEquals(2, microwaveMap.findRecipeInputs.size());
+        assertEquals("NULL", microwaveMap.findRecipeInputs.get(1));
+        assertEquals(bookOutput.getItem(), collected.get(0).outputs[0].getItem());
+    }
+
     private static FakeRecipe recipe(int duration, ItemStack[] inputs) {
         return recipe(duration, inputs, new ItemStack[] { new ItemStack(new TestItem(), 1, 0) });
     }
@@ -86,6 +143,9 @@ public class GTRecipeSourceTest {
     }
 
     private static String stackKey(ItemStack stack) {
+        if (stack == null || stack.getItem() == null) {
+            return "NULL";
+        }
         return stack.getItem() + "@" + stack.getItemDamage() + "@" + stack.stackSize;
     }
 
@@ -94,10 +154,19 @@ public class GTRecipeSourceTest {
     private static final class FakeRegistry implements GTRecipeSource.RecipeMapRegistry {
 
         private final Map<String, GTRecipeSource.RecipeMapView> maps = new LinkedHashMap<String, GTRecipeSource.RecipeMapView>();
+        private final Map<String, GTRecipeSource.RecipeMapView> legacyMappings = new LinkedHashMap<String, GTRecipeSource.RecipeMapView>();
 
         private FakeRegistry(GTRecipeSource.RecipeMapView... maps) {
+            this(Collections.<String, GTRecipeSource.RecipeMapView>emptyMap(), maps);
+        }
+
+        private FakeRegistry(Map<String, GTRecipeSource.RecipeMapView> legacyMappings,
+            GTRecipeSource.RecipeMapView... maps) {
             for (GTRecipeSource.RecipeMapView map : maps) {
                 this.maps.put(map.getMapId(), map);
+            }
+            if (legacyMappings != null) {
+                this.legacyMappings.putAll(legacyMappings);
             }
         }
 
@@ -108,7 +177,7 @@ public class GTRecipeSourceTest {
 
         @Override
         public GTRecipeSource.RecipeMapView getFromLegacyIdentifier(String identifier) {
-            return null;
+            return legacyMappings.get(identifier);
         }
     }
 
@@ -118,6 +187,7 @@ public class GTRecipeSourceTest {
         private final String transferId;
         private Collection<GTRecipeSource.RecipeView> staticRecipes = Collections.emptyList();
         private final Map<String, GTRecipeSource.RecipeView> dynamicRecipes = new LinkedHashMap<String, GTRecipeSource.RecipeView>();
+        private final java.util.List<String> findRecipeInputs = new java.util.ArrayList<String>();
 
         private MutableRecipeMap(String mapId, String transferId) {
             this.mapId = mapId;
@@ -141,7 +211,9 @@ public class GTRecipeSourceTest {
 
         @Override
         public GTRecipeSource.RecipeView findRecipe(ItemStack input) {
-            return dynamicRecipes.get(stackKey(input));
+            String key = stackKey(input);
+            findRecipeInputs.add(key);
+            return dynamicRecipes.get(key);
         }
     }
 

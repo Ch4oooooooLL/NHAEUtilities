@@ -18,6 +18,7 @@ import com.github.nhaeutilities.modules.patterngenerator.util.OreDictUtil;
  */
 public class OreDictReplacer {
 
+    private static volatile OreDictionaryAccess oreDictionaryAccess = new ForgeOreDictionaryAccess();
     private final Map<String, String> rules;
 
     public OreDictReplacer(String rulesStr) {
@@ -67,13 +68,13 @@ public class OreDictReplacer {
         if (original == null) return null;
 
         // ???????????????????????????????
-        String[] oreNames = OreDictUtil.getOreNamesSafe(original);
+        String[] oreNames = oreDictionaryAccess.getOreNames(original);
         if (oreNames.length == 0) return original;
 
         for (String oreName : oreNames) {
             if (rules.containsKey(oreName)) {
                 String targetOre = rules.get(oreName);
-                List<ItemStack> candidates = OreDictionary.getOres(targetOre);
+                List<ItemStack> candidates = oreDictionaryAccess.getOres(targetOre);
                 if (!candidates.isEmpty()) {
                     // ????????????????????
                     ItemStack replacement = candidates.get(0)
@@ -85,6 +86,34 @@ public class OreDictReplacer {
         }
 
         return original;
+    }
+
+    static void setOreDictionaryAccess(OreDictionaryAccess access) {
+        oreDictionaryAccess = access != null ? access : oreDictionaryAccess;
+    }
+
+    static void resetOreDictionaryAccess() {
+        oreDictionaryAccess = new ForgeOreDictionaryAccess();
+    }
+
+    interface OreDictionaryAccess {
+
+        String[] getOreNames(ItemStack stack);
+
+        List<ItemStack> getOres(String oreName);
+    }
+
+    private static final class ForgeOreDictionaryAccess implements OreDictionaryAccess {
+
+        @Override
+        public String[] getOreNames(ItemStack stack) {
+            return OreDictUtil.getOreNamesSafe(stack);
+        }
+
+        @Override
+        public List<ItemStack> getOres(String oreName) {
+            return OreDictionary.getOres(oreName);
+        }
     }
 }
 
