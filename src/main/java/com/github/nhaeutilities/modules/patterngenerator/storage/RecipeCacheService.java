@@ -62,35 +62,7 @@ public final class RecipeCacheService {
     }
 
     public static boolean validateCache() {
-        storageBackend.prepareAccessContext();
-        RecipeCacheMetadata metadata = storageBackend.loadMetadata();
-        if (metadata == null || metadata.cacheVersion != RecipeCacheMetadata.CURRENT_VERSION
-            || metadata.recipeMaps.isEmpty()) {
-            return false;
-        }
-
-        if (ModVersionHelper.isModVersionChanged(metadata, environmentInspector.getLoadedModVersions())) {
-            return false;
-        }
-        if (ModVersionHelper.isConfigHashChanged(metadata, environmentInspector.getConfigHashes())) {
-            return false;
-        }
-
-        for (Map.Entry<String, RecipeCacheMetadata.RecipeMapInfo> entry : metadata.recipeMaps.entrySet()) {
-            String mapId = entry.getKey();
-            if (!storageBackend.recipeMapExists(mapId)) {
-                return false;
-            }
-            List<RecipeEntry> recipes = storageBackend.loadRecipeMap(mapId);
-            if (recipes == null) {
-                return false;
-            }
-            RecipeCacheMetadata.RecipeMapInfo info = entry.getValue();
-            if (info != null && info.recipeCount != recipes.size()) {
-                return false;
-            }
-        }
-        return true;
+        return loadValidatedMetadata(true) != null;
     }
 
     public static CacheQueryResult loadRecipes(String recipeMapKeyword) {
@@ -98,7 +70,7 @@ public final class RecipeCacheService {
     }
 
     public static CacheQueryResult loadAndFilterRecipes(String recipeMapKeyword, CompositeFilter filter) {
-        if (!validateCache()) {
+        if (loadValidatedMetadata(false) == null) {
             return CacheQueryResult.invalid("cache_missing_or_invalid");
         }
 
@@ -172,7 +144,7 @@ public final class RecipeCacheService {
             RecipeCacheMetadata.RecipeMapInfo info;
             String resolvedModId = resolveSnapshotModId(mapId, currentModVersions, canReuseExisting
                 && existing.recipeMaps.containsKey(mapId) ? existing.recipeMaps.get(mapId).modId : null);
-            if (canReuseExisting && existing.recipeMaps.containsKey(mapId) && storageBackend.recipeMapExists(mapId)) {
+            if (canReuseRecipeMap(existing, mapId)) {
                 RecipeCacheMetadata.RecipeMapInfo oldInfo = existing.recipeMaps.get(mapId);
                 info = new RecipeCacheMetadata.RecipeMapInfo(oldInfo.mapId, oldInfo.modId);
                 info.recipeCount = oldInfo.recipeCount;
@@ -244,6 +216,49 @@ public final class RecipeCacheService {
         recipeCollector = new DefaultRecipeCollector();
         environmentInspector = new DefaultEnvironmentInspector();
         sourceCacheInvalidator = new DefaultSourceCacheInvalidator();
+    }
+
+    private static RecipeCacheMetadata loadValidatedMetadata(boolean validatePayloads) {
+        storageBackend.prepareAccessContext();
+        RecipeCacheMetadata metadata = storageBackend.loadMetadata();
+        if (metadata == null || metadata.cacheVersion != RecipeCacheMetadata.CURRENT_VERSION
+            || metadata.recipeMaps.isEmpty()) {
+            return null;
+        }
+
+        if (ModVersionHelper.isModVersionChanged(metadata, environmentInspector.getLoadedModVersions())) {
+            return null;
+        }
+        if (ModVersionHelper.isConfigHashChanged(metadata, environmentInspector.getConfigHashes())) {
+            return null;
+        }
+
+        for (Map.Entry<String, RecipeCacheMetadata.RecipeMapInfo> entry : metadata.recipeMaps.entrySet()) {
+            String mapId = entry.getKey();
+            if (!storageBackend.recipeMapExists(mapId)) {
+                return null;
+            }
+            if (!validatePayloads) {
+                continue;
+            }
+
+            List<RecipeEntry> recipes = storageBackend.loadRecipeMap(mapId);
+            if (!isLoadedPayloadReusable(entry.getValue(), recipes)) {
+                return null;
+            }
+        }
+        return metadata;
+    }
+
+    private static boolean canReuseRecipeMap(RecipeCacheMetadata existing, String mapId) {
+        if (existing == null || !existing.recipeMaps.containsKey(mapId) || !storageBackend.recipeMapExists(mapId)) {
+            return false;
+        }
+        return isLoadedPayloadReusable(existing.recipeMaps.get(mapId), storageBackend.loadRecipeMap(mapId));
+    }
+
+    private static boolean isLoadedPayloadReusable(RecipeCacheMetadata.RecipeMapInfo info, List<RecipeEntry> recipes) {
+        return info != null && recipes != null && info.recipeCount == recipes.size();
     }
 
     private static CacheStatistics buildStatistics(RecipeCacheMetadata metadata) {

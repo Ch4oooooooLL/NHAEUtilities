@@ -87,6 +87,35 @@ public class RecipeCacheServiceTest {
     }
 
     @Test
+    public void rebuildNowRegeneratesCorruptPersistedMapWhenEnvironmentIsUnchanged() {
+        RecipeCacheMetadata metadata = new RecipeCacheMetadata();
+        RecipeCacheMetadata.RecipeMapInfo info = new RecipeCacheMetadata.RecipeMapInfo(
+            "gt.recipe.assembler",
+            "gregtech");
+        info.recipeCount = 1;
+        info.contentHash = "hash-a";
+        info.cacheFileName = "gt.recipe.assembler.dat";
+        metadata.putRecipeMapInfo(info);
+        metadata.updateModInfo("gregtech", "5.0.0", 1, 1);
+        metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
+        storage.metadata = metadata;
+        storage.persistedRecipeMaps.put("gt.recipe.assembler", Collections.singletonList(sampleRecipe(20)));
+        storage.invalidRecipeMaps.add("gt.recipe.assembler");
+        collector.availableMapIds = Collections.singletonList("gt.recipe.assembler");
+        collector.recipeMapRecipes.put("gt.recipe.assembler", Collections.singletonList(sampleRecipe(120)));
+        inspector.modVersions.put("gregtech", "5.0.0");
+        inspector.configHashes.put("config/nhaeutilities.cfg", "cfg-hash");
+
+        CacheStatistics stats = RecipeCacheService.rebuildNow(null);
+
+        assertEquals(1, stats.totalRecipeCount);
+        assertEquals(1, collector.collectCalls);
+        assertEquals(1, storage.saveRecipeMapCalls);
+        assertEquals(120, storage.persistedRecipeMaps.get("gt.recipe.assembler").get(0).duration);
+        assertTrue(RecipeCacheService.validateCache());
+    }
+
+    @Test
     public void validateCacheSucceedsAfterRebuildWithFullModSnapshot() {
         collector.availableMapIds = Collections.singletonList("gt.recipe.assembler");
         inspector.modVersions.put("gregtech", "5.0.0");
@@ -193,6 +222,30 @@ public class RecipeCacheServiceTest {
     }
 
     @Test
+    public void loadAndFilterRecipesSkipsDeepValidationOfUnmatchedCorruptMaps() {
+        RecipeCacheMetadata metadata = new RecipeCacheMetadata();
+        metadata.updateRecipeMapInfo("gt.recipe.assembler", "gregtech", 1, "hash-a", "gt.recipe.assembler.dat");
+        metadata.updateRecipeMapInfo("gt.recipe.circuit", "gregtech", 1, "hash-b", "gt.recipe.circuit.dat");
+        metadata.updateModInfo("gregtech", "5.0.0", 2, 2);
+        metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
+        storage.metadata = metadata;
+        storage.persistedRecipeMaps.put("gt.recipe.assembler", Collections.singletonList(sampleRecipe(20)));
+        storage.persistedRecipeMaps.put("gt.recipe.circuit", Collections.singletonList(sampleRecipe(40)));
+        storage.invalidRecipeMaps.add("gt.recipe.circuit");
+        collector.availableMapIds = Arrays.asList("gt.recipe.assembler", "gt.recipe.circuit");
+        collector.matches.put("assembler", Collections.singletonList("gt.recipe.assembler"));
+        inspector.modVersions.put("gregtech", "5.0.0");
+        inspector.configHashes.put("config/nhaeutilities.cfg", "cfg-hash");
+
+        CacheQueryResult result = RecipeCacheService.loadAndFilterRecipes("assembler", null);
+
+        assertTrue(result.cacheValid);
+        assertEquals(1, result.totalLoadedCount);
+        assertEquals(1, result.recipes.size());
+        assertEquals(1, storage.loadRecipeMapCalls);
+    }
+
+    @Test
     public void rebuildNowInvalidatesRecipeSourceCaches() {
         collector.availableMapIds = Collections.singletonList("gt.recipe.assembler");
         inspector.modVersions.put("gregtech", "5.0.0");
@@ -220,6 +273,7 @@ public class RecipeCacheServiceTest {
         private RecipeCacheMetadata metadata;
         private final Map<String, List<RecipeEntry>> persistedRecipeMaps = new LinkedHashMap<String, List<RecipeEntry>>();
         private final List<String> invalidRecipeMaps = new ArrayList<String>();
+        private int loadRecipeMapCalls;
         private int saveRecipeMapCalls;
 
         private FakeStorageBackend(File cacheDirectory) {
@@ -229,12 +283,14 @@ public class RecipeCacheServiceTest {
         @Override
         public boolean saveRecipeMap(String mapId, List<RecipeEntry> recipes, RecipeCacheMetadata.RecipeMapInfo info) {
             saveRecipeMapCalls++;
+            invalidRecipeMaps.remove(mapId);
             persistedRecipeMaps.put(mapId, new ArrayList<RecipeEntry>(recipes));
             return true;
         }
 
         @Override
         public List<RecipeEntry> loadRecipeMap(String mapId) {
+            loadRecipeMapCalls++;
             if (invalidRecipeMaps.contains(mapId)) {
                 return null;
             }
