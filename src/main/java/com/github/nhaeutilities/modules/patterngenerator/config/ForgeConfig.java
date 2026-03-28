@@ -56,6 +56,8 @@ public final class ForgeConfig {
     private static volatile String storageDirectoryName = DEFAULT_STORAGE_DIRECTORY_NAME;
     private static volatile String recipeCacheDirectoryName = DEFAULT_RECIPE_CACHE_DIRECTORY_NAME;
 
+    private static final String DEFAULT_CONFIG_FILE_NAME = "nhaeutilities.cfg";
+
     private static final String DEFAULT_ENCODED_PATTERN_ID = "appliedenergistics2:item.ItemEncodedPattern";
 
     private static volatile String encodedPatternId = DEFAULT_ENCODED_PATTERN_ID;
@@ -63,7 +65,7 @@ public final class ForgeConfig {
     private ForgeConfig() {}
 
     public static void load(File suggestedConfigFile) {
-        File file = suggestedConfigFile != null ? suggestedConfigFile : new File("config", "nhaeutilities.cfg");
+        File file = resolveConfigFile(suggestedConfigFile);
         Configuration cfg = new Configuration(file);
         try {
             cfg.load();
@@ -81,6 +83,10 @@ public final class ForgeConfig {
                 cfg.save();
             }
         }
+    }
+
+    static File resolveConfigFile(File suggestedConfigFile) {
+        return suggestedConfigFile != null ? suggestedConfigFile : new File("config", DEFAULT_CONFIG_FILE_NAME);
     }
 
     private static void loadConflictConfig(Configuration cfg) {

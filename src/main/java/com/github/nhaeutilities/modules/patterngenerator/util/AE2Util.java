@@ -58,7 +58,8 @@ public class AE2Util {
                 if (available != null && available.getStackSize() >= requiredCount) {
                     inventory.extractItems(required, Actionable.MODULATE, new PlayerSource(player, null));
                     player.addChatMessage(new ChatComponentText(
-                        EnumChatFormatting.AQUA + "[NHAEUtilities] Retrieved blank patterns from the bound ME network."));
+                        EnumChatFormatting.AQUA
+                            + "[NHAEUtilities] \u5df2\u4ece\u7ed1\u5b9a\u7684 ME \u7f51\u7edc\u4e2d\u65e0\u7ebf\u63d0\u53d6\u7a7a\u767d\u6837\u677f\u3002"));
                     return true;
                 }
             }

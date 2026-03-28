@@ -2,6 +2,8 @@ package com.github.nhaeutilities.modules.patterngenerator.config;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.File;
+
 import org.junit.Test;
 
 public class ForgeConfigTest {
@@ -12,8 +14,18 @@ public class ForgeConfigTest {
     }
 
     @Test
+    public void storageDirectoryUsesExpectedDefault() {
+        assertEquals("nhaeutilities", ForgeConfig.getStorageDirectoryName());
+    }
+
+    @Test
     public void recipeCacheDirectoryUsesExpectedDefault() {
         assertEquals("recipe_cache", ForgeConfig.getRecipeCacheDirectoryName());
+    }
+
+    @Test
+    public void defaultConfigFileUsesExpectedPathAndName() {
+        assertEquals(new File("config", "nhaeutilities.cfg").getPath(), ForgeConfig.resolveConfigFile(null).getPath());
     }
 
     @Test

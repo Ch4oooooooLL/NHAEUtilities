@@ -18,10 +18,14 @@ public class ReplacementConfig {
     private static int ruleCount = 0;
 
     public static int load() {
+        return load(resolveConfigDir());
+    }
+
+    static int load(File configDir) {
         loadedRules.clear();
         ruleCount = 0;
 
-        File file = getConfigFile();
+        File file = resolveConfigFile(configDir);
         if (!file.exists()) {
             generateTemplate(file);
             return 0;
@@ -68,8 +72,20 @@ public class ReplacementConfig {
     }
 
     public static File getConfigFile() {
-        File configDir = Loader.instance().getConfigDir();
+        return resolveConfigFile(resolveConfigDir());
+    }
+
+    static File resolveConfigFile(File configDir) {
         return new File(configDir, FILE_NAME);
+    }
+
+    private static File resolveConfigDir() {
+        try {
+            return Loader.instance().getConfigDir();
+        } catch (Throwable ignored) {
+            // Unit tests do not run under the Forge LaunchClassLoader bootstrap path.
+            return new File("config");
+        }
     }
 
     private static void generateTemplate(File file) {
