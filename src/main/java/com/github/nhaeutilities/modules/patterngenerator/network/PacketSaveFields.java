@@ -81,25 +81,56 @@ public class PacketSaveFields implements IMessage {
             }
 
             ItemStack held = player.getCurrentEquippedItem();
-            if (held == null) {
-                return null;
-            }
-
-            NBTTagCompound tag = held.getTagCompound();
-            if (tag == null) {
-                tag = new NBTTagCompound();
-                held.setTagCompound(tag);
-            }
-
-            tag.setString(NBT_RECIPE_MAP, message.recipeMap != null ? message.recipeMap : "");
-            tag.setString(NBT_OUTPUT_ORE, message.outputOre != null ? message.outputOre : "");
-            tag.setString(NBT_INPUT_ORE, message.inputOre != null ? message.inputOre : "");
-            tag.setString(NBT_NC_ITEM, message.ncItem != null ? message.ncItem : "");
-            tag.setString(NBT_BLACKLIST_INPUT, message.blacklistInput != null ? message.blacklistInput : "");
-            tag.setString(NBT_BLACKLIST_OUTPUT, message.blacklistOutput != null ? message.blacklistOutput : "");
-            tag.setString(NBT_REPLACEMENTS, message.replacements != null ? message.replacements : "");
-            tag.setInteger(NBT_TARGET_TIER, message.targetTier);
+            writeFieldsIfPatternGenerator(held, message);
             return null;
         }
+    }
+
+    static boolean writeFieldsIfPatternGenerator(ItemStack held, PacketSaveFields message) {
+        if (!isPatternGeneratorItem(held) || message == null) {
+            return false;
+        }
+
+        NBTTagCompound tag = held.getTagCompound();
+        if (tag == null) {
+            tag = new NBTTagCompound();
+            held.setTagCompound(tag);
+        }
+
+        tag.setString(NBT_RECIPE_MAP, message.recipeMap != null ? message.recipeMap : "");
+        tag.setString(NBT_OUTPUT_ORE, message.outputOre != null ? message.outputOre : "");
+        tag.setString(NBT_INPUT_ORE, message.inputOre != null ? message.inputOre : "");
+        tag.setString(NBT_NC_ITEM, message.ncItem != null ? message.ncItem : "");
+        tag.setString(NBT_BLACKLIST_INPUT, message.blacklistInput != null ? message.blacklistInput : "");
+        tag.setString(NBT_BLACKLIST_OUTPUT, message.blacklistOutput != null ? message.blacklistOutput : "");
+        tag.setString(NBT_REPLACEMENTS, message.replacements != null ? message.replacements : "");
+        tag.setInteger(NBT_TARGET_TIER, message.targetTier);
+        return true;
+    }
+
+    static boolean isPatternGeneratorItem(ItemStack held) {
+        if (held == null || held.getItem() == null) {
+            return false;
+        }
+
+        if ("ItemPatternGenerator".equals(held.getItem().getClass().getSimpleName())) {
+            return true;
+        }
+
+        String unlocalizedName;
+        try {
+            unlocalizedName = held.getItem().getUnlocalizedName();
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+
+        if (unlocalizedName == null || unlocalizedName.isEmpty()) {
+            return false;
+        }
+
+        return "nhaeutilities.pattern_generator".equals(unlocalizedName)
+            || "item.nhaeutilities.pattern_generator".equals(unlocalizedName)
+            || "ae2patterngen.pattern_generator".equals(unlocalizedName)
+            || "item.ae2patterngen.pattern_generator".equals(unlocalizedName);
     }
 }

@@ -1,0 +1,64 @@
+# Task 5 command and network text
+nhaeutilities.gui.pattern_gen.status.filter_result=Filter Result: %s -> %s
+
+nhaeutilities.command.help.title==== Pattern Generator ===
+nhaeutilities.command.help.list=/patterngen list - List all recipe maps
+nhaeutilities.command.help.count=/patterngen count <recipeMapId> [outputFilter] [inputFilter] [ncFilter] [blacklistIn] [blacklistOut] - Preview matches
+nhaeutilities.command.help.generate=/patterngen generate <recipeMapId> [outputFilter] [inputFilter] [ncFilter] [blacklistIn] [blacklistOut] - Generate patterns
+nhaeutilities.command.list.available_maps=Available recipe maps (%s):
+nhaeutilities.command.list.entry=  %s (%s)
+nhaeutilities.command.generate.usage=Usage: /patterngen generate <recipeMapId> [outputFilter] [inputFilter] [ncFilter] [blacklistIn] [blacklistOut]
+nhaeutilities.command.count.usage=Usage: /patterngen count <recipeMapId> [outputFilter] [inputFilter] [ncFilter] [blacklistIn] [blacklistOut]
+nhaeutilities.command.only_player=This command can only be executed by a player.
+nhaeutilities.command.no_matching_recipe=No matching recipes found.
+nhaeutilities.command.generate.insufficient_blank_pattern=Generation failed: not enough blank patterns.
+nhaeutilities.command.generate.required_vs_owned=Required %s, but only %s available.
+nhaeutilities.command.generate.start=Consuming blank patterns and generating %s result(s)...
+nhaeutilities.command.generate.done=Done! Added to inventory: %s, dropped on ground: %s
+nhaeutilities.command.map_not_found=No matching recipe map found: %s
+nhaeutilities.command.matched_maps=Matched recipe maps: %s
+nhaeutilities.command.filter_result=Raw recipes: %s, after filter: %s
+nhaeutilities.command.count.result=Matched %s recipe(s)
+
+nhaeutilities.msg.storage.empty_extract=[NHAEUtilities] Storage is empty. Nothing to extract.
+nhaeutilities.msg.storage.inventory_full=[NHAEUtilities] Inventory is full. Cannot extract patterns.
+nhaeutilities.msg.storage.extracted=[NHAEUtilities] Extracted %s pattern(s) to inventory.
+nhaeutilities.msg.storage.extracted_with_remaining=[NHAEUtilities] Extracted %s pattern(s) to inventory (%s remaining).
+nhaeutilities.msg.storage.already_empty=[NHAEUtilities] Storage is already empty.
+nhaeutilities.msg.storage.cleared=[NHAEUtilities] Cleared %s pattern(s).
+nhaeutilities.msg.storage.delete_invalid=[NHAEUtilities] Delete failed: invalid index.
+nhaeutilities.msg.storage.deleted=[NHAEUtilities] Deleted: %s (%s remaining).
+
+nhaeutilities.msg.generate.storage_not_empty=[NHAEUtilities] Storage still has %s uncleared pattern(s) (source: %s). Please extract or clear first.
+nhaeutilities.msg.generate.no_matching_map=[NHAEUtilities] No matching recipe map: %s
+nhaeutilities.msg.generate.matched_maps=[NHAEUtilities] Matched recipe maps: %s
+nhaeutilities.msg.generate.filter_result=[NHAEUtilities] Raw recipes: %s, after filter: %s
+nhaeutilities.msg.generate.no_match_after_filter=[NHAEUtilities] No matching recipes found (check regex / ore dict).
+nhaeutilities.msg.generate.replacement_applied=[NHAEUtilities] Ore dictionary replacement rules applied.
+nhaeutilities.msg.generate.conflicts_detected=[NHAEUtilities] Detected %s conflict group(s). Please choose manually.
+nhaeutilities.msg.generate.conflicts_too_large=[NHAEUtilities] Conflict result is too large: %s filtered recipes and %s conflict groups. Interactive picker was skipped. Narrow your filters first (recommended below %s recipes and %s conflict groups).
+nhaeutilities.msg.generate.internal_error=[NHAEUtilities] Internal filter error. Please check your filter input and retry.
+
+nhaeutilities.msg.cache.missing_or_invalid=[NHAEUtilities] Recipe cache is missing or invalid. Please create or refresh the cache first.
+nhaeutilities.msg.cache.build_started=[NHAEUtilities] Recipe cache build started.
+nhaeutilities.msg.cache.build_already_running=[NHAEUtilities] Recipe cache build is already running.
+nhaeutilities.msg.cache.progress=[NHAEUtilities] Caching %s (%s/%s)
+nhaeutilities.msg.cache.build_failed=[NHAEUtilities] Recipe cache build failed: %s
+nhaeutilities.msg.cache.statistics=[NHAEUtilities] Cache ready: %s map(s), %s recipe(s), %s mod(s), %s bytes
+
+nhaeutilities.msg.conflict.cancelled=[NHAEUtilities] Conflict selection cancelled.
+nhaeutilities.msg.conflict.session_changed=[NHAEUtilities] Conflict session changed. Please reselect from latest list.
+nhaeutilities.msg.conflict.session_empty=[NHAEUtilities] Conflict session error: current group is empty. Processing aborted.
+nhaeutilities.msg.conflict.invalid_selection=[NHAEUtilities] Invalid selection index: %s. Please select again.
+nhaeutilities.msg.conflict.session_updated=[NHAEUtilities] Conflict session updated. Please reselect from latest list.
+nhaeutilities.msg.conflict.no_valid_selection=[NHAEUtilities] No valid selection received.
+nhaeutilities.msg.conflict.session_empty_group=[NHAEUtilities] Conflict session error: current group is empty.
+nhaeutilities.msg.conflict.invalid_batch_selection=[NHAEUtilities] Invalid selection index: %s. Please select again.
+
+nhaeutilities.msg.pattern.no_valid_after_encode=[NHAEUtilities] No valid pattern after encoding.
+nhaeutilities.msg.pattern.storage_write_failed=[NHAEUtilities] Failed to write storage. Please retry later.
+nhaeutilities.msg.pattern.generated_and_consumed=[NHAEUtilities] Consumed %s blank pattern(s) and generated equal outputs.
+nhaeutilities.msg.pattern.stored_hint=Patterns are stored. Sneak-right-click air to view, or sneak-right-click a container to export.
+nhaeutilities.msg.pattern.insufficient_blank_pattern=[NHAEUtilities] Generation failed: need %s blank pattern(s) but only %s available.
+
+nhaeutilities.msg.common.unknown_item=Unknown Item

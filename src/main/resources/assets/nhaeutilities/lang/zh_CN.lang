@@ -1,0 +1,64 @@
+# Task 5 command and network text
+nhaeutilities.gui.pattern_gen.status.filter_result=过滤结果: %s -> %s
+
+nhaeutilities.command.help.title==== 样板生成器 ===
+nhaeutilities.command.help.list=/patterngen list - 列出所有配方表
+nhaeutilities.command.help.count=/patterngen count <配方表ID> [输出筛选] [输入筛选] [NC筛选] [输入排除] [输出排除] - 预览匹配数量
+nhaeutilities.command.help.generate=/patterngen generate <配方表ID> [输出筛选] [输入筛选] [NC筛选] [输入排除] [输出排除] - 生成样板
+nhaeutilities.command.list.available_maps=可用的配方表 (%s 个):
+nhaeutilities.command.list.entry=  %s (%s)
+nhaeutilities.command.generate.usage=用法: /patterngen generate <配方表ID> [输出筛选] [输入筛选] [NC筛选] [输入排除] [输出排除]
+nhaeutilities.command.count.usage=用法: /patterngen count <配方表ID> [输出筛选] [输入筛选] [NC筛选] [输入排除] [输出排除]
+nhaeutilities.command.only_player=此命令只能由玩家执行。
+nhaeutilities.command.no_matching_recipe=没有找到匹配的配方。
+nhaeutilities.command.generate.insufficient_blank_pattern=生成失败: 空白样板不足。
+nhaeutilities.command.generate.required_vs_owned=需要 %s 个，但你只有 %s 个。
+nhaeutilities.command.generate.start=正在扣除空白样板并生成 %s 个成品...
+nhaeutilities.command.generate.done=完成! 放入背包: %s, 掉落地面: %s
+nhaeutilities.command.map_not_found=未找到匹配的配方表: %s
+nhaeutilities.command.matched_maps=匹配到配方表: %s
+nhaeutilities.command.filter_result=原始配方: %s, 过滤后: %s
+nhaeutilities.command.count.result=匹配到 %s 个配方
+
+nhaeutilities.msg.storage.empty_extract=[NHAEUtilities] 仓储为空，无可取出的样板。
+nhaeutilities.msg.storage.inventory_full=[NHAEUtilities] 背包已满，无法取出样板。
+nhaeutilities.msg.storage.extracted=[NHAEUtilities] 已取出 %s 个样板到背包。
+nhaeutilities.msg.storage.extracted_with_remaining=[NHAEUtilities] 已取出 %s 个样板到背包 (剩余 %s 个)。
+nhaeutilities.msg.storage.already_empty=[NHAEUtilities] 仓储已为空。
+nhaeutilities.msg.storage.cleared=[NHAEUtilities] 已清空 %s 个样板。
+nhaeutilities.msg.storage.delete_invalid=[NHAEUtilities] 删除失败: 索引无效。
+nhaeutilities.msg.storage.deleted=[NHAEUtilities] 已删除: %s (剩余 %s 个)。
+
+nhaeutilities.msg.generate.storage_not_empty=[NHAEUtilities] 仓储中仍有 %s 个未清空样板 (来源: %s)。请先取出或清空后再生成。
+nhaeutilities.msg.generate.no_matching_map=[NHAEUtilities] 未找到匹配的配方表: %s
+nhaeutilities.msg.generate.matched_maps=[NHAEUtilities] 匹配到配方表: %s
+nhaeutilities.msg.generate.filter_result=[NHAEUtilities] 原始配方: %s, 过滤后: %s
+nhaeutilities.msg.generate.no_match_after_filter=[NHAEUtilities] 没有找到匹配的配方 (请检查正则/矿辞)。
+nhaeutilities.msg.generate.replacement_applied=[NHAEUtilities] 已应用矿辞替换规则。
+nhaeutilities.msg.generate.conflicts_detected=[NHAEUtilities] 检测到 %s 组配方冲突，请进行人工选择。
+nhaeutilities.msg.generate.conflicts_too_large=[NHAEUtilities] 冲突结果过大：过滤后 %s 条配方、%s 组冲突，已停止打开选择界面。请先缩小筛选范围（建议低于 %s 条配方、%s 组冲突）。
+nhaeutilities.msg.generate.internal_error=[NHAEUtilities] 过滤器内部错误，请检查筛选输入后重试。
+
+nhaeutilities.msg.cache.missing_or_invalid=[NHAEUtilities] 配方缓存不存在或已失效，请先创建或刷新缓存。
+nhaeutilities.msg.cache.build_started=[NHAEUtilities] 已开始构建配方缓存。
+nhaeutilities.msg.cache.build_already_running=[NHAEUtilities] 配方缓存构建任务已在进行中。
+nhaeutilities.msg.cache.progress=[NHAEUtilities] 正在缓存 %s (%s/%s)
+nhaeutilities.msg.cache.build_failed=[NHAEUtilities] 配方缓存构建失败：%s
+nhaeutilities.msg.cache.statistics=[NHAEUtilities] 缓存就绪：%s 个配方表，%s 条配方，%s 个模组，%s 字节
+
+nhaeutilities.msg.conflict.cancelled=[NHAEUtilities] 已取消本次冲突筛选。
+nhaeutilities.msg.conflict.session_changed=[NHAEUtilities] 冲突会话已变更，请在最新页面重新选择。
+nhaeutilities.msg.conflict.session_empty=[NHAEUtilities] 冲突会话异常: 当前冲突组为空，已中止本次处理。
+nhaeutilities.msg.conflict.invalid_selection=[NHAEUtilities] 无效选择索引: %s，请重新选择。
+nhaeutilities.msg.conflict.session_updated=[NHAEUtilities] 冲突会话已更新，请按最新列表重新选择。
+nhaeutilities.msg.conflict.no_valid_selection=[NHAEUtilities] 未收到有效的选择结果。
+nhaeutilities.msg.conflict.session_empty_group=[NHAEUtilities] 冲突会话异常: 当前组为空。
+nhaeutilities.msg.conflict.invalid_batch_selection=[NHAEUtilities] 选择索引无效: %s，请重新选择。
+
+nhaeutilities.msg.pattern.no_valid_after_encode=[NHAEUtilities] 编码后无有效样板。
+nhaeutilities.msg.pattern.storage_write_failed=[NHAEUtilities] 仓储写入失败，请稍后重试。
+nhaeutilities.msg.pattern.generated_and_consumed=[NHAEUtilities] 已扣除 %s 个空白样板并生成了等量成品。
+nhaeutilities.msg.pattern.stored_hint=成品已存入仓储。蹲下右键空气查看，蹲下右键容器导出。
+nhaeutilities.msg.pattern.insufficient_blank_pattern=[NHAEUtilities] 生成失败: 需要 %s 个空白样板，但只有 %s 个。
+
+nhaeutilities.msg.common.unknown_item=未知物品
