@@ -3,6 +3,7 @@ package com.github.nhaeutilities.modules.patterngenerator.storage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -16,6 +17,7 @@ import java.util.List;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompressedStreamTools;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 
@@ -55,18 +57,43 @@ public class RecipeCacheStorageTest {
     @Test
     public void metadataRoundTripsThroughCompressedNbt() {
         RecipeCacheMetadata metadata = new RecipeCacheMetadata();
+        metadata.createdAt = 111L;
+        metadata.lastUpdated = 222L;
         metadata.updateModInfo("gregtech", "5.0.0", 2, 10);
         metadata.updateRecipeMapInfo("gt.recipe.assembler", "gregtech", 5, "hash-a", "gt.recipe.assembler.dat");
         metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
+        metadata.lastUpdated = 222L;
 
         assertTrue(RecipeCacheStorage.saveMetadata(metadata));
 
         RecipeCacheMetadata loaded = RecipeCacheStorage.loadMetadata();
         assertNotNull(loaded);
         assertEquals(metadata.cacheVersion, loaded.cacheVersion);
+        assertEquals(111L, loaded.createdAt);
+        assertEquals(222L, loaded.lastUpdated);
         assertEquals(metadata.totalRecipeCount, loaded.totalRecipeCount);
         assertEquals("5.0.0", loaded.mods.get("gregtech").version);
         assertEquals("cfg-hash", loaded.configHashes.get("config/nhaeutilities.cfg"));
+    }
+
+    @Test
+    public void loadRecipeMapReturnsNullForVersionSkewedPayload() throws Exception {
+        String mapId = "gt.recipe.assembler";
+        File file = RecipeCacheStorage.getRecipeMapFile(mapId);
+        assertTrue(
+            file.getParentFile() == null || file.getParentFile()
+                .mkdirs() || file.getParentFile()
+                    .exists());
+
+        NBTTagCompound root = new NBTTagCompound();
+        root.setInteger("Version", RecipeCacheMetadata.CURRENT_VERSION + 1);
+        root.setString("MapId", mapId);
+        root.setTag("Recipes", new NBTTagList());
+        try (java.io.FileOutputStream output = new java.io.FileOutputStream(file)) {
+            CompressedStreamTools.writeCompressed(root, output);
+        }
+
+        assertNull(RecipeCacheStorage.loadRecipeMap(mapId));
     }
 
     @Test

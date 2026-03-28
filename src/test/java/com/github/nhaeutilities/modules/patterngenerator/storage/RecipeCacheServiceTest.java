@@ -104,6 +104,8 @@ public class RecipeCacheServiceTest {
     @Test
     public void validateCacheIgnoresRecipePrefixesThatAreNotRealModIds() {
         collector.availableMapIds = Collections.singletonList("ic.recipe.recycler");
+        collector.recipeMapRecipes.put("ic.recipe.recycler", Arrays.asList(sampleRecipe(20), sampleRecipe(40)));
+        inspector.resolvedModIds.put("ic.recipe.recycler", "IC2");
         inspector.modVersions.put("IC2", "2.2.828");
         inspector.modVersions.put("minecraft", "1.7.10");
         inspector.configHashes.put("config/nhaeutilities.cfg", "cfg-hash");
@@ -114,6 +116,45 @@ public class RecipeCacheServiceTest {
         assertEquals(2, storage.metadata.mods.size());
         assertTrue(storage.metadata.mods.containsKey("IC2"));
         assertTrue(storage.metadata.mods.containsKey("minecraft"));
+        assertEquals(1, storage.metadata.mods.get("IC2").recipeMapCount);
+        assertEquals(2, storage.metadata.mods.get("IC2").recipeCount);
+    }
+
+    @Test
+    public void validateCacheFailsWhenRecipeMapPayloadCannotBeLoaded() {
+        RecipeCacheMetadata metadata = new RecipeCacheMetadata();
+        metadata.updateRecipeMapInfo("gt.recipe.assembler", "gregtech", 1, "hash-a", "gt.recipe.assembler.dat");
+        metadata.updateModInfo("gregtech", "5.0.0", 1, 1);
+        metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
+        storage.metadata = metadata;
+        storage.persistedRecipeMaps.put("gt.recipe.assembler", Collections.singletonList(sampleRecipe(20)));
+        storage.invalidRecipeMaps.add("gt.recipe.assembler");
+        inspector.modVersions.put("gregtech", "5.0.0");
+        inspector.configHashes.put("config/nhaeutilities.cfg", "cfg-hash");
+
+        assertFalse(RecipeCacheService.validateCache());
+    }
+
+    @Test
+    public void rebuildNowReassignsReusedRecipeMapCountsToResolvedLoadedModId() {
+        RecipeCacheMetadata metadata = new RecipeCacheMetadata();
+        metadata.updateRecipeMapInfo("ic.recipe.recycler", "ic", 2, "hash-a", "ic.recipe.recycler.dat");
+        metadata.updateModInfo("ic", "legacy", 1, 2);
+        metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
+        storage.metadata = metadata;
+        storage.persistedRecipeMaps.put("ic.recipe.recycler", Arrays.asList(sampleRecipe(20), sampleRecipe(40)));
+        collector.availableMapIds = Collections.singletonList("ic.recipe.recycler");
+        inspector.resolvedModIds.put("ic.recipe.recycler", "IC2");
+        inspector.modVersions.put("IC2", "2.2.828");
+        inspector.modVersions.put("minecraft", "1.7.10");
+        inspector.configHashes.put("config/nhaeutilities.cfg", "cfg-hash");
+
+        RecipeCacheService.rebuildNow(null);
+
+        assertTrue(storage.metadata.mods.containsKey("IC2"));
+        assertEquals(1, storage.metadata.mods.get("IC2").recipeMapCount);
+        assertEquals(2, storage.metadata.mods.get("IC2").recipeCount);
+        assertEquals("IC2", storage.metadata.recipeMaps.get("ic.recipe.recycler").modId);
     }
 
     @Test
@@ -178,6 +219,7 @@ public class RecipeCacheServiceTest {
         private final File cacheDirectory;
         private RecipeCacheMetadata metadata;
         private final Map<String, List<RecipeEntry>> persistedRecipeMaps = new LinkedHashMap<String, List<RecipeEntry>>();
+        private final List<String> invalidRecipeMaps = new ArrayList<String>();
         private int saveRecipeMapCalls;
 
         private FakeStorageBackend(File cacheDirectory) {
@@ -193,6 +235,9 @@ public class RecipeCacheServiceTest {
 
         @Override
         public List<RecipeEntry> loadRecipeMap(String mapId) {
+            if (invalidRecipeMaps.contains(mapId)) {
+                return null;
+            }
             List<RecipeEntry> recipes = persistedRecipeMaps.get(mapId);
             return recipes != null ? new ArrayList<RecipeEntry>(recipes) : new ArrayList<RecipeEntry>();
         }
@@ -235,6 +280,7 @@ public class RecipeCacheServiceTest {
 
         private List<String> availableMapIds = new ArrayList<String>();
         private Map<String, List<String>> matches = new LinkedHashMap<String, List<String>>();
+        private Map<String, List<RecipeEntry>> recipeMapRecipes = new LinkedHashMap<String, List<RecipeEntry>>();
         private int collectCalls;
 
         @Override
@@ -251,7 +297,8 @@ public class RecipeCacheServiceTest {
         @Override
         public List<RecipeEntry> collectRecipes(String mapId) {
             collectCalls++;
-            return Arrays.asList(sampleRecipe(20), sampleRecipe(40));
+            List<RecipeEntry> recipes = recipeMapRecipes.get(mapId);
+            return recipes != null ? new ArrayList<RecipeEntry>(recipes) : Arrays.asList(sampleRecipe(20), sampleRecipe(40));
         }
     }
 
@@ -259,6 +306,7 @@ public class RecipeCacheServiceTest {
 
         private final Map<String, String> modVersions = new LinkedHashMap<String, String>();
         private final Map<String, String> configHashes = new LinkedHashMap<String, String>();
+        private final Map<String, String> resolvedModIds = new LinkedHashMap<String, String>();
 
         @Override
         public Map<String, String> getLoadedModVersions() {
@@ -277,7 +325,8 @@ public class RecipeCacheServiceTest {
 
         @Override
         public String resolveModId(String mapId) {
-            return "gregtech";
+            String resolved = resolvedModIds.get(mapId);
+            return resolved != null ? resolved : "gregtech";
         }
     }
 }

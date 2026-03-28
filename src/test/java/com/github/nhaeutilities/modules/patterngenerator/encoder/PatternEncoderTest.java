@@ -4,12 +4,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
 
 import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
@@ -35,6 +37,38 @@ public class PatternEncoderTest {
     }
 
     @Test
+    public void encodeBuildsPatternNbtWithFullStackCounts() {
+        final Item patternItem = new Item();
+        PatternEncoder.setPatternItemResolver(() -> patternItem);
+        RecipeEntry recipe = new RecipeEntry(
+            "gt",
+            "gt.recipe.assembler",
+            "Assembler",
+            new ItemStack[] { new ItemStack(Items.iron_ingot, 300, 0) },
+            new ItemStack[] { new ItemStack(Items.gold_ingot, 2, 0) },
+            new net.minecraftforge.fluids.FluidStack[0],
+            new net.minecraftforge.fluids.FluidStack[0],
+            new ItemStack[0],
+            120,
+            30);
+
+        ItemStack encoded = PatternEncoder.encode(recipe);
+
+        assertNotNull(encoded);
+        assertEquals(patternItem, encoded.getItem());
+        assertNotNull(encoded.getTagCompound());
+        NBTTagList inputList = encoded.getTagCompound()
+            .getTagList("in", 10);
+        assertEquals(1, inputList.tagCount());
+        NBTTagCompound inputTag = inputList.getCompoundTagAt(0);
+        assertEquals(300, inputTag.getInteger("Count"));
+        assertEquals(300L, inputTag.getLong("Cnt"));
+        assertEquals(1, encoded.getTagCompound()
+            .getTagList("out", 10)
+            .tagCount());
+    }
+
+    @Test
     public void appendStackTagPreservesLargeStackCountsInPatternNbt() {
         NBTTagList inputList = new NBTTagList();
         invokeAppendStackTag(inputList, new ItemStack(Items.iron_ingot, 300, 0));
@@ -43,6 +77,11 @@ public class PatternEncoderTest {
         NBTTagCompound inputTag = inputList.getCompoundTagAt(0);
         assertEquals(300, inputTag.getInteger("Count"));
         assertEquals(300L, inputTag.getLong("Cnt"));
+    }
+
+    @After
+    public void tearDown() {
+        PatternEncoder.resetPatternItemResolver();
     }
 
     private static void invokeAppendStackTag(NBTTagList targetList, ItemStack stack) {

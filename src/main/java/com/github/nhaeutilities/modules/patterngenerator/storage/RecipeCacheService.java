@@ -2,6 +2,7 @@ package com.github.nhaeutilities.modules.patterngenerator.storage;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,8 +76,17 @@ public final class RecipeCacheService {
             return false;
         }
 
-        for (String mapId : metadata.recipeMaps.keySet()) {
+        for (Map.Entry<String, RecipeCacheMetadata.RecipeMapInfo> entry : metadata.recipeMaps.entrySet()) {
+            String mapId = entry.getKey();
             if (!storageBackend.recipeMapExists(mapId)) {
+                return false;
+            }
+            List<RecipeEntry> recipes = storageBackend.loadRecipeMap(mapId);
+            if (recipes == null) {
+                return false;
+            }
+            RecipeCacheMetadata.RecipeMapInfo info = entry.getValue();
+            if (info != null && info.recipeCount != recipes.size()) {
                 return false;
             }
         }
@@ -101,6 +111,9 @@ public final class RecipeCacheService {
         int totalLoaded = 0;
         for (String mapId : matchedMapIds) {
             List<RecipeEntry> recipes = storageBackend.loadRecipeMap(mapId);
+            if (recipes == null) {
+                return CacheQueryResult.invalid("cache_missing_or_invalid");
+            }
             totalLoaded += recipes.size();
             if (filter == null) {
                 filtered.addAll(recipes);
@@ -157,6 +170,8 @@ public final class RecipeCacheService {
             }
 
             RecipeCacheMetadata.RecipeMapInfo info;
+            String resolvedModId = resolveSnapshotModId(mapId, currentModVersions, canReuseExisting
+                && existing.recipeMaps.containsKey(mapId) ? existing.recipeMaps.get(mapId).modId : null);
             if (canReuseExisting && existing.recipeMaps.containsKey(mapId) && storageBackend.recipeMapExists(mapId)) {
                 RecipeCacheMetadata.RecipeMapInfo oldInfo = existing.recipeMaps.get(mapId);
                 info = new RecipeCacheMetadata.RecipeMapInfo(oldInfo.mapId, oldInfo.modId);
@@ -166,7 +181,7 @@ public final class RecipeCacheService {
                 info.cacheFileName = oldInfo.cacheFileName;
             } else {
                 List<RecipeEntry> recipes = recipeCollector.collectRecipes(mapId);
-                info = new RecipeCacheMetadata.RecipeMapInfo(mapId, environmentInspector.resolveModId(mapId));
+                info = new RecipeCacheMetadata.RecipeMapInfo(mapId, resolvedModId);
                 info.recipeCount = recipes.size();
                 info.cachedAt = System.currentTimeMillis();
                 info.contentHash = environmentInspector.calculateRecipeMapHash(mapId, recipes);
@@ -177,6 +192,7 @@ public final class RecipeCacheService {
                 }
             }
 
+            info.modId = resolvedModId;
             metadata.putRecipeMapInfo(info);
             incrementModCounter(modCounters, info.modId, info.recipeCount);
         }
@@ -269,6 +285,47 @@ public final class RecipeCacheService {
         }
         counts[0]++;
         counts[1] += Math.max(0, recipeCount);
+    }
+
+    private static String resolveSnapshotModId(String mapId, Map<String, String> currentModVersions, String fallbackModId) {
+        String resolved = canonicalizeLoadedModId(environmentInspector.resolveModId(mapId), currentModVersions);
+        if (!isBlank(resolved)) {
+            return resolved;
+        }
+
+        String fallback = canonicalizeLoadedModId(fallbackModId, currentModVersions);
+        if (!isBlank(fallback)) {
+            return fallback;
+        }
+
+        String direct = environmentInspector.resolveModId(mapId);
+        if (!isBlank(direct)) {
+            return direct;
+        }
+        return !isBlank(fallbackModId) ? fallbackModId : "unknown";
+    }
+
+    private static String canonicalizeLoadedModId(String candidate, Map<String, String> currentModVersions) {
+        if (isBlank(candidate) || currentModVersions == null || currentModVersions.isEmpty()) {
+            return null;
+        }
+        if (currentModVersions.containsKey(candidate)) {
+            return candidate;
+        }
+
+        List<String> loadedModIds = new ArrayList<String>(currentModVersions.keySet());
+        Collections.sort(loadedModIds);
+        for (String loadedModId : loadedModIds) {
+            if (loadedModId.equalsIgnoreCase(candidate)) {
+                return loadedModId;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim()
+            .isEmpty();
     }
 
     public interface ProgressNotifier {

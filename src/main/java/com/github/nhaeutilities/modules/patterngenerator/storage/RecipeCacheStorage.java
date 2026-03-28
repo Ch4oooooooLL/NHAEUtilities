@@ -131,14 +131,13 @@ public final class RecipeCacheStorage {
 
         try (FileInputStream fis = new FileInputStream(file)) {
             NBTTagCompound root = CompressedStreamTools.readCompressed(fis);
-            int version = root.getInteger(KEY_VERSION);
-            if (version != RecipeCacheMetadata.CURRENT_VERSION) {
-                return recipes;
+            if (!isRecipeMapPayloadValid(root, mapId, file.getName())) {
+                return null;
             }
             return fromRecipeListNBT(root.getTagList(KEY_RECIPES, 10));
         } catch (Exception e) {
             System.err.println("[NHAEUtilities] Failed to load recipe cache map: " + e.getMessage());
-            return recipes;
+            return null;
         }
     }
 
@@ -324,7 +323,9 @@ public final class RecipeCacheStorage {
                 tag.getString(KEY_MOD_VERSION));
             info.recipeMapCount = tag.getInteger(KEY_RECIPE_MAP_COUNT);
             info.recipeCount = tag.getInteger(KEY_RECIPE_COUNT);
-            metadata.putModInfo(info);
+            if (!isBlank(info.modId)) {
+                metadata.mods.put(info.modId, info);
+            }
         }
 
         NBTTagList recipeMaps = root.getTagList(KEY_RECIPE_MAPS, 10);
@@ -337,7 +338,9 @@ public final class RecipeCacheStorage {
             info.cachedAt = tag.getLong(KEY_CACHED_AT);
             info.contentHash = tag.getString(KEY_HASH);
             info.cacheFileName = tag.getString(KEY_CACHE_FILE_NAME);
-            metadata.putRecipeMapInfo(info);
+            if (!isBlank(info.mapId)) {
+                metadata.recipeMaps.put(info.mapId, info);
+            }
         }
 
         NBTTagList configHashes = root.getTagList(KEY_CONFIG_HASHES, 10);
@@ -349,6 +352,24 @@ public final class RecipeCacheStorage {
         metadata.totalRecipeCount = root.getInteger(KEY_TOTAL_RECIPE_COUNT);
         metadata.totalRecipeMaps = root.getInteger(KEY_TOTAL_RECIPE_MAPS);
         return metadata;
+    }
+
+    private static boolean isRecipeMapPayloadValid(NBTTagCompound root, String expectedMapId, String expectedFileName) {
+        if (root == null || root.getInteger(KEY_VERSION) != RecipeCacheMetadata.CURRENT_VERSION) {
+            return false;
+        }
+        if (!expectedMapId.equals(root.getString(KEY_MAP_ID))) {
+            return false;
+        }
+        if (!root.hasKey(KEY_RECIPES, 9)) {
+            return false;
+        }
+
+        NBTTagList recipes = root.getTagList(KEY_RECIPES, 10);
+        if (root.hasKey(KEY_RECIPE_COUNT) && root.getInteger(KEY_RECIPE_COUNT) != recipes.tagCount()) {
+            return false;
+        }
+        return !root.hasKey(KEY_CACHE_FILE_NAME) || safe(expectedFileName).equals(root.getString(KEY_CACHE_FILE_NAME));
     }
 
     private static NBTTagList toRecipeListNBT(List<RecipeEntry> recipes) {
