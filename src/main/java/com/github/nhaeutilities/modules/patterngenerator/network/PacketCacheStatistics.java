@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.github.nhaeutilities.modules.patterngenerator.gui.GuiPatternGenStatusBridge;
 import com.github.nhaeutilities.modules.patterngenerator.storage.CacheStatistics;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
 
@@ -56,6 +57,13 @@ public class PacketCacheStatistics implements IMessage {
         public IMessage onMessage(PacketCacheStatistics message, MessageContext ctx) {
             Minecraft.getMinecraft().func_152344_a(() -> {
                 if (Minecraft.getMinecraft().thePlayer != null) {
+                    GuiPatternGenStatusBridge.setStatus(
+                        String.format(
+                            "Cache ready: %s map(s), %s recipe(s), %s mod(s), %s bytes",
+                            message.totalRecipeMaps,
+                            message.totalRecipeCount,
+                            message.totalModCount,
+                            message.directoryBytes));
                     Minecraft.getMinecraft().thePlayer.addChatMessage(
                         new ChatComponentText(
                             EnumChatFormatting.GREEN + I18nUtil.tr(

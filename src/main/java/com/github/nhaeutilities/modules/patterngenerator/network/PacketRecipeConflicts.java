@@ -8,6 +8,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidStack;
 
+import com.github.nhaeutilities.modules.patterngenerator.gui.GuiRecipePicker;
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
@@ -151,7 +152,8 @@ public class PacketRecipeConflicts implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketRecipeConflicts message, MessageContext ctx) {
-            Minecraft.getMinecraft().func_152344_a(() -> {});
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> GuiRecipePicker.open(message));
             return null;
         }
     }

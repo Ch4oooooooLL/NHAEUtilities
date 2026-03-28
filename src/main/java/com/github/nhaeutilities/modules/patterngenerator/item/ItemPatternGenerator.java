@@ -1,0 +1,759 @@
+package com.github.nhaeutilities.modules.patterngenerator.item;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import net.minecraft.client.renderer.texture.IIconRegister;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.ISidedInventory;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IIcon;
+import net.minecraft.util.MovingObjectPosition;
+import net.minecraft.world.World;
+
+import org.lwjgl.input.Keyboard;
+
+import com.github.nhaeutilities.NHAEUtilities;
+import com.github.nhaeutilities.modules.patterngenerator.storage.PatternStorage;
+import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
+
+import appeng.api.features.INetworkEncodable;
+import appeng.api.features.IWirelessTermHandler;
+import appeng.api.util.IConfigManager;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
+import gregtech.api.interfaces.metatileentity.IMetaTileEntity;
+import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
+import gregtech.api.interfaces.tileentity.RecipeMapWorkable;
+import gregtech.api.recipe.RecipeMap;
+
+public class ItemPatternGenerator extends Item implements INetworkEncodable, IWirelessTermHandler {
+
+    public static final int GUI_ID = 101;
+    public static final int GUI_ID_STORAGE = 102;
+    private static final int MAX_PATTERN_TARGET_RESOLVE_DEPTH = 4;
+
+    public static final String NBT_RECIPE_MAP = "recipeMap";
+    public static final String NBT_OUTPUT_ORE = "outputOre";
+    public static final String NBT_INPUT_ORE = "inputOre";
+    public static final String NBT_NC_ITEM = "ncItem";
+    public static final String NBT_BLACKLIST_INPUT = "blacklistInput";
+    public static final String NBT_BLACKLIST_OUTPUT = "blacklistOutput";
+    public static final String NBT_REPLACEMENTS = "replacements";
+    public static final String NBT_TARGET_TIER = "targetTier";
+
+    @SideOnly(Side.CLIENT)
+    private IIcon blankPatternIcon;
+
+    public ItemPatternGenerator() {
+        setUnlocalizedName("nhaeutilities.pattern_generator");
+        setMaxStackSize(1);
+        setCreativeTab(CreativeTabs.tabRedstone);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(IIconRegister register) {
+        blankPatternIcon = register.registerIcon("appliedenergistics2:ItemEncodedPattern");
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconFromDamage(int damage) {
+        return blankPatternIcon;
+    }
+
+    @Override
+    public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
+        if (player.isSneaking()) {
+            MovingObjectPosition hit = getMovingObjectPositionFromPlayer(world, player, false);
+            if (hit != null && hit.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
+                return stack;
+            }
+        }
+
+        if (!world.isRemote) {
+            int guiId = player.isSneaking() ? GUI_ID_STORAGE : GUI_ID;
+            cpw.mods.fml.common.FMLLog.info(
+                "[NHAEUtilities] SERVER SIDE: Requesting GUI %d for player %s",
+                guiId,
+                player.getCommandSenderName());
+            player.openGui(NHAEUtilities.instance, guiId, world, (int) player.posX, (int) player.posY, (int) player.posZ);
+        }
+        return stack;
+    }
+
+    @Override
+    public boolean onItemUseFirst(ItemStack stack, EntityPlayer player, World world, int x, int y, int z, int side,
+        float hitX, float hitY, float hitZ) {
+        if (!player.isSneaking()) {
+            return false;
+        }
+        if (world.isRemote) {
+            return false;
+        }
+
+        TileEntity te = world.getTileEntity(x, y, z);
+        if (te == null) {
+            player.addChatMessage(msg(EnumChatFormatting.RED, "nhaeutilities.msg.item.block_not_detectable"));
+            return true;
+        }
+
+        if (te instanceof IGregTechTileEntity) {
+            IGregTechTileEntity gte = (IGregTechTileEntity) te;
+            IMetaTileEntity mte = gte.getMetaTileEntity();
+            RecipeMap<?> recipeMap = resolveRecipeMap(mte);
+            if (recipeMap != null) {
+                saveField(stack, NBT_RECIPE_MAP, recipeMap.unlocalizedName);
+                player.addChatMessage(msg(EnumChatFormatting.GREEN, "nhaeutilities.msg.item.detected_recipe_map",
+                    recipeMap.unlocalizedName));
+                return true;
+            }
+        }
+
+        PatternInsertTarget insertTarget = resolveInsertTarget(te);
+        if (insertTarget == null) {
+            if (te instanceof IGregTechTileEntity) {
+                player.addChatMessage(msg(EnumChatFormatting.RED, "nhaeutilities.msg.item.machine_part_unsupported"));
+            } else {
+                player.addChatMessage(msg(EnumChatFormatting.RED, "nhaeutilities.msg.item.block_extract_unsupported"));
+            }
+            return true;
+        }
+
+        UUID uuid = player.getUniqueID();
+        if (PatternStorage.isEmpty(uuid)) {
+            player.addChatMessage(msg(EnumChatFormatting.YELLOW, "nhaeutilities.msg.item.storage_empty_export"));
+            return true;
+        }
+
+        IInventory inv = insertTarget.inventory;
+        PatternStorage.StorageSummary storageSummary = PatternStorage.getSummary(uuid);
+        List<ItemStack> patterns = PatternStorage.load(uuid);
+        List<ItemStack> remainingPatterns = new ArrayList<ItemStack>(patterns.size());
+        int transferred = 0;
+        List<InsertAttemptPlan> insertPlans = buildInsertPlans(inv, side, insertTarget.preferredSlots);
+
+        for (int i = 0; i < patterns.size(); i++) {
+            ItemStack pattern = patterns.get(i);
+            if (tryInsertPattern(inv, pattern, insertPlans)) {
+                transferred++;
+            } else {
+                remainingPatterns.add(pattern);
+                for (int j = i + 1; j < patterns.size(); j++) {
+                    remainingPatterns.add(patterns.get(j));
+                }
+                break;
+            }
+        }
+
+        if (remainingPatterns.isEmpty()) {
+            PatternStorage.clear(uuid);
+        } else {
+            if (!PatternStorage.save(uuid, remainingPatterns, storageSummary.source)) {
+                player.addChatMessage(msg(EnumChatFormatting.RED, "nhaeutilities.msg.item.storage_update_failed"));
+                return true;
+            }
+        }
+
+        inv.markDirty();
+
+        if (!remainingPatterns.isEmpty()) {
+            player.addChatMessage(
+                msg(
+                    EnumChatFormatting.GREEN,
+                    "nhaeutilities.msg.item.exported_with_remaining",
+                    transferred,
+                    remainingPatterns.size()));
+        } else {
+            player.addChatMessage(msg(EnumChatFormatting.GREEN, "nhaeutilities.msg.item.exported", transferred));
+        }
+
+        return true;
+    }
+
+    private static RecipeMap<?> resolveRecipeMap(IMetaTileEntity mte) {
+        if (mte == null) {
+            return null;
+        }
+
+        if (mte instanceof RecipeMapWorkable) {
+            return ((RecipeMapWorkable) mte).getRecipeMap();
+        }
+
+        try {
+            Method method = mte.getClass().getMethod("getRecipeMap");
+            Object result = method.invoke(mte);
+            if (result instanceof RecipeMap<?>) {
+                return (RecipeMap<?>) result;
+            }
+        } catch (Throwable ignored) {}
+
+        return null;
+    }
+
+    private static PatternInsertTarget resolveInsertTarget(TileEntity te) {
+        if (te == null) {
+            return null;
+        }
+
+        if (te instanceof IGregTechTileEntity) {
+            IGregTechTileEntity gt = (IGregTechTileEntity) te;
+            PatternInsertTarget gtTarget = resolveInsertTargetFromMetaTile(gt.getMetaTileEntity(), 0);
+            if (gtTarget != null) {
+                return gtTarget;
+            }
+        }
+
+        if (te instanceof IInventory) {
+            return new PatternInsertTarget((IInventory) te, null);
+        }
+
+        return null;
+    }
+
+    private static PatternInsertTarget resolveInsertTargetFromMetaTile(Object metaTile, int depth) {
+        if (metaTile == null || depth > MAX_PATTERN_TARGET_RESOLVE_DEPTH) {
+            return null;
+        }
+
+        IInventory patternInventory = resolvePatternInventory(metaTile);
+        if (patternInventory != null) {
+            return buildPatternInsertTarget(metaTile, patternInventory);
+        }
+
+        Object[] masters = new Object[] { invokeNoArg(metaTile, "getMasterSuper"), invokeNoArg(metaTile, "getMaster"),
+            invokeNoArg(metaTile, "getCraftingMaster") };
+        for (Object master : masters) {
+            if (master == null || master == metaTile) {
+                continue;
+            }
+            PatternInsertTarget nested = resolveInsertTargetFromMetaTile(master, depth + 1);
+            if (nested != null) {
+                return nested;
+            }
+        }
+
+        return null;
+    }
+
+    private static IInventory resolvePatternInventory(Object metaTile) {
+        Object patterns = invokeNoArg(metaTile, "getPatterns");
+        if (patterns instanceof IInventory) {
+            return (IInventory) patterns;
+        }
+        return null;
+    }
+
+    private static PatternInsertTarget buildPatternInsertTarget(Object metaTile, IInventory patternInventory) {
+        int invSize = Math.max(0, patternInventory.getSizeInventory());
+        int slotCircuit = readStaticIntField(metaTile.getClass(), "SLOT_CIRCUIT");
+        int patternCount = readStaticIntField(metaTile.getClass(), "MAX_PATTERN_COUNT");
+        int preferredLimit = -1;
+
+        if (slotCircuit > 0) {
+            preferredLimit = slotCircuit;
+        }
+        if (patternCount > 0) {
+            preferredLimit = preferredLimit > 0 ? Math.min(preferredLimit, patternCount) : patternCount;
+        }
+
+        int[] preferredSlots = null;
+        if (preferredLimit > 0 && invSize > 0) {
+            preferredSlots = buildRangeSlots(Math.min(preferredLimit, invSize));
+        }
+
+        return new PatternInsertTarget(patternInventory, preferredSlots);
+    }
+
+    private static Object invokeNoArg(Object target, String methodName) {
+        if (target == null || methodName == null || methodName.isEmpty()) {
+            return null;
+        }
+
+        Class<?> type = target.getClass();
+        while (type != null) {
+            try {
+                Method method = type.getDeclaredMethod(methodName);
+                method.setAccessible(true);
+                return method.invoke(target);
+            } catch (NoSuchMethodException ignored) {
+                type = type.getSuperclass();
+            } catch (Throwable ignored) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private static int readStaticIntField(Class<?> type, String fieldName) {
+        Class<?> current = type;
+        while (current != null) {
+            try {
+                Field field = current.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                if (!Modifier.isStatic(field.getModifiers())) {
+                    current = current.getSuperclass();
+                    continue;
+                }
+                return field.getInt(null);
+            } catch (NoSuchFieldException ignored) {
+                current = current.getSuperclass();
+            } catch (Throwable ignored) {
+                return -1;
+            }
+        }
+        return -1;
+    }
+
+    private static int[] buildRangeSlots(int count) {
+        if (count <= 0) {
+            return new int[0];
+        }
+        int[] slots = new int[count];
+        for (int i = 0; i < count; i++) {
+            slots[i] = i;
+        }
+        return slots;
+    }
+
+    private static int[] sanitizeSlots(int[] slots, int sizeLimit) {
+        if (slots == null || slots.length == 0 || sizeLimit <= 0) {
+            return new int[0];
+        }
+
+        boolean[] seen = new boolean[sizeLimit];
+        int count = 0;
+        for (int slot : slots) {
+            if (slot >= 0 && slot < sizeLimit && !seen[slot]) {
+                seen[slot] = true;
+                count++;
+            }
+        }
+
+        int[] sanitized = new int[count];
+        int idx = 0;
+        for (int slot : slots) {
+            if (slot >= 0 && slot < sizeLimit && seen[slot]) {
+                sanitized[idx++] = slot;
+                seen[slot] = false;
+            }
+        }
+        return sanitized;
+    }
+
+    private static int[] filterSlotsByAllowed(int[] slots, int[] allowedSlots, int sizeLimit) {
+        int[] sanitizedSlots = sanitizeSlots(slots, sizeLimit);
+        if (sanitizedSlots.length == 0 || allowedSlots == null) {
+            return sanitizedSlots;
+        }
+
+        boolean[] allowed = new boolean[sizeLimit];
+        for (int slot : allowedSlots) {
+            if (slot >= 0 && slot < sizeLimit) {
+                allowed[slot] = true;
+            }
+        }
+
+        int count = 0;
+        for (int slot : sanitizedSlots) {
+            if (allowed[slot]) {
+                count++;
+            }
+        }
+
+        int[] filtered = new int[count];
+        int idx = 0;
+        for (int slot : sanitizedSlots) {
+            if (allowed[slot]) {
+                filtered[idx++] = slot;
+            }
+        }
+        return filtered;
+    }
+
+    private static boolean tryInsertPattern(IInventory inv, ItemStack pattern, List<InsertAttemptPlan> plans) {
+        if (inv == null || pattern == null || plans == null || plans.isEmpty()) {
+            return false;
+        }
+        for (InsertAttemptPlan plan : plans) {
+            if (tryInsertPatternWithPlan(inv, pattern, plan)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean tryInsertPatternWithPlan(IInventory inv, ItemStack pattern, InsertAttemptPlan plan) {
+        if (plan == null || plan.slots == null || plan.slots.length == 0) {
+            return false;
+        }
+        ISidedInventory sided = plan.requireSidedCheck && inv instanceof ISidedInventory ? (ISidedInventory) inv : null;
+
+        for (int slot : plan.slots) {
+            if (slot < 0 || slot >= inv.getSizeInventory()) {
+                continue;
+            }
+
+            ItemStack existing = safeGetStack(inv, slot);
+            if (existing != null) {
+                continue;
+            }
+            if (!isItemValidForSlotSafe(inv, slot, pattern)) {
+                continue;
+            }
+            if (sided != null && !canInsertItemSafe(sided, slot, pattern, plan.side)) {
+                continue;
+            }
+
+            ItemStack inserted = normalizeInsertStack(inv, pattern);
+            if (inserted == null) {
+                continue;
+            }
+
+            try {
+                inv.setInventorySlotContents(slot, inserted);
+            } catch (Throwable ignored) {
+                continue;
+            }
+
+            ItemStack after = safeGetStack(inv, slot);
+            if (isInsertedAsExpected(after, inserted)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static List<InsertAttemptPlan> buildInsertPlans(IInventory inv, int clickedSide, int[] preferredSlots) {
+        List<InsertAttemptPlan> plans = new ArrayList<InsertAttemptPlan>();
+        if (inv == null) {
+            return plans;
+        }
+
+        int[] allSlots = preferredSlots != null ? sanitizeSlots(preferredSlots, inv.getSizeInventory()) : null;
+        if (allSlots == null || allSlots.length == 0) {
+            allSlots = buildAllSlots(inv);
+        }
+
+        if (inv instanceof ISidedInventory) {
+            ISidedInventory sided = (ISidedInventory) inv;
+            int normalizedClicked = normalizeSide(clickedSide);
+
+            addSidedPlan(plans, sided, normalizedClicked, allSlots);
+            for (int side = 0; side <= 5; side++) {
+                if (side == normalizedClicked) {
+                    continue;
+                }
+                addSidedPlan(plans, sided, side, allSlots);
+            }
+            plans.add(new InsertAttemptPlan(allSlots, -1, false));
+        } else {
+            plans.add(new InsertAttemptPlan(allSlots, -1, false));
+        }
+        return plans;
+    }
+
+    private static void addSidedPlan(List<InsertAttemptPlan> plans, ISidedInventory sided, int side,
+        int[] allowedSlots) {
+        int[] slots = filterSlotsByAllowed(getAccessibleSlotsSafe(sided, side), allowedSlots, sided.getSizeInventory());
+        if (slots.length == 0) {
+            return;
+        }
+        plans.add(new InsertAttemptPlan(slots, side, true));
+    }
+
+    private static int[] getAccessibleSlotsSafe(ISidedInventory inv, int side) {
+        try {
+            int[] slots = inv.getAccessibleSlotsFromSide(normalizeSide(side));
+            return slots != null ? slots : new int[0];
+        } catch (Throwable ignored) {
+            return new int[0];
+        }
+    }
+
+    private static int[] buildAllSlots(IInventory inv) {
+        int size = Math.max(0, inv.getSizeInventory());
+        int[] slots = new int[size];
+        for (int i = 0; i < size; i++) {
+            slots[i] = i;
+        }
+        return slots;
+    }
+
+    private static ItemStack safeGetStack(IInventory inv, int slot) {
+        try {
+            return inv.getStackInSlot(slot);
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    private static boolean isItemValidForSlotSafe(IInventory inv, int slot, ItemStack stack) {
+        try {
+            return inv.isItemValidForSlot(slot, stack);
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private static boolean canInsertItemSafe(ISidedInventory inv, int slot, ItemStack stack, int side) {
+        try {
+            return inv.canInsertItem(slot, stack, normalizeSide(side));
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    private static ItemStack normalizeInsertStack(IInventory inv, ItemStack pattern) {
+        if (pattern == null) {
+            return null;
+        }
+        ItemStack inserted = pattern.copy();
+        if (inserted.stackSize <= 0) {
+            inserted.stackSize = 1;
+        }
+        int limit = Math.max(1, Math.min(inv.getInventoryStackLimit(), inserted.getMaxStackSize()));
+        inserted.stackSize = Math.min(inserted.stackSize, limit);
+        return inserted;
+    }
+
+    private static int normalizeSide(int side) {
+        return side >= 0 && side <= 5 ? side : 0;
+    }
+
+    private static boolean isInsertedAsExpected(ItemStack actual, ItemStack expected) {
+        if (actual == null || expected == null) {
+            return false;
+        }
+        if (actual.getItem() != expected.getItem()) {
+            return false;
+        }
+        if (actual.getItemDamage() != expected.getItemDamage()) {
+            return false;
+        }
+        if (!ItemStack.areItemStackTagsEqual(actual, expected)) {
+            return false;
+        }
+        return actual.stackSize >= expected.stackSize;
+    }
+
+    private static final class InsertAttemptPlan {
+
+        private final int[] slots;
+        private final int side;
+        private final boolean requireSidedCheck;
+
+        private InsertAttemptPlan(int[] slots, int side, boolean requireSidedCheck) {
+            this.slots = slots;
+            this.side = side;
+            this.requireSidedCheck = requireSidedCheck;
+        }
+    }
+
+    private static final class PatternInsertTarget {
+
+        private final IInventory inventory;
+        private final int[] preferredSlots;
+
+        private PatternInsertTarget(IInventory inventory, int[] preferredSlots) {
+            this.inventory = inventory;
+            this.preferredSlots = preferredSlots;
+        }
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean advanced) {
+        if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+            list.add(EnumChatFormatting.YELLOW + I18nUtil.tr("nhaeutilities.tooltip.feature.title"));
+            list.add(
+                EnumChatFormatting.GRAY + "(1) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.batch_encode")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.batch_encode.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "(2) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.smart_filter")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.smart_filter.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "(3) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.explicit_blacklist")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.explicit_blacklist.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "(4) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.conflict_resolution")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.conflict_resolution.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "(5) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.virtual_storage")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.virtual_storage.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "(6) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.equivalent_consume")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.feature.equivalent_consume.desc"));
+            list.add("");
+            list.add(EnumChatFormatting.YELLOW + I18nUtil.tr("nhaeutilities.tooltip.usage.title"));
+            list.add(
+                EnumChatFormatting.GRAY + "- "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.usage.right_click_air")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.usage.right_click_air.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "- "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.usage.shift_right_click_air")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.usage.shift_right_click_air.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "- "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.usage.shift_right_click_block")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.usage.shift_right_click_block.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "- "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.usage.network_binding")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.usage.network_binding.desc"));
+        } else {
+            list.add(EnumChatFormatting.GRAY + I18nUtil.tr("nhaeutilities.tooltip.hint.quick_open"));
+            list.add(EnumChatFormatting.GRAY + I18nUtil.tr("nhaeutilities.tooltip.hint.quick_storage"));
+            list.add(EnumChatFormatting.GRAY + I18nUtil.tr("nhaeutilities.tooltip.hint.quick_detect_export"));
+            list.add(
+                EnumChatFormatting.GRAY + I18nUtil.tr("nhaeutilities.tooltip.hint.hold_shift_prefix")
+                    + " "
+                    + EnumChatFormatting.AQUA
+                    + I18nUtil.tr("nhaeutilities.tooltip.key.shift")
+                    + EnumChatFormatting.GRAY
+                    + " "
+                    + I18nUtil.tr("nhaeutilities.tooltip.hint.hold_shift"));
+        }
+    }
+
+    private static ChatComponentText msg(EnumChatFormatting color, String key, Object... args) {
+        return new ChatComponentText(color + I18nUtil.tr(key, args));
+    }
+
+    public static String getSavedField(ItemStack stack, String key) {
+        if (stack == null || !stack.hasTagCompound()) {
+            return "";
+        }
+        NBTTagCompound tag = stack.getTagCompound();
+        return tag.hasKey(key) ? tag.getString(key) : "";
+    }
+
+    public static void saveField(ItemStack stack, String key, String value) {
+        if (stack == null) {
+            return;
+        }
+        if (!stack.hasTagCompound()) {
+            stack.setTagCompound(new NBTTagCompound());
+        }
+        stack.getTagCompound().setString(key, value != null ? value : "");
+    }
+
+    public static int getSavedInt(ItemStack stack, String key, int def) {
+        if (stack == null || !stack.hasTagCompound()) {
+            return def;
+        }
+        return stack.getTagCompound().hasKey(key) ? stack.getTagCompound().getInteger(key) : def;
+    }
+
+    public static void saveInt(ItemStack stack, String key, int value) {
+        if (stack == null) {
+            return;
+        }
+        if (!stack.hasTagCompound()) {
+            stack.setTagCompound(new NBTTagCompound());
+        }
+        stack.getTagCompound().setInteger(key, value);
+    }
+
+    public static void saveAllFields(ItemStack stack, String recipeMap, String outputOre, String inputOre,
+        String ncItem, String blacklistInput, String blacklistOutput, String replacements, int targetTier) {
+        saveField(stack, NBT_RECIPE_MAP, recipeMap);
+        saveField(stack, NBT_OUTPUT_ORE, outputOre);
+        saveField(stack, NBT_INPUT_ORE, inputOre);
+        saveField(stack, NBT_NC_ITEM, ncItem);
+        saveField(stack, NBT_BLACKLIST_INPUT, blacklistInput);
+        saveField(stack, NBT_BLACKLIST_OUTPUT, blacklistOutput);
+        saveField(stack, NBT_REPLACEMENTS, replacements);
+        saveInt(stack, NBT_TARGET_TIER, targetTier);
+    }
+
+    @Override
+    public String getEncryptionKey(ItemStack item) {
+        if (item != null && item.hasTagCompound()) {
+            return item.getTagCompound().getString("encryptionKey");
+        }
+        return "";
+    }
+
+    @Override
+    public void setEncryptionKey(ItemStack item, String encKey, String name) {
+        if (item != null) {
+            if (!item.hasTagCompound()) {
+                item.setTagCompound(new NBTTagCompound());
+            }
+            item.getTagCompound().setString("encryptionKey", encKey);
+        }
+    }
+
+    @Override
+    public boolean canHandle(ItemStack is) {
+        return is != null && is.getItem() == this;
+    }
+
+    @Override
+    public boolean usePower(EntityPlayer player, double amount, ItemStack is) {
+        return true;
+    }
+
+    @Override
+    public boolean hasPower(EntityPlayer player, double amount, ItemStack is) {
+        return true;
+    }
+
+    @Override
+    public IConfigManager getConfigManager(ItemStack is) {
+        return null;
+    }
+}

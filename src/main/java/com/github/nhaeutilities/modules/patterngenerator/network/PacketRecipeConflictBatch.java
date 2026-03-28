@@ -5,6 +5,7 @@ import java.util.List;
 
 import net.minecraft.client.Minecraft;
 
+import com.github.nhaeutilities.modules.patterngenerator.gui.GuiRecipePicker;
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
@@ -112,7 +113,8 @@ public class PacketRecipeConflictBatch implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketRecipeConflictBatch message, MessageContext ctx) {
-            Minecraft.getMinecraft().func_152344_a(() -> {});
+            Minecraft.getMinecraft()
+                .func_152344_a(() -> GuiRecipePicker.openBatch(message));
             return null;
         }
     }

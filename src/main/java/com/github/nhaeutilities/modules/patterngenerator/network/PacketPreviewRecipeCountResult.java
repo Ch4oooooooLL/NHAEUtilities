@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.github.nhaeutilities.modules.patterngenerator.gui.GuiPatternGenStatusBridge;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
@@ -65,20 +66,30 @@ public class PacketPreviewRecipeCountResult implements IMessage {
                 }
 
                 if (!message.cacheValid) {
+                    GuiPatternGenStatusBridge.setStatus("Recipe cache is missing or invalid.");
                     Minecraft.getMinecraft().thePlayer.addChatMessage(
                         new ChatComponentText(
-                            EnumChatFormatting.RED + I18nUtil.tr("nhaeutilities.msg.cache.missing_or_invalid")));
+                            EnumChatFormatting.RED
+                                + I18nUtil.trOr(
+                                    "nhaeutilities.msg.cache.missing_or_invalid",
+                                    "Recipe cache is missing or invalid. Please build the cache first.")));
                     return;
                 }
 
                 if (message.matchedMapCount <= 0) {
+                    GuiPatternGenStatusBridge.setStatus("No matching recipe map.");
                     Minecraft.getMinecraft().thePlayer.addChatMessage(
                         new ChatComponentText(
                             EnumChatFormatting.RED
-                                + I18nUtil.tr("nhaeutilities.msg.generate.no_matching_map", message.requestedKeyword)));
+                                + I18nUtil.trOr(
+                                    "nhaeutilities.msg.generate.no_matching_map",
+                                    "No matching recipe map: %s",
+                                    message.requestedKeyword)));
                     return;
                 }
 
+                GuiPatternGenStatusBridge.setStatus(
+                    String.format("Filter result: %s -> %s", message.totalLoadedCount, message.totalFilteredCount));
                 Minecraft.getMinecraft().thePlayer.addChatMessage(
                     new ChatComponentText(
                         EnumChatFormatting.GRAY + I18nUtil.tr(

@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.github.nhaeutilities.modules.patterngenerator.gui.GuiPatternGenStatusBridge;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
@@ -67,19 +68,33 @@ public class PacketCacheProgress implements IMessage {
                 String text;
                 switch (message.stage) {
                     case STAGE_STARTED:
-                        text = EnumChatFormatting.GRAY + I18nUtil.tr("nhaeutilities.msg.cache.build_started");
+                        text = EnumChatFormatting.GRAY
+                            + I18nUtil.trOr("nhaeutilities.msg.cache.build_started", "Recipe cache build started.");
+                        GuiPatternGenStatusBridge.setStatus("Recipe cache build started.");
                         break;
                     case STAGE_ALREADY_RUNNING:
-                        text = EnumChatFormatting.YELLOW + I18nUtil.tr("nhaeutilities.msg.cache.build_already_running");
+                        text = EnumChatFormatting.YELLOW
+                            + I18nUtil.trOr(
+                                "nhaeutilities.msg.cache.build_already_running",
+                                "Recipe cache build is already running.");
+                        GuiPatternGenStatusBridge.setStatus("Recipe cache build is already running.");
                         break;
                     case STAGE_PROGRESS:
                         text = EnumChatFormatting.GRAY
-                            + I18nUtil.tr("nhaeutilities.msg.cache.progress", message.detail, message.current, message.total);
+                            + I18nUtil.trOr(
+                                "nhaeutilities.msg.cache.progress",
+                                "Caching %s (%s/%s)",
+                                message.detail,
+                                message.current,
+                                message.total);
+                        GuiPatternGenStatusBridge.setStatus(
+                            String.format("Caching %s (%s/%s)", message.detail, message.current, message.total));
                         break;
                     case STAGE_ERROR:
                     default:
                         text = EnumChatFormatting.RED
-                            + I18nUtil.tr("nhaeutilities.msg.cache.build_failed", message.detail);
+                            + I18nUtil.trOr("nhaeutilities.msg.cache.build_failed", "Recipe cache build failed: %s", message.detail);
+                        GuiPatternGenStatusBridge.setStatus(String.format("Cache failed: %s", message.detail));
                         break;
                 }
 
