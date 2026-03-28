@@ -64,6 +64,22 @@ nhaeutilities.msg.pattern.insufficient_blank_pattern=[NHAEUtilities] Generation 
 nhaeutilities.msg.common.unknown_item=Unknown Item
 
 item.nhaeutilities.pattern_generator.name=Pattern Generator
+item.nhaeutilities.super_wireless_kit.name=Super Wireless Kit
+nhaeutilities.module.super_wireless_kit.name=Super Wireless Kit
+nhaeutilities.module.super_wireless_kit.status.todo=Super Wireless Kit is scaffolded but not implemented yet.
+nhaeutilities.module.super_wireless_kit.status.ready=Super Wireless Kit is available.
+nhaeutilities.tooltip.swk.title=Super Wireless Kit
+nhaeutilities.tooltip.swk.mode=Mode: %s
+nhaeutilities.tooltip.swk.queue=Queued targets: %s
+nhaeutilities.tooltip.swk.pending=Pending bindings: %s
+nhaeutilities.tooltip.swk.controller=Controller: %s
+nhaeutilities.msg.swk.mode_switched=Mode switched to %s
+nhaeutilities.msg.swk.controller_required=Click an ME Controller while in bind mode.
+nhaeutilities.msg.swk.bound_targets=Bound %s queued target(s).
+nhaeutilities.msg.swk.bind_failures=%s target(s) were rejected and remain pending.
+nhaeutilities.msg.swk.queue_cannot_record_controller=Queue mode records non-controller targets only.
+nhaeutilities.msg.swk.invalid_target=This target cannot be recorded.
+nhaeutilities.msg.swk.queued_target=Queued target count: %s
 
 nhaeutilities.gui.common.any=Any
 nhaeutilities.gui.common.back=Back
@@ -188,3 +204,18 @@ nhaeutilities.msg.item.storage_empty_export=[NHAEUtilities] Storage is empty. No
 nhaeutilities.msg.item.storage_update_failed=[NHAEUtilities] Storage update failed. Please retry later.
 nhaeutilities.msg.item.exported=[NHAEUtilities] Exported %s pattern(s) to target container.
 nhaeutilities.msg.item.exported_with_remaining=[NHAEUtilities] Exported %s pattern(s) to target container (%s remaining).
+
+# Config GUI categories
+nhaeutilities.config.modules=Modules
+nhaeutilities.config.modules.patternGenerator=Pattern Generator
+nhaeutilities.config.modules.patternGenerator.enabled=Enabled
+nhaeutilities.config.modules.superWirelessKit=Super Wireless Kit
+nhaeutilities.config.modules.superWirelessKit.enabled=Enabled
+nhaeutilities.config.patternGenerator=Pattern Generator Settings
+nhaeutilities.config.patternGenerator.conflict=Conflict Resolution
+nhaeutilities.config.patternGenerator.duplicate=Duplicate Suppression
+nhaeutilities.config.patternGenerator.ui=User Interface
+nhaeutilities.config.patternGenerator.ui.patternGen=Pattern Generator GUI
+nhaeutilities.config.patternGenerator.ui.recipePicker=Recipe Picker GUI
+nhaeutilities.config.patternGenerator.storage=Storage
+nhaeutilities.config.patternGenerator.items=Items

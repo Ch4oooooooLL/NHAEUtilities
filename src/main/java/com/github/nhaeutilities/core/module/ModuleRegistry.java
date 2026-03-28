@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import net.minecraftforge.common.config.Configuration;
+
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -20,6 +22,26 @@ public class ModuleRegistry {
             throw new IllegalStateException("Cannot register modules after bootstrap has started");
         }
         modules.add(Objects.requireNonNull(module, "module"));
+    }
+
+    /**
+     * Returns an unmodifiable view of ALL registered modules regardless of enabled state.
+     * Useful for config GUI to show every module's settings.
+     */
+    public List<ModuleDefinition> getAllModules() {
+        return Collections.unmodifiableList(modules);
+    }
+
+    /**
+     * Calls {@link ModuleDefinition#loadConfig(Configuration)} on every registered module
+     * (including disabled ones) so that all configuration properties are declared in the
+     * shared {@link Configuration} file and visible in the config GUI.
+     */
+    public void loadAllConfigs(Configuration configuration) {
+        Objects.requireNonNull(configuration, "configuration");
+        for (ModuleDefinition module : modules) {
+            module.loadConfig(configuration);
+        }
     }
 
     public List<ModuleDefinition> getEnabledModules() {

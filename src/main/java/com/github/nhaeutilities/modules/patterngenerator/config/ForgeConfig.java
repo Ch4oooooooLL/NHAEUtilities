@@ -1,6 +1,6 @@
 package com.github.nhaeutilities.modules.patterngenerator.config;
 
-import java.io.File;
+import java.util.Objects;
 
 import net.minecraftforge.common.config.Configuration;
 
@@ -8,12 +8,14 @@ import cpw.mods.fml.common.FMLLog;
 
 public final class ForgeConfig {
 
-    private static final String CATEGORY_CONFLICT = "conflict";
-    private static final String CATEGORY_DUPLICATE = "duplicate";
-    private static final String CATEGORY_UI_PATTERN_GEN = "ui.patternGen";
-    private static final String CATEGORY_UI_RECIPE_PICKER = "ui.recipePicker";
-    private static final String CATEGORY_STORAGE = "storage";
-    private static final String CATEGORY_ITEMS = "items";
+    private static final String MODULE_PREFIX = "patternGenerator.";
+
+    private static final String CATEGORY_CONFLICT = MODULE_PREFIX + "conflict";
+    private static final String CATEGORY_DUPLICATE = MODULE_PREFIX + "duplicate";
+    private static final String CATEGORY_UI_PATTERN_GEN = MODULE_PREFIX + "ui.patternGen";
+    private static final String CATEGORY_UI_RECIPE_PICKER = MODULE_PREFIX + "ui.recipePicker";
+    private static final String CATEGORY_STORAGE = MODULE_PREFIX + "storage";
+    private static final String CATEGORY_ITEMS = MODULE_PREFIX + "items";
 
     private static final int MIN_CONFLICT_BATCH_SIZE = 1;
     private static final int MAX_CONFLICT_BATCH_SIZE = 64;
@@ -56,37 +58,33 @@ public final class ForgeConfig {
     private static volatile String storageDirectoryName = DEFAULT_STORAGE_DIRECTORY_NAME;
     private static volatile String recipeCacheDirectoryName = DEFAULT_RECIPE_CACHE_DIRECTORY_NAME;
 
-    private static final String DEFAULT_CONFIG_FILE_NAME = "nhaeutilities.cfg";
-
     private static final String DEFAULT_ENCODED_PATTERN_ID = "appliedenergistics2:item.ItemEncodedPattern";
 
     private static volatile String encodedPatternId = DEFAULT_ENCODED_PATTERN_ID;
 
     private ForgeConfig() {}
 
-    public static void load(File suggestedConfigFile) {
-        File file = resolveConfigFile(suggestedConfigFile);
-        Configuration cfg = new Configuration(file);
+    /**
+     * Loads all pattern-generator configuration properties from the given shared
+     * {@link Configuration}. This method both declares the properties (so they
+     * appear in the config GUI) and reads their current values into the static
+     * fields.
+     *
+     * <p>
+     * Safe to call multiple times (e.g. on config-GUI reload).
+     */
+    public static void load(Configuration cfg) {
+        Objects.requireNonNull(cfg, "cfg");
         try {
-            cfg.load();
-
             loadConflictConfig(cfg);
             loadDuplicateConfig(cfg);
             loadUIConfig(cfg);
             loadStorageConfig(cfg);
             loadItemsConfig(cfg);
-
+            applyCategoryMetadata(cfg);
         } catch (RuntimeException e) {
-            FMLLog.warning("[NHAEUtilities] Failed to load Forge config: %s", e.getMessage());
-        } finally {
-            if (cfg.hasChanged()) {
-                cfg.save();
-            }
+            FMLLog.warning("[NHAEUtilities] Failed to load PatternGenerator config: %s", e.getMessage());
         }
-    }
-
-    static File resolveConfigFile(File suggestedConfigFile) {
-        return suggestedConfigFile != null ? suggestedConfigFile : new File("config", DEFAULT_CONFIG_FILE_NAME);
     }
 
     private static void loadConflictConfig(Configuration cfg) {
@@ -226,6 +224,26 @@ public final class ForgeConfig {
             DEFAULT_ENCODED_PATTERN_ID,
             "Item ID of the AE2 encoded pattern item. Used for compatibility with different AE2 versions.");
         encodedPatternId = configuredPatternId;
+    }
+
+    private static void applyCategoryMetadata(Configuration cfg) {
+        String langPrefix = "nhaeutilities.config.";
+        cfg.getCategory("patternGenerator")
+            .setLanguageKey(langPrefix + "patternGenerator");
+        cfg.getCategory(CATEGORY_CONFLICT)
+            .setLanguageKey(langPrefix + CATEGORY_CONFLICT);
+        cfg.getCategory(CATEGORY_DUPLICATE)
+            .setLanguageKey(langPrefix + CATEGORY_DUPLICATE);
+        cfg.getCategory(MODULE_PREFIX + "ui")
+            .setLanguageKey(langPrefix + MODULE_PREFIX + "ui");
+        cfg.getCategory(CATEGORY_UI_PATTERN_GEN)
+            .setLanguageKey(langPrefix + CATEGORY_UI_PATTERN_GEN);
+        cfg.getCategory(CATEGORY_UI_RECIPE_PICKER)
+            .setLanguageKey(langPrefix + CATEGORY_UI_RECIPE_PICKER);
+        cfg.getCategory(CATEGORY_STORAGE)
+            .setLanguageKey(langPrefix + CATEGORY_STORAGE);
+        cfg.getCategory(CATEGORY_ITEMS)
+            .setLanguageKey(langPrefix + CATEGORY_ITEMS);
     }
 
     public static int getConflictBatchSize() {

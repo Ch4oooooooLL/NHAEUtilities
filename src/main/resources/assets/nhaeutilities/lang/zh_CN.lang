@@ -64,6 +64,22 @@ nhaeutilities.msg.pattern.insufficient_blank_pattern=[NHAEUtilities] Generation 
 nhaeutilities.msg.common.unknown_item=Unknown Item
 
 item.nhaeutilities.pattern_generator.name=Pattern Generator
+item.nhaeutilities.super_wireless_kit.name=Super Wireless Kit
+nhaeutilities.module.super_wireless_kit.name=Super Wireless Kit
+nhaeutilities.module.super_wireless_kit.status.todo=Super Wireless Kit \u529f\u80fd\u5df2\u642d\u5efa\u9aa8\u67b6\uff0c\u5c1a\u672a\u5b9e\u73b0\u3002
+nhaeutilities.module.super_wireless_kit.status.ready=Super Wireless Kit is available.
+nhaeutilities.tooltip.swk.title=Super Wireless Kit
+nhaeutilities.tooltip.swk.mode=Mode: %s
+nhaeutilities.tooltip.swk.queue=Queued targets: %s
+nhaeutilities.tooltip.swk.pending=Pending bindings: %s
+nhaeutilities.tooltip.swk.controller=Controller: %s
+nhaeutilities.msg.swk.mode_switched=Mode switched to %s
+nhaeutilities.msg.swk.controller_required=Click an ME Controller while in bind mode.
+nhaeutilities.msg.swk.bound_targets=Bound %s queued target(s).
+nhaeutilities.msg.swk.bind_failures=%s target(s) were rejected and remain pending.
+nhaeutilities.msg.swk.queue_cannot_record_controller=Queue mode records non-controller targets only.
+nhaeutilities.msg.swk.invalid_target=This target cannot be recorded.
+nhaeutilities.msg.swk.queued_target=Queued target count: %s
 
 nhaeutilities.gui.common.any=Any
 nhaeutilities.gui.common.back=Back
@@ -188,3 +204,18 @@ nhaeutilities.msg.item.storage_empty_export=[NHAEUtilities] Storage is empty. No
 nhaeutilities.msg.item.storage_update_failed=[NHAEUtilities] Storage update failed. Please retry later.
 nhaeutilities.msg.item.exported=[NHAEUtilities] Exported %s pattern(s) to target container.
 nhaeutilities.msg.item.exported_with_remaining=[NHAEUtilities] Exported %s pattern(s) to target container (%s remaining).
+
+# Config GUI categories
+nhaeutilities.config.modules=\u6a21\u5757\u7ba1\u7406
+nhaeutilities.config.modules.patternGenerator=\u6837\u677f\u751f\u6210\u5668
+nhaeutilities.config.modules.patternGenerator.enabled=\u542f\u7528
+nhaeutilities.config.modules.superWirelessKit=\u8d85\u7ea7\u65e0\u7ebf\u5de5\u5177\u5305
+nhaeutilities.config.modules.superWirelessKit.enabled=\u542f\u7528
+nhaeutilities.config.patternGenerator=\u6837\u677f\u751f\u6210\u5668\u8bbe\u7f6e
+nhaeutilities.config.patternGenerator.conflict=\u51b2\u7a81\u89e3\u51b3
+nhaeutilities.config.patternGenerator.duplicate=\u91cd\u590d\u8bf7\u6c42\u62a6\u622a
+nhaeutilities.config.patternGenerator.ui=\u7528\u6237\u754c\u9762
+nhaeutilities.config.patternGenerator.ui.patternGen=\u6837\u677f\u751f\u6210\u5668 GUI
+nhaeutilities.config.patternGenerator.ui.recipePicker=\u914d\u65b9\u9009\u62e9\u5668 GUI
+nhaeutilities.config.patternGenerator.storage=\u5b58\u50a8
+nhaeutilities.config.patternGenerator.items=\u7269\u54c1

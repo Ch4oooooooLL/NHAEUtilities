@@ -2,6 +2,8 @@ package com.github.nhaeutilities.modules.patterngenerator;
 
 import java.util.Objects;
 
+import net.minecraftforge.common.config.Configuration;
+
 import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleDefinition;
 import com.github.nhaeutilities.modules.patterngenerator.command.CommandPatternGen;
@@ -36,9 +38,18 @@ public class PatternGeneratorModule implements ModuleDefinition {
         return coreConfig.isPatternGeneratorEnabled();
     }
 
+    /**
+     * Declares and loads all pattern-generator configuration properties into the
+     * shared {@link Configuration}. Called for ALL modules (including disabled ones)
+     * so that the config GUI always shows the full set of settings.
+     */
+    @Override
+    public void loadConfig(Configuration configuration) {
+        ForgeConfig.load(configuration);
+    }
+
     @Override
     public void preInit(FMLPreInitializationEvent event) {
-        ForgeConfig.load(event.getSuggestedConfigurationFile());
         ReplacementConfig.load();
         ModItems.init();
         NetworkHandler.init();
