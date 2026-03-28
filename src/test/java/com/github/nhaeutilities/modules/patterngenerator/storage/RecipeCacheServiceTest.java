@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.After;
 import org.junit.Before;
@@ -26,6 +27,7 @@ public class RecipeCacheServiceTest {
     private FakeStorageBackend storage;
     private FakeRecipeCollector collector;
     private FakeEnvironmentInspector inspector;
+    private AtomicInteger sourceInvalidations;
 
     @Before
     public void setUp() throws Exception {
@@ -34,9 +36,11 @@ public class RecipeCacheServiceTest {
                 .toFile());
         collector = new FakeRecipeCollector();
         inspector = new FakeEnvironmentInspector();
+        sourceInvalidations = new AtomicInteger();
         RecipeCacheService.setStorageBackend(storage);
         RecipeCacheService.setRecipeCollector(collector);
         RecipeCacheService.setEnvironmentInspector(inspector);
+        RecipeCacheService.setSourceCacheInvalidator(() -> sourceInvalidations.incrementAndGet());
     }
 
     @After
@@ -145,6 +149,24 @@ public class RecipeCacheServiceTest {
         assertEquals(2, result.totalLoadedCount);
         assertEquals(1, result.totalFilteredCount);
         assertEquals(120, result.recipes.get(0).duration);
+    }
+
+    @Test
+    public void rebuildNowInvalidatesRecipeSourceCaches() {
+        collector.availableMapIds = Collections.singletonList("gt.recipe.assembler");
+        inspector.modVersions.put("gregtech", "5.0.0");
+        inspector.configHashes.put("config/nhaeutilities.cfg", "cfg-hash");
+
+        RecipeCacheService.rebuildNow(null);
+
+        assertEquals(1, sourceInvalidations.get());
+    }
+
+    @Test
+    public void clearCacheInvalidatesRecipeSourceCaches() {
+        RecipeCacheService.clearCache();
+
+        assertEquals(1, sourceInvalidations.get());
     }
 
     private static RecipeEntry sampleRecipe(int duration) {

@@ -21,6 +21,7 @@ public class PatternEncoder {
 
     /** ??? AE2FC ?????? */
     private static Boolean ae2fcAvailable = null;
+    private static volatile PatternItemResolver patternItemResolver = new DefaultPatternItemResolver();
 
     /**
      * ????????? AE2 Processing Pattern (??????)
@@ -154,21 +155,42 @@ public class PatternEncoder {
     }
 
     private static Item findEncodedPatternItem() {
-        try {
-            for (ItemStack stack : appeng.api.AEApi.instance()
-                .definitions()
-                .items()
-                .encodedPattern()
-                .maybeStack(1)
-                .asSet()) {
-                if (stack != null && stack.getItem() != null) {
-                    return stack.getItem();
-                }
-            }
-        } catch (Throwable e) {}
+        return patternItemResolver.resolve();
+    }
 
-        String patternId = ForgeConfig.getEncodedPatternId();
-        return (Item) Item.itemRegistry.getObject(patternId);
+    static void setPatternItemResolver(PatternItemResolver resolver) {
+        patternItemResolver = resolver != null ? resolver : patternItemResolver;
+    }
+
+    static void resetPatternItemResolver() {
+        patternItemResolver = new DefaultPatternItemResolver();
+    }
+
+    interface PatternItemResolver {
+
+        Item resolve();
+    }
+
+    private static final class DefaultPatternItemResolver implements PatternItemResolver {
+
+        @Override
+        public Item resolve() {
+            try {
+                for (ItemStack stack : appeng.api.AEApi.instance()
+                    .definitions()
+                    .items()
+                    .encodedPattern()
+                    .maybeStack(1)
+                    .asSet()) {
+                    if (stack != null && stack.getItem() != null) {
+                        return stack.getItem();
+                    }
+                }
+            } catch (Throwable e) {}
+
+            String patternId = ForgeConfig.getEncodedPatternId();
+            return (Item) Item.itemRegistry.getObject(patternId);
+        }
     }
 }
 

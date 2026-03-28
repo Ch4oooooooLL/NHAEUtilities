@@ -1,6 +1,7 @@
 package com.github.nhaeutilities.modules.patterngenerator.filter;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -10,6 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import org.junit.Test;
+
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 
 public class ExplicitStackMatcherTest {
 
@@ -104,6 +108,21 @@ public class ExplicitStackMatcherTest {
         assertTrue("display-only matcher should load display name", displayLoads.get() > 0);
     }
 
+    @Test
+    public void separateMatchersDoNotReuseStackMetadataAcrossRuns() {
+        CountingItem item = new CountingItem("Copper Dust");
+        ItemStack stack = new ItemStack(item, 1, 0);
+
+        ExplicitStackMatcher firstRun = new ExplicitStackMatcher("{Copper Dust}");
+        ExplicitStackMatcher secondRun = new ExplicitStackMatcher("{Copper Dust}");
+
+        assertTrue(firstRun.matches(stack));
+        assertEquals(1, item.displayNameLookups.get());
+
+        assertTrue(secondRun.matches(stack));
+        assertEquals("separate runs should not share a global strong cache", 2, item.displayNameLookups.get());
+    }
+
     private boolean invokeLazyMatch(ExplicitStackMatcher matcher, int itemId, int meta, AtomicInteger oreLoads,
         AtomicInteger displayLoads, String[] oreNames, String displayName) {
         try {
@@ -130,6 +149,22 @@ public class ExplicitStackMatcherTest {
             fail("Lazy matching overload threw unexpectedly: " + cause.getMessage());
         }
         return false;
+    }
+
+    private static final class CountingItem extends Item {
+
+        private final String displayName;
+        private final AtomicInteger displayNameLookups = new AtomicInteger();
+
+        private CountingItem(String displayName) {
+            this.displayName = displayName;
+        }
+
+        @Override
+        public String getItemStackDisplayName(ItemStack stack) {
+            displayNameLookups.incrementAndGet();
+            return displayName;
+        }
     }
 }
 

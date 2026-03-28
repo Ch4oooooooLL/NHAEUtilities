@@ -25,6 +25,8 @@ import gregtech.api.util.GTRecipe;
 public class GTRecipeSource {
 
     private static final RecipeCollectionCache<String, List<RecipeEntry>> COLLECTED_RECIPE_CACHE = new RecipeCollectionCache<String, List<RecipeEntry>>();
+    private static volatile RecipeMapRegistry recipeMapRegistry = new GregTechRecipeMapRegistry();
+    private static volatile SmeltingRecipeProvider smeltingRecipeProvider = new FurnaceSmeltingRecipeProvider();
 
     /**
      * ?????????????GT ????????
@@ -33,7 +35,8 @@ public class GTRecipeSource {
      */
     public static Map<String, String> getAvailableRecipeMaps() {
         Map<String, String> result = new LinkedHashMap<>();
-        for (Map.Entry<String, RecipeMap<?>> entry : RecipeMap.ALL_RECIPE_MAPS.entrySet()) {
+        for (Map.Entry<String, RecipeMapView> entry : recipeMapRegistry.getRecipeMaps()
+            .entrySet()) {
             result.put(entry.getKey(), entry.getKey());
         }
         return result;
@@ -64,20 +67,22 @@ public class GTRecipeSource {
         String lowerKeyword = normalized.toLowerCase();
 
         // 1. ??????
-        if (RecipeMap.ALL_RECIPE_MAPS.containsKey(normalized)) {
+        Map<String, RecipeMapView> recipeMaps = recipeMapRegistry.getRecipeMaps();
+
+        if (recipeMaps.containsKey(normalized)) {
             matches.add(normalized);
         }
 
         // 2. ????????ID (xxx_1_2_3_4_5)
-        RecipeMap<?> fromLegacy = RecipeMap.getFromOldIdentifier(normalized);
+        RecipeMapView fromLegacy = recipeMapRegistry.getFromLegacyIdentifier(normalized);
         if (fromLegacy != null) {
-            matches.add(fromLegacy.unlocalizedName);
+            matches.add(fromLegacy.getMapId());
         }
 
         // 3. ?????????????????(map id + NEI transfer id)
-        for (Map.Entry<String, RecipeMap<?>> entry : RecipeMap.ALL_RECIPE_MAPS.entrySet()) {
+        for (Map.Entry<String, RecipeMapView> entry : recipeMaps.entrySet()) {
             String mapId = entry.getKey();
-            RecipeMap<?> map = entry.getValue();
+            RecipeMapView map = entry.getValue();
 
             if (mapId.toLowerCase()
                 .contains(lowerKeyword)) {
@@ -85,15 +90,10 @@ public class GTRecipeSource {
                 continue;
             }
 
-            if (map != null && map.getFrontend() != null
-                && map.getFrontend()
-                    .getUIProperties() != null) {
-                String transferId = map.getFrontend()
-                    .getUIProperties().neiTransferRectId;
-                if (transferId != null && transferId.toLowerCase()
-                    .contains(lowerKeyword)) {
-                    matches.add(mapId);
-                }
+            String transferId = map != null ? map.getTransferId() : null;
+            if (transferId != null && transferId.toLowerCase()
+                .contains(lowerKeyword)) {
+                matches.add(mapId);
             }
         }
 
@@ -117,44 +117,49 @@ public class GTRecipeSource {
             .getOrCompute(cacheKey, () -> Collections.unmodifiableList(collectRecipesForMatchedMaps(matchedMaps)));
     }
 
+    public static void invalidateCollectionCache() {
+        COLLECTED_RECIPE_CACHE.clear();
+    }
+
+    static void setRecipeMapRegistry(RecipeMapRegistry registry) {
+        recipeMapRegistry = registry != null ? registry : recipeMapRegistry;
+        invalidateCollectionCache();
+    }
+
+    static void resetRecipeMapRegistry() {
+        recipeMapRegistry = new GregTechRecipeMapRegistry();
+        invalidateCollectionCache();
+    }
+
+    static void setSmeltingRecipeProvider(SmeltingRecipeProvider provider) {
+        smeltingRecipeProvider = provider != null ? provider : smeltingRecipeProvider;
+        invalidateCollectionCache();
+    }
+
+    static void resetSmeltingRecipeProvider() {
+        smeltingRecipeProvider = new FurnaceSmeltingRecipeProvider();
+        invalidateCollectionCache();
+    }
+
     private static List<RecipeEntry> collectRecipesForMatchedMaps(List<String> matchedMaps) {
         List<RecipeEntry> entries = new ArrayList<>();
         Set<String> processedKeys = new java.util.HashSet<>();
+        Map<String, RecipeMapView> recipeMaps = recipeMapRegistry.getRecipeMaps();
 
         for (String mapId : matchedMaps) {
-            RecipeMap<?> targetMap = RecipeMap.ALL_RECIPE_MAPS.get(mapId);
+            RecipeMapView targetMap = recipeMaps.get(mapId);
             if (targetMap == null) continue;
 
-            Collection<GTRecipe> recipes = targetMap.getAllRecipes();
+            Collection<RecipeView> recipes = targetMap.getAllRecipes();
             if (recipes != null) {
-                for (GTRecipe recipe : recipes) {
-                    if (recipe == null || !recipe.mEnabled) continue;
+                for (RecipeView recipe : recipes) {
+                    if (recipe == null || !recipe.isEnabled()) continue;
 
                     // ???????????Key (??????????????????U)
                     String recipeKey = generateRecipeKey(recipe);
                     if (!processedKeys.add(recipeKey)) continue;
 
-                    ItemStack[] normalInputs = recipe.mInputs;
-                    ItemStack[] specialItems = new ItemStack[0];
-                    if (recipe.mSpecialItems instanceof ItemStack[]) {
-                        specialItems = (ItemStack[]) recipe.mSpecialItems;
-                    } else if (recipe.mSpecialItems instanceof ItemStack) {
-                        specialItems = new ItemStack[] { (ItemStack) recipe.mSpecialItems };
-                    }
-
-                    RecipeEntry entry = new RecipeEntry(
-                        "gt",
-                        mapId,
-                        mapId,
-                        normalInputs,
-                        recipe.mOutputs,
-                        recipe.mFluidInputs,
-                        recipe.mFluidOutputs,
-                        specialItems,
-                        recipe.mDuration,
-                        recipe.mEUt);
-
-                    entries.add(entry);
+                    entries.add(toRecipeEntry(mapId, recipe, recipe.getInputs()));
                 }
             }
 
@@ -175,14 +180,13 @@ public class GTRecipeSource {
      * GT ??furnace / microwave ??? NonGTBackend ???????????????????? getAllRecipes()??
      * ???????????????FurnaceRecipes ????????RecipeEntry??
      */
-    private static void collectDynamicSmeltingRecipesIfNeeded(String mapId, RecipeMap<?> targetMap,
+    private static void collectDynamicSmeltingRecipesIfNeeded(String mapId, RecipeMapView targetMap,
         List<RecipeEntry> entries, Set<String> processedKeys) {
         if (targetMap == null || (!"gt.recipe.furnace".equals(mapId) && !"gt.recipe.microwave".equals(mapId))) {
             return;
         }
 
-        Map<ItemStack, ItemStack> smelting = FurnaceRecipes.smelting()
-            .getSmeltingList();
+        Map<ItemStack, ItemStack> smelting = smeltingRecipeProvider.getSmeltingList();
         if (smelting == null || smelting.isEmpty()) {
             return;
         }
@@ -204,24 +208,13 @@ public class GTRecipeSource {
                 continue;
             }
 
-            GTRecipe dynamic = targetMap.findRecipeQuery()
-                .items(input)
-                .dontCheckStackSizes(true)
-                .find();
-            if (dynamic == null || !dynamic.mEnabled) {
+            RecipeView dynamic = targetMap.findRecipe(input);
+            if (dynamic == null || !dynamic.isEnabled()) {
                 continue;
             }
-            if ((dynamic.mOutputs == null || dynamic.mOutputs.length == 0)
-                && (dynamic.mFluidOutputs == null || dynamic.mFluidOutputs.length == 0)) {
+            if ((dynamic.getOutputs() == null || dynamic.getOutputs().length == 0)
+                && (dynamic.getFluidOutputs() == null || dynamic.getFluidOutputs().length == 0)) {
                 continue;
-            }
-
-            ItemStack[] normalInputs = dynamic.mInputs != null ? dynamic.mInputs : new ItemStack[] { input };
-            ItemStack[] specialItems = new ItemStack[0];
-            if (dynamic.mSpecialItems instanceof ItemStack[]) {
-                specialItems = (ItemStack[]) dynamic.mSpecialItems;
-            } else if (dynamic.mSpecialItems instanceof ItemStack) {
-                specialItems = new ItemStack[] { (ItemStack) dynamic.mSpecialItems };
             }
 
             String dynamicKey = generateRecipeKey(dynamic) + "|MAP:" + mapId;
@@ -229,43 +222,19 @@ public class GTRecipeSource {
                 continue;
             }
 
-            entries.add(
-                new RecipeEntry(
-                    "gt",
-                    mapId,
-                    mapId,
-                    normalInputs,
-                    dynamic.mOutputs,
-                    dynamic.mFluidInputs,
-                    dynamic.mFluidOutputs,
-                    specialItems,
-                    dynamic.mDuration,
-                    dynamic.mEUt));
+            ItemStack[] normalInputs = dynamic.getInputs() != null ? dynamic.getInputs() : new ItemStack[] { input };
+            entries.add(toRecipeEntry(mapId, dynamic, normalInputs));
         }
 
         if ("gt.recipe.microwave".equals(mapId)) {
             ItemStack microwaveBook = new ItemStack(Items.book, 1, 0);
-            GTRecipe bookRecipe = targetMap.findRecipeQuery()
-                .items(microwaveBook)
-                .dontCheckStackSizes(true)
-                .find();
-            if (bookRecipe != null && bookRecipe.mEnabled
-                && bookRecipe.mOutputs != null
-                && bookRecipe.mOutputs.length > 0) {
+            RecipeView bookRecipe = targetMap.findRecipe(microwaveBook);
+            if (bookRecipe != null && bookRecipe.isEnabled()
+                && bookRecipe.getOutputs() != null
+                && bookRecipe.getOutputs().length > 0) {
                 String bookKey = generateRecipeKey(bookRecipe) + "|MAP:" + mapId;
                 if (processedKeys.add(bookKey)) {
-                    entries.add(
-                        new RecipeEntry(
-                            "gt",
-                            mapId,
-                            mapId,
-                            bookRecipe.mInputs,
-                            bookRecipe.mOutputs,
-                            bookRecipe.mFluidInputs,
-                            bookRecipe.mFluidOutputs,
-                            new ItemStack[0],
-                            bookRecipe.mDuration,
-                            bookRecipe.mEUt));
+                    entries.add(toRecipeEntry(mapId, bookRecipe, bookRecipe.getInputs()));
                 }
             }
         }
@@ -280,14 +249,14 @@ public class GTRecipeSource {
         return String.valueOf(name) + "@" + stack.getItemDamage() + "@" + stack.stackSize;
     }
 
-    private static String generateRecipeKey(GTRecipe recipe) {
+    private static String generateRecipeKey(RecipeView recipe) {
         StringBuilder sb = new StringBuilder();
-        sb.append(recipe.mDuration)
+        sb.append(recipe.getDuration())
             .append(":")
-            .append(recipe.mEUt)
+            .append(recipe.getEuPerTick())
             .append("|");
-        if (recipe.mInputs != null) {
-            for (ItemStack is : recipe.mInputs) {
+        if (recipe.getInputs() != null) {
+            for (ItemStack is : recipe.getInputs()) {
                 if (is != null && is.getItem() != null)
                     sb.append(net.minecraft.item.Item.itemRegistry.getNameForObject(is.getItem()))
                         .append("@")
@@ -299,8 +268,8 @@ public class GTRecipeSource {
             }
         }
         sb.append("|");
-        if (recipe.mOutputs != null) {
-            for (ItemStack is : recipe.mOutputs) {
+        if (recipe.getOutputs() != null) {
+            for (ItemStack is : recipe.getOutputs()) {
                 if (is != null && is.getItem() != null)
                     sb.append(net.minecraft.item.Item.itemRegistry.getNameForObject(is.getItem()))
                         .append("@")
@@ -312,15 +281,15 @@ public class GTRecipeSource {
             }
         }
         sb.append("|SP:");
-        if (recipe.mSpecialItems instanceof ItemStack) {
-            ItemStack is = (ItemStack) recipe.mSpecialItems;
+        if (recipe.getSpecialItems() instanceof ItemStack) {
+            ItemStack is = (ItemStack) recipe.getSpecialItems();
             if (is.getItem() != null) {
                 sb.append(net.minecraft.item.Item.itemRegistry.getNameForObject(is.getItem()))
                     .append("@")
                     .append(is.getItemDamage());
             }
-        } else if (recipe.mSpecialItems instanceof ItemStack[]) {
-            for (ItemStack is : (ItemStack[]) recipe.mSpecialItems) {
+        } else if (recipe.getSpecialItems() instanceof ItemStack[]) {
+            for (ItemStack is : (ItemStack[]) recipe.getSpecialItems()) {
                 if (is != null && is.getItem() != null)
                     sb.append(net.minecraft.item.Item.itemRegistry.getNameForObject(is.getItem()))
                         .append("@")
@@ -329,8 +298,8 @@ public class GTRecipeSource {
             }
         }
         sb.append("|FI:");
-        if (recipe.mFluidInputs != null) {
-            for (net.minecraftforge.fluids.FluidStack fs : recipe.mFluidInputs) {
+        if (recipe.getFluidInputs() != null) {
+            for (net.minecraftforge.fluids.FluidStack fs : recipe.getFluidInputs()) {
                 if (fs != null && fs.getFluid() != null) {
                     sb.append(
                         fs.getFluid()
@@ -342,8 +311,8 @@ public class GTRecipeSource {
             }
         }
         sb.append("|FO:");
-        if (recipe.mFluidOutputs != null) {
-            for (net.minecraftforge.fluids.FluidStack fs : recipe.mFluidOutputs) {
+        if (recipe.getFluidOutputs() != null) {
+            for (net.minecraftforge.fluids.FluidStack fs : recipe.getFluidOutputs()) {
                 if (fs != null && fs.getFluid() != null) {
                     sb.append(
                         fs.getFluid()
@@ -362,10 +331,206 @@ public class GTRecipeSource {
      */
     public static List<RecipeEntry> collectAllRecipes() {
         List<RecipeEntry> all = new ArrayList<>();
-        for (String mapId : RecipeMap.ALL_RECIPE_MAPS.keySet()) {
+        for (String mapId : recipeMapRegistry.getRecipeMaps()
+            .keySet()) {
             all.addAll(collectRecipes(mapId));
         }
         return all;
+    }
+
+    private static RecipeEntry toRecipeEntry(String mapId, RecipeView recipe, ItemStack[] normalInputs) {
+        return new RecipeEntry(
+            "gt",
+            mapId,
+            mapId,
+            normalInputs != null ? normalInputs : new ItemStack[0],
+            recipe.getOutputs(),
+            recipe.getFluidInputs(),
+            recipe.getFluidOutputs(),
+            toSpecialItems(recipe.getSpecialItems()),
+            recipe.getDuration(),
+            recipe.getEuPerTick());
+    }
+
+    private static ItemStack[] toSpecialItems(Object specialItems) {
+        if (specialItems instanceof ItemStack[]) {
+            return (ItemStack[]) specialItems;
+        }
+        if (specialItems instanceof ItemStack) {
+            return new ItemStack[] { (ItemStack) specialItems };
+        }
+        return new ItemStack[0];
+    }
+
+    interface RecipeMapRegistry {
+
+        Map<String, RecipeMapView> getRecipeMaps();
+
+        RecipeMapView getFromLegacyIdentifier(String identifier);
+    }
+
+    interface RecipeMapView {
+
+        String getMapId();
+
+        String getTransferId();
+
+        Collection<RecipeView> getAllRecipes();
+
+        RecipeView findRecipe(ItemStack input);
+    }
+
+    interface RecipeView {
+
+        boolean isEnabled();
+
+        ItemStack[] getInputs();
+
+        ItemStack[] getOutputs();
+
+        net.minecraftforge.fluids.FluidStack[] getFluidInputs();
+
+        net.minecraftforge.fluids.FluidStack[] getFluidOutputs();
+
+        Object getSpecialItems();
+
+        int getDuration();
+
+        int getEuPerTick();
+    }
+
+    interface SmeltingRecipeProvider {
+
+        Map<ItemStack, ItemStack> getSmeltingList();
+    }
+
+    private static final class FurnaceSmeltingRecipeProvider implements SmeltingRecipeProvider {
+
+        @Override
+        public Map<ItemStack, ItemStack> getSmeltingList() {
+            return FurnaceRecipes.smelting()
+                .getSmeltingList();
+        }
+    }
+
+    private static final class GregTechRecipeMapRegistry implements RecipeMapRegistry {
+
+        @Override
+        public Map<String, RecipeMapView> getRecipeMaps() {
+            Map<String, RecipeMapView> result = new LinkedHashMap<String, RecipeMapView>();
+            for (Map.Entry<String, RecipeMap<?>> entry : RecipeMap.ALL_RECIPE_MAPS.entrySet()) {
+                result.put(entry.getKey(), new GregTechRecipeMapView(entry.getKey(), entry.getValue()));
+            }
+            return result;
+        }
+
+        @Override
+        public RecipeMapView getFromLegacyIdentifier(String identifier) {
+            RecipeMap<?> recipeMap = RecipeMap.getFromOldIdentifier(identifier);
+            return recipeMap != null ? new GregTechRecipeMapView(recipeMap.unlocalizedName, recipeMap) : null;
+        }
+    }
+
+    private static final class GregTechRecipeMapView implements RecipeMapView {
+
+        private final String mapId;
+        private final RecipeMap<?> recipeMap;
+
+        private GregTechRecipeMapView(String mapId, RecipeMap<?> recipeMap) {
+            this.mapId = mapId;
+            this.recipeMap = recipeMap;
+        }
+
+        @Override
+        public String getMapId() {
+            return mapId;
+        }
+
+        @Override
+        public String getTransferId() {
+            if (recipeMap == null || recipeMap.getFrontend() == null
+                || recipeMap.getFrontend()
+                    .getUIProperties() == null) {
+                return null;
+            }
+            return recipeMap.getFrontend()
+                .getUIProperties().neiTransferRectId;
+        }
+
+        @Override
+        public Collection<RecipeView> getAllRecipes() {
+            Collection<GTRecipe> recipes = recipeMap != null ? recipeMap.getAllRecipes() : null;
+            if (recipes == null || recipes.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            List<RecipeView> wrapped = new ArrayList<RecipeView>(recipes.size());
+            for (GTRecipe recipe : recipes) {
+                wrapped.add(new GregTechRecipeView(recipe));
+            }
+            return wrapped;
+        }
+
+        @Override
+        public RecipeView findRecipe(ItemStack input) {
+            if (recipeMap == null) {
+                return null;
+            }
+            GTRecipe recipe = recipeMap.findRecipeQuery()
+                .items(input)
+                .dontCheckStackSizes(true)
+                .find();
+            return recipe != null ? new GregTechRecipeView(recipe) : null;
+        }
+    }
+
+    private static final class GregTechRecipeView implements RecipeView {
+
+        private final GTRecipe recipe;
+
+        private GregTechRecipeView(GTRecipe recipe) {
+            this.recipe = recipe;
+        }
+
+        @Override
+        public boolean isEnabled() {
+            return recipe != null && recipe.mEnabled;
+        }
+
+        @Override
+        public ItemStack[] getInputs() {
+            return recipe != null ? recipe.mInputs : null;
+        }
+
+        @Override
+        public ItemStack[] getOutputs() {
+            return recipe != null ? recipe.mOutputs : null;
+        }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack[] getFluidInputs() {
+            return recipe != null ? recipe.mFluidInputs : null;
+        }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack[] getFluidOutputs() {
+            return recipe != null ? recipe.mFluidOutputs : null;
+        }
+
+        @Override
+        public Object getSpecialItems() {
+            return recipe != null ? recipe.mSpecialItems : null;
+        }
+
+        @Override
+        public int getDuration() {
+            return recipe != null ? recipe.mDuration : 0;
+        }
+
+        @Override
+        public int getEuPerTick() {
+            return recipe != null ? recipe.mEUt : 0;
+        }
     }
 }
 

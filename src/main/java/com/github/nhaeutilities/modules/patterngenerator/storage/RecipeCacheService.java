@@ -24,6 +24,7 @@ public final class RecipeCacheService {
     private static volatile StorageBackend storageBackend = new DefaultStorageBackend();
     private static volatile RecipeCollector recipeCollector = new DefaultRecipeCollector();
     private static volatile EnvironmentInspector environmentInspector = new DefaultEnvironmentInspector();
+    private static volatile SourceCacheInvalidator sourceCacheInvalidator = new DefaultSourceCacheInvalidator();
 
     private RecipeCacheService() {}
 
@@ -127,10 +128,12 @@ public final class RecipeCacheService {
 
     public static void clearCache() {
         storageBackend.prepareAccessContext();
+        sourceCacheInvalidator.invalidate();
         storageBackend.clearAll();
     }
 
     static CacheStatistics rebuildNow(ProgressNotifier notifier) {
+        sourceCacheInvalidator.invalidate();
         RecipeCacheMetadata existing = storageBackend.loadMetadata();
         Map<String, String> currentModVersions = environmentInspector.getLoadedModVersions();
         Map<String, String> currentConfigHashes = environmentInspector.getConfigHashes();
@@ -216,10 +219,15 @@ public final class RecipeCacheService {
         environmentInspector = inspector != null ? inspector : environmentInspector;
     }
 
+    static void setSourceCacheInvalidator(SourceCacheInvalidator invalidator) {
+        sourceCacheInvalidator = invalidator != null ? invalidator : sourceCacheInvalidator;
+    }
+
     static void resetTestHooks() {
         storageBackend = new DefaultStorageBackend();
         recipeCollector = new DefaultRecipeCollector();
         environmentInspector = new DefaultEnvironmentInspector();
+        sourceCacheInvalidator = new DefaultSourceCacheInvalidator();
     }
 
     private static CacheStatistics buildStatistics(RecipeCacheMetadata metadata) {
@@ -313,6 +321,11 @@ public final class RecipeCacheService {
         String resolveModId(String mapId);
     }
 
+    interface SourceCacheInvalidator {
+
+        void invalidate();
+    }
+
     private static final class DefaultStorageBackend implements StorageBackend {
 
         @Override
@@ -402,6 +415,14 @@ public final class RecipeCacheService {
         @Override
         public String resolveModId(String mapId) {
             return ModVersionHelper.resolveModId(mapId);
+        }
+    }
+
+    private static final class DefaultSourceCacheInvalidator implements SourceCacheInvalidator {
+
+        @Override
+        public void invalidate() {
+            GTRecipeSource.invalidateCollectionCache();
         }
     }
 }

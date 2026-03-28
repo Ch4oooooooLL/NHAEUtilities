@@ -247,42 +247,17 @@ public class ExplicitStackMatcher {
         return ParseResult.invalid();
     }
 
-    /**
-     * Global cache shared across all ExplicitStackMatcher instances.
-     * Item info (ore names, display name) is computed once and reused across all recipes.
-     */
-    static final class GlobalStackMatchCache {
-
-        private static final IdentityHashMap<ItemStack, StackMatchData> GLOBAL_CACHE = new IdentityHashMap<ItemStack, StackMatchData>();
-
-        private static final Object CACHE_LOCK = new Object();
-
-        /**
-         * Get or create cached item data from global cache.
-         * Thread-safe - uses synchronized to prevent duplicate computation.
-         */
-        private StackMatchData getOrCreate(ItemStack stack) {
-            synchronized (CACHE_LOCK) {
-                StackMatchData data = GLOBAL_CACHE.get(stack);
-                if (data == null) {
-                    data = new StackMatchData(stack);
-                    GLOBAL_CACHE.put(stack, data);
-                }
-                return data;
-            }
-        }
-    }
-
-    /**
-     * Instance-level cache that delegates to global cache.
-     * Maintains backward compatibility with existing code.
-     */
     static final class StackMatchCache {
 
-        private static final GlobalStackMatchCache GLOBAL = new GlobalStackMatchCache();
+        private final IdentityHashMap<ItemStack, StackMatchData> cache = new IdentityHashMap<ItemStack, StackMatchData>();
 
-        private StackMatchData getOrCreate(ItemStack stack) {
-            return GLOBAL.getOrCreate(stack);
+        private synchronized StackMatchData getOrCreate(ItemStack stack) {
+            StackMatchData data = cache.get(stack);
+            if (data == null) {
+                data = new StackMatchData(stack);
+                cache.put(stack, data);
+            }
+            return data;
         }
     }
 
