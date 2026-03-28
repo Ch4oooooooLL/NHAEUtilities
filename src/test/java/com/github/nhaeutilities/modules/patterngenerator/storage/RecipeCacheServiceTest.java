@@ -68,7 +68,7 @@ public class RecipeCacheServiceTest {
             "gt.recipe.assembler",
             "gregtech");
         info.recipeCount = 2;
-        info.contentHash = "hash-a";
+        info.contentHash = hashFor("gt.recipe.assembler", Arrays.asList(sampleRecipe(20), sampleRecipe(40)));
         info.cacheFileName = "gt.recipe.assembler.dat";
         metadata.putRecipeMapInfo(info);
         metadata.updateModInfo("gregtech", "5.0.0", 1, 2);
@@ -93,7 +93,7 @@ public class RecipeCacheServiceTest {
             "gt.recipe.assembler",
             "gregtech");
         info.recipeCount = 1;
-        info.contentHash = "hash-a";
+        info.contentHash = hashFor("gt.recipe.assembler", Collections.singletonList(sampleRecipe(20)));
         info.cacheFileName = "gt.recipe.assembler.dat";
         metadata.putRecipeMapInfo(info);
         metadata.updateModInfo("gregtech", "5.0.0", 1, 1);
@@ -152,7 +152,12 @@ public class RecipeCacheServiceTest {
     @Test
     public void validateCacheFailsWhenRecipeMapPayloadCannotBeLoaded() {
         RecipeCacheMetadata metadata = new RecipeCacheMetadata();
-        metadata.updateRecipeMapInfo("gt.recipe.assembler", "gregtech", 1, "hash-a", "gt.recipe.assembler.dat");
+        metadata.updateRecipeMapInfo(
+            "gt.recipe.assembler",
+            "gregtech",
+            1,
+            hashFor("gt.recipe.assembler", Collections.singletonList(sampleRecipe(20))),
+            "gt.recipe.assembler.dat");
         metadata.updateModInfo("gregtech", "5.0.0", 1, 1);
         metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
         storage.metadata = metadata;
@@ -167,7 +172,12 @@ public class RecipeCacheServiceTest {
     @Test
     public void rebuildNowReassignsReusedRecipeMapCountsToResolvedLoadedModId() {
         RecipeCacheMetadata metadata = new RecipeCacheMetadata();
-        metadata.updateRecipeMapInfo("ic.recipe.recycler", "ic", 2, "hash-a", "ic.recipe.recycler.dat");
+        metadata.updateRecipeMapInfo(
+            "ic.recipe.recycler",
+            "ic",
+            2,
+            hashFor("ic.recipe.recycler", Arrays.asList(sampleRecipe(20), sampleRecipe(40))),
+            "ic.recipe.recycler.dat");
         metadata.updateModInfo("ic", "legacy", 1, 2);
         metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
         storage.metadata = metadata;
@@ -189,7 +199,12 @@ public class RecipeCacheServiceTest {
     @Test
     public void loadAndFilterRecipesUsesStoredPayloadAndFilter() {
         RecipeCacheMetadata metadata = new RecipeCacheMetadata();
-        metadata.updateRecipeMapInfo("gt.recipe.assembler", "gregtech", 2, "hash-a", "gt.recipe.assembler.dat");
+        metadata.updateRecipeMapInfo(
+            "gt.recipe.assembler",
+            "gregtech",
+            2,
+            hashFor("gt.recipe.assembler", Arrays.asList(sampleRecipe(20), sampleRecipe(120))),
+            "gt.recipe.assembler.dat");
         metadata.updateModInfo("gregtech", "5.0.0", 1, 2);
         metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
         storage.metadata = metadata;
@@ -224,8 +239,18 @@ public class RecipeCacheServiceTest {
     @Test
     public void loadAndFilterRecipesSkipsDeepValidationOfUnmatchedCorruptMaps() {
         RecipeCacheMetadata metadata = new RecipeCacheMetadata();
-        metadata.updateRecipeMapInfo("gt.recipe.assembler", "gregtech", 1, "hash-a", "gt.recipe.assembler.dat");
-        metadata.updateRecipeMapInfo("gt.recipe.circuit", "gregtech", 1, "hash-b", "gt.recipe.circuit.dat");
+        metadata.updateRecipeMapInfo(
+            "gt.recipe.assembler",
+            "gregtech",
+            1,
+            hashFor("gt.recipe.assembler", Collections.singletonList(sampleRecipe(20))),
+            "gt.recipe.assembler.dat");
+        metadata.updateRecipeMapInfo(
+            "gt.recipe.circuit",
+            "gregtech",
+            1,
+            hashFor("gt.recipe.circuit", Collections.singletonList(sampleRecipe(40))),
+            "gt.recipe.circuit.dat");
         metadata.updateModInfo("gregtech", "5.0.0", 2, 2);
         metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
         storage.metadata = metadata;
@@ -243,6 +268,53 @@ public class RecipeCacheServiceTest {
         assertEquals(1, result.totalLoadedCount);
         assertEquals(1, result.recipes.size());
         assertEquals(1, storage.loadRecipeMapCalls);
+    }
+
+    @Test
+    public void loadAndFilterRecipesRejectsMetadataSkewedMatchedPayload() {
+        RecipeCacheMetadata metadata = new RecipeCacheMetadata();
+        metadata.updateRecipeMapInfo(
+            "gt.recipe.assembler",
+            "gregtech",
+            1,
+            hashFor("gt.recipe.assembler", Collections.singletonList(sampleRecipe(20))),
+            "gt.recipe.assembler.dat");
+        metadata.updateModInfo("gregtech", "5.0.0", 1, 1);
+        metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
+        storage.metadata = metadata;
+        storage.persistedRecipeMaps.put("gt.recipe.assembler", Collections.singletonList(sampleRecipe(120)));
+        collector.availableMapIds = Collections.singletonList("gt.recipe.assembler");
+        collector.matches.put("assembler", Collections.singletonList("gt.recipe.assembler"));
+        inspector.modVersions.put("gregtech", "5.0.0");
+        inspector.configHashes.put("config/nhaeutilities.cfg", "cfg-hash");
+
+        CacheQueryResult result = RecipeCacheService.loadAndFilterRecipes("assembler", null);
+
+        assertFalse(result.cacheValid);
+        assertEquals("cache_missing_or_invalid", result.failureReason);
+    }
+
+    @Test
+    public void getStatisticsMarksMetadataSkewedPayloadAsUnavailable() {
+        RecipeCacheMetadata metadata = new RecipeCacheMetadata();
+        metadata.updateRecipeMapInfo(
+            "gt.recipe.assembler",
+            "gregtech",
+            1,
+            hashFor("gt.recipe.assembler", Collections.singletonList(sampleRecipe(20))),
+            "gt.recipe.assembler.dat");
+        metadata.updateModInfo("gregtech", "5.0.0", 1, 1);
+        metadata.setConfigHash("config/nhaeutilities.cfg", "cfg-hash");
+        storage.metadata = metadata;
+        storage.persistedRecipeMaps.put("gt.recipe.assembler", Collections.singletonList(sampleRecipe(120)));
+        inspector.modVersions.put("gregtech", "5.0.0");
+        inspector.configHashes.put("config/nhaeutilities.cfg", "cfg-hash");
+
+        CacheStatistics stats = RecipeCacheService.getStatistics();
+
+        assertFalse(stats.available);
+        assertEquals(0, stats.totalRecipeCount);
+        assertEquals(0, stats.totalRecipeMaps);
     }
 
     @Test
@@ -265,6 +337,16 @@ public class RecipeCacheServiceTest {
 
     private static RecipeEntry sampleRecipe(int duration) {
         return new RecipeEntry("gt", "gt.recipe.assembler", "Assembler", null, null, null, null, null, duration, 30);
+    }
+
+    private static String hashFor(String mapId, List<RecipeEntry> recipes) {
+        int durationTotal = 0;
+        if (recipes != null) {
+            for (RecipeEntry recipe : recipes) {
+                durationTotal += recipe != null ? recipe.duration : 0;
+            }
+        }
+        return mapId + ":" + (recipes != null ? recipes.size() : 0) + ":" + durationTotal;
     }
 
     private static final class FakeStorageBackend implements RecipeCacheService.StorageBackend {
@@ -376,7 +458,7 @@ public class RecipeCacheServiceTest {
 
         @Override
         public String calculateRecipeMapHash(String mapId, List<RecipeEntry> recipes) {
-            return mapId + ":" + recipes.size();
+            return hashFor(mapId, recipes);
         }
 
         @Override

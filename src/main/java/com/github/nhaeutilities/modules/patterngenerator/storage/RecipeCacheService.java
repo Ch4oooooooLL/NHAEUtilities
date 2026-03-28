@@ -70,7 +70,8 @@ public final class RecipeCacheService {
     }
 
     public static CacheQueryResult loadAndFilterRecipes(String recipeMapKeyword, CompositeFilter filter) {
-        if (loadValidatedMetadata(false) == null) {
+        RecipeCacheMetadata metadata = loadValidatedMetadata(false);
+        if (metadata == null) {
             return CacheQueryResult.invalid("cache_missing_or_invalid");
         }
 
@@ -82,8 +83,9 @@ public final class RecipeCacheService {
         List<RecipeEntry> filtered = new ArrayList<RecipeEntry>();
         int totalLoaded = 0;
         for (String mapId : matchedMapIds) {
-            List<RecipeEntry> recipes = storageBackend.loadRecipeMap(mapId);
-            if (recipes == null) {
+            RecipeCacheMetadata.RecipeMapInfo info = metadata.recipeMaps.get(mapId);
+            List<RecipeEntry> recipes = loadConsistentRecipeMap(mapId, info);
+            if (info == null || recipes == null) {
                 return CacheQueryResult.invalid("cache_missing_or_invalid");
             }
             totalLoaded += recipes.size();
@@ -103,9 +105,8 @@ public final class RecipeCacheService {
     }
 
     public static CacheStatistics getStatistics() {
-        storageBackend.prepareAccessContext();
-        RecipeCacheMetadata metadata = storageBackend.loadMetadata();
-        if (metadata == null || metadata.recipeMaps.isEmpty()) {
+        RecipeCacheMetadata metadata = loadValidatedMetadata(true);
+        if (metadata == null) {
             return CacheStatistics.EMPTY;
         }
         return buildStatistics(metadata);
@@ -242,8 +243,7 @@ public final class RecipeCacheService {
                 continue;
             }
 
-            List<RecipeEntry> recipes = storageBackend.loadRecipeMap(mapId);
-            if (!isLoadedPayloadReusable(entry.getValue(), recipes)) {
+            if (loadConsistentRecipeMap(mapId, entry.getValue()) == null) {
                 return null;
             }
         }
@@ -254,11 +254,30 @@ public final class RecipeCacheService {
         if (existing == null || !existing.recipeMaps.containsKey(mapId) || !storageBackend.recipeMapExists(mapId)) {
             return false;
         }
-        return isLoadedPayloadReusable(existing.recipeMaps.get(mapId), storageBackend.loadRecipeMap(mapId));
+        return loadConsistentRecipeMap(mapId, existing.recipeMaps.get(mapId)) != null;
     }
 
-    private static boolean isLoadedPayloadReusable(RecipeCacheMetadata.RecipeMapInfo info, List<RecipeEntry> recipes) {
-        return info != null && recipes != null && info.recipeCount == recipes.size();
+    private static List<RecipeEntry> loadConsistentRecipeMap(String mapId, RecipeCacheMetadata.RecipeMapInfo info) {
+        if (info == null || !storageBackend.recipeMapExists(mapId)) {
+            return null;
+        }
+
+        List<RecipeEntry> recipes = storageBackend.loadRecipeMap(mapId);
+        return isLoadedPayloadReusable(mapId, info, recipes) ? recipes : null;
+    }
+
+    private static boolean isLoadedPayloadReusable(String mapId, RecipeCacheMetadata.RecipeMapInfo info,
+        List<RecipeEntry> recipes) {
+        if (info == null || recipes == null || info.recipeCount != recipes.size()) {
+            return false;
+        }
+
+        String expectedHash = info.contentHash != null ? info.contentHash : "";
+        if (expectedHash.isEmpty()) {
+            return true;
+        }
+        String actualHash = environmentInspector.calculateRecipeMapHash(mapId, recipes);
+        return expectedHash.equals(actualHash);
     }
 
     private static CacheStatistics buildStatistics(RecipeCacheMetadata metadata) {
