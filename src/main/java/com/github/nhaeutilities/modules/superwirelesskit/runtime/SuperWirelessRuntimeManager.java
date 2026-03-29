@@ -46,6 +46,13 @@ public class SuperWirelessRuntimeManager {
         World world = chunk.worldObj;
         BindingChunkRef chunkRef = new BindingChunkRef(world.provider.dimensionId, chunk.xPosition, chunk.zPosition);
         List<BindingRecord> records = getRegistry(world).getBindingsTouchingChunk(chunkRef);
+        SuperWirelessDebugLog.log(
+            "REFRESH_CHUNK",
+            "chunk=%d:%d,%d bindings=%d",
+            Integer.valueOf(chunkRef.getDimensionId()),
+            Integer.valueOf(chunkRef.getChunkX()),
+            Integer.valueOf(chunkRef.getChunkZ()),
+            Integer.valueOf(records.size()));
         for (BindingRecord record : records) {
             reconcile(world, record);
         }
@@ -58,6 +65,12 @@ public class SuperWirelessRuntimeManager {
         }
 
         List<BindingRecord> records = getRegistry(node.getWorld()).getBindingsTouchingBlock(blockRef);
+        SuperWirelessDebugLog.log(
+            "REFRESH_NODE",
+            "block=%s node=%d bindings=%d",
+            formatBlock(blockRef),
+            Integer.valueOf(System.identityHashCode(node)),
+            Integer.valueOf(records.size()));
         for (BindingRecord record : records) {
             reconcile(node.getWorld(), record);
         }
@@ -68,6 +81,7 @@ public class SuperWirelessRuntimeManager {
             return;
         }
 
+        int removedCount = 0;
         for (Map.Entry<UUID, IGridConnection> entry : new HashMap<UUID, IGridConnection>(activeConnections)
             .entrySet()) {
             IGridConnection connection = entry.getValue();
@@ -77,9 +91,15 @@ public class SuperWirelessRuntimeManager {
             }
 
             if (connection.a() == node || connection.b() == node) {
-                activeConnections.remove(entry.getKey());
+                destroyActive(entry.getKey());
+                removedCount++;
             }
         }
+        SuperWirelessDebugLog.log(
+            "NODE_DESTROYED",
+            "node=%d removedRuntimeConnections=%d",
+            Integer.valueOf(System.identityHashCode(node)),
+            Integer.valueOf(removedCount));
     }
 
     public void onBlockBroken(World world, int x, int y, int z) {
@@ -88,9 +108,23 @@ public class SuperWirelessRuntimeManager {
         }
 
         BindingRegistry registry = getRegistry(world);
-        List<BindingRecord> touchedBindings = registry.getBindingsTouchingBlock(
-            new BindingBlockRef(world.provider.dimensionId, x, y, z));
+        List<BindingRecord> touchedBindings = registry
+            .getBindingsTouchingBlock(new BindingBlockRef(world.provider.dimensionId, x, y, z));
+        SuperWirelessDebugLog.log(
+            "BLOCK_BROKEN",
+            "block=%d:%d,%d,%d touchedBindings=%d",
+            Integer.valueOf(world.provider.dimensionId),
+            Integer.valueOf(x),
+            Integer.valueOf(y),
+            Integer.valueOf(z),
+            Integer.valueOf(touchedBindings.size()));
         for (BindingRecord record : touchedBindings) {
+            SuperWirelessDebugLog.log(
+                "BLOCK_BROKEN_REMOVE_BINDING",
+                "bindingId=%s controller=%s target=%s",
+                record.getBindingId(),
+                formatController(record),
+                formatTarget(record));
             destroyActive(record.getBindingId());
             registry.remove(record.getBindingId());
         }
@@ -101,6 +135,7 @@ public class SuperWirelessRuntimeManager {
             return;
         }
 
+        int removedCount = 0;
         for (Map.Entry<UUID, IGridConnection> entry : new HashMap<UUID, IGridConnection>(activeConnections)
             .entrySet()) {
             IGridConnection connection = entry.getValue();
@@ -114,14 +149,26 @@ public class SuperWirelessRuntimeManager {
                 || connection.b()
                     .getWorld() == world) {
                 activeConnections.remove(entry.getKey());
+                removedCount++;
             }
         }
 
+        SuperWirelessDebugLog.log(
+            "WORLD_UNLOAD",
+            "dimension=%d removedRuntimeConnections=%d",
+            Integer.valueOf(world.provider != null ? world.provider.dimensionId : 0),
+            Integer.valueOf(removedCount));
         dataStore.clearWorld(world);
     }
 
     public BindingReconcileResult reconcile(World world, BindingRecord record) {
         BindingRegistry registry = getRegistry(world);
+        SuperWirelessDebugLog.log(
+            "RECONCILE_START",
+            "bindingId=%s controller=%s target=%s",
+            record.getBindingId(),
+            formatController(record),
+            formatTarget(record));
 
         ResolvedControllerEndpoint controller = resolver.resolveController(world, record.getController());
         if (controller == null) {
@@ -135,6 +182,12 @@ public class SuperWirelessRuntimeManager {
 
         IGridConnection existing = activeConnections.get(record.getBindingId());
         if (existing != null && existing.a() == controller.getNode() && existing.b() == target.getNode()) {
+            SuperWirelessDebugLog.log(
+                "RECONCILE_ALREADY_CONNECTED",
+                "bindingId=%s controllerNode=%d targetNode=%d",
+                record.getBindingId(),
+                Integer.valueOf(System.identityHashCode(controller.getNode())),
+                Integer.valueOf(System.identityHashCode(target.getNode())));
             return BindingReconcileResult.ALREADY_CONNECTED;
         }
 
@@ -143,8 +196,23 @@ public class SuperWirelessRuntimeManager {
         try {
             IGridConnection connection = connect(record, controller.getNode(), target.getNode());
             activeConnections.put(record.getBindingId(), connection);
+            SuperWirelessDebugLog.log(
+                "RECONCILE_CONNECTED",
+                "bindingId=%s controllerNode=%d targetNode=%d",
+                record.getBindingId(),
+                Integer.valueOf(System.identityHashCode(controller.getNode())),
+                Integer.valueOf(System.identityHashCode(target.getNode())));
             return BindingReconcileResult.CONNECTED;
         } catch (FailedConnection e) {
+            SuperWirelessDebugLog.log(
+                "RECONCILE_CONNECTION_FAILED",
+                "bindingId=%s controller=%s target=%s reason=%s:%s",
+                record.getBindingId(),
+                formatController(record),
+                formatTarget(record),
+                e.getClass()
+                    .getSimpleName(),
+                String.valueOf(e.getMessage()));
             LOGGER.warn(
                 "Failed to create SuperWirelessKit binding {} [{}: {}] controller={} target={} controllerNode={} targetNode={} targetMachine={}",
                 record.getBindingId(),
@@ -177,16 +245,34 @@ public class SuperWirelessRuntimeManager {
             : record.getTarget()
                 .getZ();
         if (!isChunkLoaded(world, x, z)) {
+            SuperWirelessDebugLog.log(
+                "RECONCILE_DEFERRED_CHUNK_UNLOADED",
+                "bindingId=%s side=%s chunk=%d:%d,%d",
+                record.getBindingId(),
+                controllerSide ? "controller" : "target",
+                Integer.valueOf(world.provider.dimensionId),
+                Integer.valueOf(x >> 4),
+                Integer.valueOf(z >> 4));
             return controllerSide ? BindingReconcileResult.CONTROLLER_UNLOADED : BindingReconcileResult.TARGET_UNLOADED;
         }
 
         boolean hostStillPresent = controllerSide ? resolver.hasControllerHost(world, record.getController())
             : resolver.hasCompatibleTargetHost(world, record.getTarget());
         if (hostStillPresent) {
+            SuperWirelessDebugLog.log(
+                "RECONCILE_DEFERRED_HOST_PRESENT",
+                "bindingId=%s side=%s",
+                record.getBindingId(),
+                controllerSide ? "controller" : "target");
             return controllerSide ? BindingReconcileResult.CONTROLLER_UNLOADED : BindingReconcileResult.TARGET_UNLOADED;
         }
 
         registry.remove(record.getBindingId());
+        SuperWirelessDebugLog.log(
+            "RECONCILE_INVALID_BINDING_REMOVED",
+            "bindingId=%s side=%s",
+            record.getBindingId(),
+            controllerSide ? "controller" : "target");
         return BindingReconcileResult.INVALID_BINDING_REMOVED;
     }
 
@@ -215,6 +301,7 @@ public class SuperWirelessRuntimeManager {
     private void destroyActive(UUID bindingId) {
         IGridConnection existing = activeConnections.remove(bindingId);
         if (existing != null) {
+            SuperWirelessDebugLog.log("RUNTIME_DESTROY_ACTIVE", "bindingId=%s", bindingId);
             try {
                 existing.destroy();
             } catch (RuntimeException ignored) {}
@@ -229,8 +316,7 @@ public class SuperWirelessRuntimeManager {
 
     private static String formatController(BindingRecord record) {
         return record.getController()
-            .getDimensionId()
-            + ":"
+            .getDimensionId() + ":"
             + record.getController()
                 .getX()
             + ","
@@ -248,8 +334,7 @@ public class SuperWirelessRuntimeManager {
     private static String formatTarget(BindingRecord record) {
         return record.getTarget()
             .getKind()
-                .name()
-            + "@"
+            .name() + "@"
             + record.getTarget()
                 .getDimensionId()
             + ":"
@@ -265,5 +350,9 @@ public class SuperWirelessRuntimeManager {
             + record.getTarget()
                 .getSide()
                 .name();
+    }
+
+    private static String formatBlock(BindingBlockRef blockRef) {
+        return blockRef.getDimensionId() + ":" + blockRef.getX() + "," + blockRef.getY() + "," + blockRef.getZ();
     }
 }

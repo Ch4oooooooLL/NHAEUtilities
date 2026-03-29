@@ -2,8 +2,11 @@ package com.github.nhaeutilities.modules.superwirelesskit;
 
 import java.util.Objects;
 
+import net.minecraftforge.common.config.Configuration;
+
 import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleDefinition;
+import com.github.nhaeutilities.modules.superwirelesskit.config.ForgeConfig;
 import com.github.nhaeutilities.modules.superwirelesskit.item.ModItems;
 import com.github.nhaeutilities.modules.superwirelesskit.runtime.SuperWirelessServices;
 import com.github.nhaeutilities.proxy.CommonProxy;
@@ -31,6 +34,11 @@ public class SuperWirelessKitModule implements ModuleDefinition {
     @Override
     public boolean isEnabled() {
         return coreConfig.isSuperWirelessKitEnabled();
+    }
+
+    @Override
+    public void loadConfig(Configuration configuration) {
+        ForgeConfig.load(configuration);
     }
 
     @Override

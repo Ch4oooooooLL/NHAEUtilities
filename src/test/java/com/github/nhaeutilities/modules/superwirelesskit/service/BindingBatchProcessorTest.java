@@ -16,6 +16,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import org.junit.After;
 import org.junit.Test;
 
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingFingerprint;
@@ -27,6 +28,7 @@ import com.github.nhaeutilities.modules.superwirelesskit.data.SuperWirelessSaved
 import com.github.nhaeutilities.modules.superwirelesskit.runtime.BindingNodeResolver;
 import com.github.nhaeutilities.modules.superwirelesskit.runtime.BindingReconcileResult;
 import com.github.nhaeutilities.modules.superwirelesskit.runtime.ResolvedBindingTarget;
+import com.github.nhaeutilities.modules.superwirelesskit.runtime.SuperWirelessDebugLog;
 
 import appeng.api.networking.GridFlags;
 import appeng.api.networking.GridNotification;
@@ -41,6 +43,11 @@ import appeng.me.GridNode;
 
 public class BindingBatchProcessorTest {
 
+    @After
+    public void tearDownDebugLog() {
+        SuperWirelessDebugLog.resetForTests();
+    }
+
     @Test
     public void sharedTargetNodesAreMergedIntoSinglePersistentBinding() {
         BindingRegistry registry = new BindingRegistry(new SuperWirelessSavedData("test"));
@@ -53,8 +60,12 @@ public class BindingBatchProcessorTest {
 
         GridNode sharedNode = new GridNode(new TestGridBlock(new Object(), 10, 20, 30));
         FakeResolver resolver = new FakeResolver();
-        resolver.add(first.getTarget(), new ResolvedBindingTarget(first.getTarget(), new TileEntity(), new Object(), sharedNode));
-        resolver.add(alias.getTarget(), new ResolvedBindingTarget(alias.getTarget(), new TileEntity(), new Object(), sharedNode));
+        resolver.add(
+            first.getTarget(),
+            new ResolvedBindingTarget(first.getTarget(), new TileEntity(), new Object(), sharedNode));
+        resolver.add(
+            alias.getTarget(),
+            new ResolvedBindingTarget(alias.getTarget(), new TileEntity(), new Object(), sharedNode));
 
         CountingReconciler reconciler = new CountingReconciler(BindingReconcileResult.CONNECTED);
         BindingBatchProcessor processor = new BindingBatchProcessor(resolver, reconciler);
@@ -64,12 +75,55 @@ public class BindingBatchProcessorTest {
         assertEquals(2, result.getSuccessCount());
         assertEquals(0, result.getFailureCount());
         assertEquals(1, reconciler.callCount);
-        assertEquals(1, registry.values().size());
-        assertTrue(registry.findByTarget(first.getTarget()) != null || registry.findByTarget(alias.getTarget()) != null);
+        assertEquals(
+            1,
+            registry.values()
+                .size());
+        assertTrue(
+            registry.findByTarget(first.getTarget()) != null || registry.findByTarget(alias.getTarget()) != null);
     }
 
-    private static BindingRecord createRecord(ControllerEndpointRef controller, int x, int y, int z, ForgeDirection side,
-        String seed) {
+    @Test
+    public void debugLoggingRecordsMergedBatchBindings() {
+        BindingRegistry registry = new BindingRegistry(new SuperWirelessSavedData("test"));
+        ControllerEndpointRef controller = new ControllerEndpointRef(0, 1, 2, 3, ForgeDirection.NORTH, "controller");
+        BindingRecord first = createRecord(controller, 10, 20, 30, ForgeDirection.UP, "target-a");
+        BindingRecord alias = createRecord(controller, 10, 20, 31, ForgeDirection.DOWN, "target-b");
+        List<BindingRecord> draftedBindings = new ArrayList<BindingRecord>();
+        draftedBindings.add(first);
+        draftedBindings.add(alias);
+
+        GridNode sharedNode = new GridNode(new TestGridBlock(new Object(), 10, 20, 30));
+        FakeResolver resolver = new FakeResolver();
+        resolver.add(
+            first.getTarget(),
+            new ResolvedBindingTarget(first.getTarget(), new TileEntity(), new Object(), sharedNode));
+        resolver.add(
+            alias.getTarget(),
+            new ResolvedBindingTarget(alias.getTarget(), new TileEntity(), new Object(), sharedNode));
+
+        CapturingDebugSink sink = new CapturingDebugSink();
+        SuperWirelessDebugLog.installSinkForTests(sink);
+        SuperWirelessDebugLog.configure(true);
+
+        BindingBatchProcessor processor = new BindingBatchProcessor(
+            resolver,
+            new CountingReconciler(BindingReconcileResult.CONNECTED));
+        processor.bind(null, controller, draftedBindings, registry);
+
+        assertTrue(
+            sink.contents()
+                .contains("BIND_BATCH_START"));
+        assertTrue(
+            sink.contents()
+                .contains("BIND_BATCH_GROUP_ALIAS"));
+        assertTrue(
+            sink.contents()
+                .contains("BIND_BATCH_RESULT"));
+    }
+
+    private static BindingRecord createRecord(ControllerEndpointRef controller, int x, int y, int z,
+        ForgeDirection side, String seed) {
         return new BindingRecord(
             UUID.nameUUIDFromBytes(seed.getBytes(StandardCharsets.UTF_8)),
             controller,
@@ -192,6 +246,24 @@ public class BindingBatchProcessorTest {
         @Override
         public ItemStack getMachineRepresentation() {
             return null;
+        }
+    }
+
+    private static final class CapturingDebugSink implements SuperWirelessDebugLog.DebugSink {
+
+        private final StringBuilder contents = new StringBuilder();
+
+        @Override
+        public void write(String line) {
+            contents.append(line)
+                .append('\n');
+        }
+
+        @Override
+        public void close() {}
+
+        private String contents() {
+            return contents.toString();
         }
     }
 }
