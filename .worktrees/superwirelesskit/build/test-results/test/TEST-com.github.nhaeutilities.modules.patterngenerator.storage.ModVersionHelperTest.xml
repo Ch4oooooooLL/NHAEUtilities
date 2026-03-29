@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.github.nhaeutilities.modules.patterngenerator.storage.ModVersionHelperTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-03-28T18:04:54" hostname="CHAO" time="0.014">
+  <properties/>
+  <testcase name="missingConfigHashUsesStableSentinel" classname="com.github.nhaeutilities.modules.patterngenerator.storage.ModVersionHelperTest" time="0.002"/>
+  <testcase name="recipeMapHashIsStableForEquivalentPayloads" classname="com.github.nhaeutilities.modules.patterngenerator.storage.ModVersionHelperTest" time="0.002"/>
+  <testcase name="versionAndConfigComparisonDetectsChanges" classname="com.github.nhaeutilities.modules.patterngenerator.storage.ModVersionHelperTest" time="0.001"/>
+  <testcase name="configHashIsDeterministicForSameFileContents" classname="com.github.nhaeutilities.modules.patterngenerator.storage.ModVersionHelperTest" time="0.007"/>
+  <testcase name="loadedModVersionsUsesOverrideProvider" classname="com.github.nhaeutilities.modules.patterngenerator.storage.ModVersionHelperTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

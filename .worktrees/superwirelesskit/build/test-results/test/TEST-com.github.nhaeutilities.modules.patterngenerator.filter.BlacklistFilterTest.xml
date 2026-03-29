@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-03-28T18:04:54" hostname="CHAO" time="0.011">
+  <properties/>
+  <testcase name="multipleExplicitTokensUseOrSemantics" classname="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" time="0.007"/>
+  <testcase name="idTokenWithMetaMatchesOnlyExactMeta" classname="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" time="0.001"/>
+  <testcase name="nestedRegexGroupsRemainValidInsideExplicitToken" classname="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" time="0.001"/>
+  <testcase name="oreDictTokenMatchesOreNamesOnly" classname="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" time="0.001"/>
+  <testcase name="displayNameTokenMatchesDisplayNameOnly" classname="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" time="0.0"/>
+  <testcase name="bareTextNoLongerMatchesAnything" classname="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" time="0.0"/>
+  <testcase name="invalidMixedSyntaxDisablesActualMatching" classname="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" time="0.0"/>
+  <testcase name="idTokenWithoutMetaMatchesAnyMeta" classname="com.github.nhaeutilities.modules.patterngenerator.filter.BlacklistFilterTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

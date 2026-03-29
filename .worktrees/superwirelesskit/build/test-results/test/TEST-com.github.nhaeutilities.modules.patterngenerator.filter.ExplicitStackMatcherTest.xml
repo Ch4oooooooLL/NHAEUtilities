@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" tests="10" skipped="0" failures="0" errors="0" timestamp="2026-03-28T18:04:54" hostname="CHAO" time="0.012">
+  <properties/>
+  <testcase name="separateMatchersDoNotReuseStackMetadataAcrossRuns" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.009"/>
+  <testcase name="idOnlyMatcherDoesNotLoadOreOrDisplayData" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.001"/>
+  <testcase name="idTokenMatchesByIdOnly" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.0"/>
+  <testcase name="explicitTokensSupportOrSemantics" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.001"/>
+  <testcase name="bareTextIsInvalid" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.0"/>
+  <testcase name="oreTokenMatchesOnlyOreNames" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.0"/>
+  <testcase name="oreOnlyMatcherDoesNotLoadDisplayData" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.0"/>
+  <testcase name="displayTokenMatchesOnlyDisplayName" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.0"/>
+  <testcase name="displayOnlyMatcherDoesNotLoadOreData" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.0"/>
+  <testcase name="asteriskDisablesFiltering" classname="com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcherTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

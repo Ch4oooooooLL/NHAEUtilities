@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.github.nhaeutilities.modules.patterngenerator.gui.FilterTextFieldWidgetTest" tests="4" skipped="0" failures="0" errors="0" timestamp="2026-03-28T18:04:54" hostname="CHAO" time="0.02">
+  <properties/>
+  <testcase name="successfulDropReplacesCurrentText" classname="com.github.nhaeutilities.modules.patterngenerator.gui.FilterTextFieldWidgetTest" time="0.018"/>
+  <testcase name="nullStackIsRejected" classname="com.github.nhaeutilities.modules.patterngenerator.gui.FilterTextFieldWidgetTest" time="0.001"/>
+  <testcase name="emptyFormattedTokenIsRejected" classname="com.github.nhaeutilities.modules.patterngenerator.gui.FilterTextFieldWidgetTest" time="0.0"/>
+  <testcase name="successfulDropPublishesChoicesToListener" classname="com.github.nhaeutilities.modules.patterngenerator.gui.FilterTextFieldWidgetTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

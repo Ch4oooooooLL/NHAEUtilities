@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-03-28T18:04:54" hostname="CHAO" time="0.059">
+  <properties/>
+  <testcase name="rebuildNowInvalidatesRecipeSourceCaches" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.045"/>
+  <testcase name="loadAndFilterRecipesUsesStoredPayloadAndFilter" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.006"/>
+  <testcase name="rebuildNowReassignsReusedRecipeMapCountsToResolvedLoadedModId" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.001"/>
+  <testcase name="rebuildNowRegeneratesCorruptPersistedMapWhenEnvironmentIsUnchanged" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.001"/>
+  <testcase name="validateCacheFailsWhenRecipeMapPayloadCannotBeLoaded" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.001"/>
+  <testcase name="validateCacheIgnoresRecipePrefixesThatAreNotRealModIds" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.001"/>
+  <testcase name="loadAndFilterRecipesRejectsMetadataSkewedMatchedPayload" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.0"/>
+  <testcase name="validateCacheSucceedsAfterRebuildWithFullModSnapshot" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.0"/>
+  <testcase name="getStatisticsMarksMetadataSkewedPayloadAsUnavailable" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.001"/>
+  <testcase name="validateCacheFailsWhenMetadataMissing" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.0"/>
+  <testcase name="rebuildNowReusesExistingEntriesWhenEnvironmentIsUnchanged" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.001"/>
+  <testcase name="loadAndFilterRecipesSkipsDeepValidationOfUnmatchedCorruptMaps" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.0"/>
+  <testcase name="loadAndFilterRecipesRejectsInvalidCache" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.001"/>
+  <testcase name="clearCacheInvalidatesRecipeSourceCaches" classname="com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServiceTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

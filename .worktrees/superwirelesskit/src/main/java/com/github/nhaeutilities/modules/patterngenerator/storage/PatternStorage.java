@@ -1,0 +1,412 @@
+package com.github.nhaeutilities.modules.patterngenerator.storage;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompressedStreamTools;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.DimensionManager;
+
+import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
+
+/**
+ * File-backed virtual storage for generated patterns.
+ */
+public class PatternStorage {
+
+    private static final String KEY_PATTERNS = "Patterns";
+    private static final String KEY_COUNT = "Count";
+    private static final String KEY_SOURCE = "Source";
+    private static final String KEY_TIMESTAMP = "Timestamp";
+
+    public static boolean save(UUID playerUUID, List<ItemStack> patterns, String source) {
+        File tmpFile = null;
+        try {
+            File file = getStorageFile(playerUUID);
+            File parent = file.getParentFile();
+            if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                System.err
+                    .println("[NHAEUtilities] Failed to create pattern storage directory: " + parent.getAbsolutePath());
+                return false;
+            }
+
+            NBTTagCompound root = new NBTTagCompound();
+            NBTTagList list = new NBTTagList();
+
+            for (ItemStack stack : patterns) {
+                if (stack == null) {
+                    continue;
+                }
+                NBTTagCompound tag = new NBTTagCompound();
+                stack.writeToNBT(tag);
+                list.appendTag(tag);
+            }
+
+            root.setTag(KEY_PATTERNS, list);
+            root.setInteger(KEY_COUNT, list.tagCount());
+            root.setString(KEY_SOURCE, source != null ? source : "");
+            root.setLong(KEY_TIMESTAMP, System.currentTimeMillis());
+
+            tmpFile = new File(file.getParentFile(), file.getName() + ".tmp");
+            try (FileOutputStream fos = new FileOutputStream(tmpFile)) {
+                CompressedStreamTools.writeCompressed(root, fos);
+            }
+
+            try {
+                Files.move(
+                    tmpFile.toPath(),
+                    file.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException e) {
+                Files.move(tmpFile.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+            return true;
+        } catch (Exception e) {
+            System.err.println("[NHAEUtilities] Failed to save pattern storage: " + e.getMessage());
+            if (tmpFile != null && tmpFile.exists()) {
+                tmpFile.delete();
+            }
+            return false;
+        }
+    }
+
+    public static List<ItemStack> load(UUID playerUUID) {
+        List<ItemStack> patterns = new ArrayList<ItemStack>();
+        try {
+            File file = getStorageFile(playerUUID);
+            if (!file.exists()) {
+                return patterns;
+            }
+
+            NBTTagCompound root;
+            try (FileInputStream fis = new FileInputStream(file)) {
+                root = CompressedStreamTools.readCompressed(fis);
+            }
+            String source = root.getString(KEY_SOURCE);
+            NBTTagList list = root.getTagList(KEY_PATTERNS, 10);
+            boolean repaired = false;
+
+            for (int i = 0; i < list.tagCount(); i++) {
+                ItemStack stack = ItemStack.loadItemStackFromNBT(list.getCompoundTagAt(i));
+                if (stack != null) {
+                    if (stack.stackSize <= 0) {
+                        stack.stackSize = 1;
+                        repaired = true;
+                    }
+                    if (normalizePatternCounts(stack)) {
+                        repaired = true;
+                    }
+                    patterns.add(stack);
+                }
+            }
+
+            if (repaired) {
+                save(playerUUID, patterns, source);
+            }
+        } catch (Exception e) {
+            System.err.println("[NHAEUtilities] Failed to load pattern storage: " + e.getMessage());
+        }
+        return patterns;
+    }
+
+    public static StorageSummary getSummary(UUID playerUUID) {
+        try {
+            File file = getStorageFile(playerUUID);
+            if (!file.exists()) {
+                return StorageSummary.EMPTY;
+            }
+
+            NBTTagCompound root;
+            try (FileInputStream fis = new FileInputStream(file)) {
+                root = CompressedStreamTools.readCompressed(fis);
+            }
+            int count = root.getInteger(KEY_COUNT);
+            String source = root.getString(KEY_SOURCE);
+            long timestamp = root.getLong(KEY_TIMESTAMP);
+
+            if (count == 0) {
+                return StorageSummary.EMPTY;
+            }
+
+            List<String> previews = new ArrayList<String>();
+            NBTTagList list = root.getTagList(KEY_PATTERNS, 10);
+            int previewCount = list.tagCount();
+            for (int i = 0; i < previewCount; i++) {
+                ItemStack stack = ItemStack.loadItemStackFromNBT(list.getCompoundTagAt(i));
+                if (stack != null) {
+                    previews.add(extractOutputSummary(stack));
+                }
+            }
+
+            return new StorageSummary(count, source, timestamp, previews);
+        } catch (Exception e) {
+            System.err.println("[NHAEUtilities] Failed to read storage summary: " + e.getMessage());
+            return StorageSummary.EMPTY;
+        }
+    }
+
+    public static boolean isEmpty(UUID playerUUID) {
+        File file = getStorageFile(playerUUID);
+        return !file.exists() || file.length() == 0 || getSummary(playerUUID).count == 0;
+    }
+
+    public static void clear(UUID playerUUID) {
+        File file = getStorageFile(playerUUID);
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
+    public static List<ItemStack> extract(UUID playerUUID, int maxCount) {
+        List<ItemStack> all = load(playerUUID);
+        List<ItemStack> extracted = new ArrayList<ItemStack>();
+
+        int toExtract = Math.min(maxCount, all.size());
+        for (int i = 0; i < toExtract; i++) {
+            extracted.add(all.remove(0));
+        }
+
+        if (all.isEmpty()) {
+            clear(playerUUID);
+        } else {
+            StorageSummary summary = getSummary(playerUUID);
+            if (!save(playerUUID, all, summary.source)) {
+                System.err.println("[NHAEUtilities] Failed to persist remaining patterns after extract.");
+            }
+        }
+
+        return extracted;
+    }
+
+    public static ItemStack delete(UUID playerUUID, int index) {
+        List<ItemStack> all = load(playerUUID);
+        if (index < 0 || index >= all.size()) {
+            return null;
+        }
+
+        ItemStack removed = all.remove(index);
+
+        if (all.isEmpty()) {
+            clear(playerUUID);
+        } else {
+            StorageSummary summary = getSummary(playerUUID);
+            if (!save(playerUUID, all, summary.source)) {
+                System.err.println("[NHAEUtilities] Failed to persist remaining patterns after delete.");
+            }
+        }
+
+        return removed;
+    }
+
+    public static StorageSummary getPage(UUID playerUUID, int page, int pageSize) {
+        try {
+            File file = getStorageFile(playerUUID);
+            if (!file.exists()) {
+                return StorageSummary.EMPTY;
+            }
+
+            NBTTagCompound root;
+            try (FileInputStream fis = new FileInputStream(file)) {
+                root = CompressedStreamTools.readCompressed(fis);
+            }
+            int count = root.getInteger(KEY_COUNT);
+            String source = root.getString(KEY_SOURCE);
+            long timestamp = root.getLong(KEY_TIMESTAMP);
+
+            if (count == 0) {
+                return StorageSummary.EMPTY;
+            }
+
+            NBTTagList list = root.getTagList(KEY_PATTERNS, 10);
+            int start = page * pageSize;
+            int end = Math.min(start + pageSize, list.tagCount());
+
+            List<String> previews = new ArrayList<String>();
+            for (int i = start; i < end; i++) {
+                ItemStack stack = ItemStack.loadItemStackFromNBT(list.getCompoundTagAt(i));
+                if (stack != null) {
+                    previews.add(extractOutputSummary(stack));
+                }
+            }
+
+            return new StorageSummary(count, source, timestamp, previews);
+        } catch (Exception e) {
+            System.err.println("[NHAEUtilities] Failed to read storage page: " + e.getMessage());
+            return StorageSummary.EMPTY;
+        }
+    }
+
+    public static PatternDetail getPatternDetail(UUID playerUUID, int index) {
+        List<ItemStack> all = load(playerUUID);
+        if (index < 0 || index >= all.size()) {
+            return null;
+        }
+
+        ItemStack pattern = all.get(index);
+        List<String> inputs = new ArrayList<String>();
+        List<String> outputs = new ArrayList<String>();
+
+        if (pattern.hasTagCompound()) {
+            NBTTagCompound tag = pattern.getTagCompound();
+
+            NBTTagList inList = tag.getTagList("in", 10);
+            for (int i = 0; i < inList.tagCount(); i++) {
+                ItemStack item = ItemStack.loadItemStackFromNBT(inList.getCompoundTagAt(i));
+                if (item != null) {
+                    long count = inList.getCompoundTagAt(i)
+                        .hasKey("Cnt")
+                            ? inList.getCompoundTagAt(i)
+                                .getLong("Cnt")
+                            : item.stackSize;
+                    if (count <= 0) {
+                        count = 1;
+                    }
+                    inputs.add(item.getDisplayName() + " x" + count);
+                }
+            }
+
+            NBTTagList outList = tag.getTagList("out", 10);
+            for (int i = 0; i < outList.tagCount(); i++) {
+                ItemStack item = ItemStack.loadItemStackFromNBT(outList.getCompoundTagAt(i));
+                if (item != null) {
+                    long count = outList.getCompoundTagAt(i)
+                        .hasKey("Cnt")
+                            ? outList.getCompoundTagAt(i)
+                                .getLong("Cnt")
+                            : item.stackSize;
+                    if (count <= 0) {
+                        count = 1;
+                    }
+                    outputs.add(item.getDisplayName() + " x" + count);
+                }
+            }
+        }
+
+        return new PatternDetail(inputs, outputs);
+    }
+
+    private static String extractOutputSummary(ItemStack pattern) {
+        if (pattern == null || !pattern.hasTagCompound()) {
+            return pattern != null ? pattern.getDisplayName() : "?";
+        }
+
+        NBTTagCompound tag = pattern.getTagCompound();
+        NBTTagList outList = tag.getTagList("out", 10);
+
+        if (outList.tagCount() == 0) {
+            return pattern.getDisplayName();
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < outList.tagCount(); i++) {
+            ItemStack item = ItemStack.loadItemStackFromNBT(outList.getCompoundTagAt(i));
+            if (item != null) {
+                if (sb.length() > 0) {
+                    sb.append(", ");
+                }
+                long count = outList.getCompoundTagAt(i)
+                    .hasKey("Cnt")
+                        ? outList.getCompoundTagAt(i)
+                            .getLong("Cnt")
+                        : item.stackSize;
+                if (count <= 0) {
+                    count = 1;
+                }
+                sb.append(item.getDisplayName());
+                if (count > 1) {
+                    sb.append(" x")
+                        .append(count);
+                }
+            }
+        }
+
+        return sb.length() > 0 ? sb.toString() : pattern.getDisplayName();
+    }
+
+    private static boolean normalizePatternCounts(ItemStack pattern) {
+        if (pattern == null || !pattern.hasTagCompound()) {
+            return false;
+        }
+        NBTTagCompound root = pattern.getTagCompound();
+        boolean changed = false;
+        changed |= normalizePatternSide(root.getTagList("in", 10));
+        changed |= normalizePatternSide(root.getTagList("out", 10));
+        return changed;
+    }
+
+    private static boolean normalizePatternSide(NBTTagList list) {
+        boolean changed = false;
+        for (int i = 0; i < list.tagCount(); i++) {
+            NBTTagCompound itemTag = list.getCompoundTagAt(i);
+            int count = itemTag.getInteger("Count");
+            long cnt = itemTag.hasKey("Cnt") ? itemTag.getLong("Cnt") : Long.MIN_VALUE;
+
+            int target = (cnt > 0) ? clampToPositiveInt(cnt) : count;
+            if (target <= 0) {
+                target = 1;
+            }
+
+            if (!itemTag.hasKey("Count") || count != target) {
+                itemTag.setInteger("Count", target);
+                changed = true;
+            }
+            if (!itemTag.hasKey("Cnt") || cnt != (long) target) {
+                itemTag.setLong("Cnt", target);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
+    private static int clampToPositiveInt(long value) {
+        if (value <= 0) {
+            return 1;
+        }
+        return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
+    }
+
+    private static File getStorageFile(UUID playerUUID) {
+        File worldDir = DimensionManager.getCurrentSaveRootDirectory();
+        String dirName = ForgeConfig.getStorageDirectoryName();
+        File storageDir = new File(worldDir, dirName);
+        return new File(storageDir, playerUUID.toString() + ".dat");
+    }
+
+    public static class StorageSummary {
+
+        public static final StorageSummary EMPTY = new StorageSummary(0, "", 0, new ArrayList<String>());
+
+        public final int count;
+        public final String source;
+        public final long timestamp;
+        public final List<String> previews;
+
+        public StorageSummary(int count, String source, long timestamp, List<String> previews) {
+            this.count = count;
+            this.source = source;
+            this.timestamp = timestamp;
+            this.previews = previews;
+        }
+    }
+
+    public static class PatternDetail {
+
+        public final List<String> inputs;
+        public final List<String> outputs;
+
+        public PatternDetail(List<String> inputs, List<String> outputs) {
+            this.inputs = inputs;
+            this.outputs = outputs;
+        }
+    }
+}

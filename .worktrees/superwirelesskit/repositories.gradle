@@ -1,0 +1,12 @@
+// Add any extra repositories here
+repositories {
+    mavenCentral()
+    maven {
+        name = "GTNH Nexus"
+        url = "https://nexus.gtnewhorizons.com/repository/public/"
+    }
+    maven {
+        name = "Forge"
+        url = "https://maven.minecraftforge.net/"
+    }
+}
