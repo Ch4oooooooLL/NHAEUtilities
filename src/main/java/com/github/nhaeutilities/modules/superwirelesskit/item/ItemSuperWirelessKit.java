@@ -13,6 +13,8 @@ import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import org.lwjgl.input.Keyboard;
+
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetRef;
 import com.github.nhaeutilities.modules.superwirelesskit.data.ControllerEndpointRef;
 import com.github.nhaeutilities.modules.superwirelesskit.service.BindingBatchResult;
@@ -79,6 +81,14 @@ public class ItemSuperWirelessKit extends Item {
             return true;
         }
 
+        if (SuperWirelessKitInteractionRules
+            .shouldRejectNewTarget(SuperWirelessKitStackState.getPendingBindingCount(stack) > 0)) {
+            player.addChatMessage(
+                new ChatComponentText(
+                    EnumChatFormatting.RED + tr("nhaeutilities.msg.swk.pending_bindings_block_new_targets")));
+            return true;
+        }
+
         BindingTargetRef target = SuperWirelessKitTargetResolver
             .resolveTarget(world, x, y, z, toFacing(side), hitX, hitY, hitZ);
         if (target == null) {
@@ -92,8 +102,7 @@ public class ItemSuperWirelessKit extends Item {
             new ChatComponentText(
                 EnumChatFormatting.GREEN + tr(
                     "nhaeutilities.msg.swk.queued_target",
-                    SuperWirelessKitStackState.getQueuedTargets(stack)
-                        .size())));
+                    SuperWirelessKitStackState.getQueuedTargetCount(stack))));
         return true;
     }
 
@@ -111,21 +120,31 @@ public class ItemSuperWirelessKit extends Item {
                 "nhaeutilities.tooltip.swk.mode",
                 SuperWirelessKitStackState.getMode(stack)
                     .name()));
-        list.add(
-            EnumChatFormatting.GRAY + tr(
-                "nhaeutilities.tooltip.swk.queue",
-                SuperWirelessKitStackState.getQueuedTargets(stack)
-                    .size()));
-        list.add(
-            EnumChatFormatting.GRAY + tr(
-                "nhaeutilities.tooltip.swk.pending",
-                SuperWirelessKitStackState.getPendingBindings(stack)
-                    .size()));
         ControllerEndpointRef controller = SuperWirelessKitStackState.getController(stack);
         list.add(
             EnumChatFormatting.GRAY + tr(
                 "nhaeutilities.tooltip.swk.controller",
                 controller != null ? formatController(controller) : tr("nhaeutilities.gui.common.none")));
+        if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+            list.add(
+                EnumChatFormatting.GRAY + tr(
+                    "nhaeutilities.tooltip.swk.queue",
+                    SuperWirelessKitStackState.getQueuedTargetCount(stack)));
+            list.add(
+                EnumChatFormatting.GRAY + tr(
+                    "nhaeutilities.tooltip.swk.pending",
+                    SuperWirelessKitStackState.getPendingBindingCount(stack)));
+            list.add(EnumChatFormatting.GRAY + tr("nhaeutilities.tooltip.swk.batch_usage"));
+        } else {
+            list.add(
+                EnumChatFormatting.GRAY + tr("nhaeutilities.tooltip.hint.hold_shift_prefix")
+                    + " "
+                    + EnumChatFormatting.AQUA
+                    + tr("nhaeutilities.tooltip.key.shift")
+                    + EnumChatFormatting.GRAY
+                    + " "
+                    + tr("nhaeutilities.tooltip.hint.hold_shift"));
+        }
     }
 
     private static ForgeDirection toFacing(int side) {

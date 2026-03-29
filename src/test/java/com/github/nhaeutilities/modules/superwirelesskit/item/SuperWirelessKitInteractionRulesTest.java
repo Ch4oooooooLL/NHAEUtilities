@@ -13,4 +13,18 @@ public class SuperWirelessKitInteractionRulesTest {
         assertFalse(SuperWirelessKitInteractionRules.shouldToggleMode(true, true));
         assertFalse(SuperWirelessKitInteractionRules.shouldToggleMode(false, false));
     }
+
+    @Test
+    public void batchCaptureRequiresSneakLeftClickAndNoPendingBindings() {
+        assertTrue(SuperWirelessKitInteractionRules.shouldAttemptBatchCapture(true, true, false));
+        assertFalse(SuperWirelessKitInteractionRules.shouldAttemptBatchCapture(false, true, false));
+        assertFalse(SuperWirelessKitInteractionRules.shouldAttemptBatchCapture(true, false, false));
+        assertFalse(SuperWirelessKitInteractionRules.shouldAttemptBatchCapture(true, true, true));
+    }
+
+    @Test
+    public void pendingBindingsBlockNewTargets() {
+        assertTrue(SuperWirelessKitInteractionRules.shouldRejectNewTarget(true));
+        assertFalse(SuperWirelessKitInteractionRules.shouldRejectNewTarget(false));
+    }
 }

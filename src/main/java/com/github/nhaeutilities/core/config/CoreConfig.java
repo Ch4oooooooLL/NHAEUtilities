@@ -9,7 +9,9 @@ public final class CoreConfig {
 
     private static final String MODULES_CATEGORY = "modules";
     private static final String PATTERN_GENERATOR_CATEGORY = "modules.patternGenerator";
+    private static final String PATTERN_GENERATOR_BASIC_CATEGORY = PATTERN_GENERATOR_CATEGORY + ".basic";
     private static final String SUPER_WIRELESS_KIT_CATEGORY = "modules.superWirelessKit";
+    private static final String SUPER_WIRELESS_KIT_BASIC_CATEGORY = SUPER_WIRELESS_KIT_CATEGORY + ".basic";
     private static final String ENABLED_PROPERTY = "enabled";
     private static final String PATTERN_GENERATOR_ENABLED_COMMENT =
         "Enable the pattern generator module. [Requires MC restart]";
@@ -37,7 +39,7 @@ public final class CoreConfig {
      * all modules have finished loading their config properties.
      */
     public static CoreConfig load(File configFile) {
-        configuration = new Configuration(configFile);
+        configuration = new Configuration(configFile, true);
         configuration.load();
 
         boolean patternGeneratorEnabled = readPatternGeneratorEnabled(configuration);
@@ -90,23 +92,23 @@ public final class CoreConfig {
 
     private static boolean readPatternGeneratorEnabled(Configuration cfg) {
         Property property = cfg.get(
-            PATTERN_GENERATOR_CATEGORY,
+            PATTERN_GENERATOR_BASIC_CATEGORY,
             ENABLED_PROPERTY,
             true,
             PATTERN_GENERATOR_ENABLED_COMMENT);
         property.setRequiresMcRestart(true);
-        property.setLanguageKey("nhaeutilities.config." + PATTERN_GENERATOR_CATEGORY + "." + ENABLED_PROPERTY);
+        property.setLanguageKey("nhaeutilities.config." + PATTERN_GENERATOR_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
         return property.getBoolean();
     }
 
     private static boolean readSuperWirelessKitEnabled(Configuration cfg) {
         Property property = cfg.get(
-            SUPER_WIRELESS_KIT_CATEGORY,
+            SUPER_WIRELESS_KIT_BASIC_CATEGORY,
             ENABLED_PROPERTY,
             true,
             SUPER_WIRELESS_KIT_ENABLED_COMMENT);
         property.setRequiresMcRestart(true);
-        property.setLanguageKey("nhaeutilities.config." + SUPER_WIRELESS_KIT_CATEGORY + "." + ENABLED_PROPERTY);
+        property.setLanguageKey("nhaeutilities.config." + SUPER_WIRELESS_KIT_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
         return property.getBoolean();
     }
 
@@ -117,9 +119,15 @@ public final class CoreConfig {
         cfg.getCategory(PATTERN_GENERATOR_CATEGORY)
             .setLanguageKey("nhaeutilities.config.modules.patternGenerator")
             .setRequiresMcRestart(true);
+        cfg.getCategory(PATTERN_GENERATOR_BASIC_CATEGORY)
+            .setLanguageKey("nhaeutilities.config.modules.patternGenerator.basic")
+            .setRequiresMcRestart(true);
 
         cfg.getCategory(SUPER_WIRELESS_KIT_CATEGORY)
             .setLanguageKey("nhaeutilities.config.modules.superWirelessKit")
+            .setRequiresMcRestart(true);
+        cfg.getCategory(SUPER_WIRELESS_KIT_BASIC_CATEGORY)
+            .setLanguageKey("nhaeutilities.config.modules.superWirelessKit.basic")
             .setRequiresMcRestart(true);
     }
 }

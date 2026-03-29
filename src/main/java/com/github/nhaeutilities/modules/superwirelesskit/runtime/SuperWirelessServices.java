@@ -2,6 +2,8 @@ package com.github.nhaeutilities.modules.superwirelesskit.runtime;
 
 import net.minecraftforge.common.MinecraftForge;
 
+import com.github.nhaeutilities.modules.superwirelesskit.item.SuperWirelessKitInteractionHandler;
+
 public final class SuperWirelessServices {
 
     private static final BindingDataStore DATA_STORE = new BindingDataStore();
@@ -20,6 +22,7 @@ public final class SuperWirelessServices {
         }
 
         MinecraftForge.EVENT_BUS.register(new SuperWirelessLifecycleHandler(RUNTIME_MANAGER));
+        MinecraftForge.EVENT_BUS.register(new SuperWirelessKitInteractionHandler());
         bootstrapComplete = true;
     }
 

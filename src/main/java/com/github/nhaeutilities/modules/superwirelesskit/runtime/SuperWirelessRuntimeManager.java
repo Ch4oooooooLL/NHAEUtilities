@@ -68,6 +68,8 @@ public class SuperWirelessRuntimeManager {
             return;
         }
 
+        World world = node.getWorld();
+        BindingRegistry registry = world != null && !world.isRemote ? getRegistry(world) : null;
         for (Map.Entry<UUID, IGridConnection> entry : new HashMap<UUID, IGridConnection>(activeConnections)
             .entrySet()) {
             IGridConnection connection = entry.getValue();
@@ -78,6 +80,9 @@ public class SuperWirelessRuntimeManager {
 
             if (connection.a() == node || connection.b() == node) {
                 activeConnections.remove(entry.getKey());
+                if (registry != null) {
+                    registry.remove(entry.getKey());
+                }
             }
         }
     }

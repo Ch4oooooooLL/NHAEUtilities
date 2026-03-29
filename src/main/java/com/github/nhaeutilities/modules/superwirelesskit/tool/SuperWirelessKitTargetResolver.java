@@ -1,5 +1,9 @@
 package com.github.nhaeutilities.modules.superwirelesskit.tool;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Vec3;
 import net.minecraft.world.World;
@@ -83,11 +87,97 @@ public final class SuperWirelessKitTargetResolver {
             BindingNodeResolver.createFingerprint(tile, tile));
     }
 
+    public static List<BindingTargetRef> resolveTargetsAtBlock(World world, int x, int y, int z) {
+        if (world == null) {
+            return Collections.emptyList();
+        }
+
+        TileEntity tile = world.getTileEntity(x, y, z);
+        if (tile == null) {
+            return Collections.emptyList();
+        }
+
+        List<BindingTargetRef> targets = new ArrayList<BindingTargetRef>();
+        appendPartTargets(world, x, y, z, tile, targets);
+        appendTileTargets(world, x, y, z, tile, targets);
+        return Collections.unmodifiableList(targets);
+    }
+
+    public static List<BindingTargetRef> findAdjacentTargets(World world, BindingTargetRef target) {
+        if (world == null || target == null) {
+            return Collections.emptyList();
+        }
+
+        List<BindingTargetRef> adjacent = new ArrayList<BindingTargetRef>();
+        for (ForgeDirection direction : ForgeDirection.VALID_DIRECTIONS) {
+            int nx = target.getX() + direction.offsetX;
+            int ny = target.getY() + direction.offsetY;
+            int nz = target.getZ() + direction.offsetZ;
+            for (BindingTargetRef neighbor : resolveTargetsAtBlock(world, nx, ny, nz)) {
+                if (!adjacent.contains(neighbor)) {
+                    adjacent.add(neighbor);
+                }
+            }
+        }
+        return Collections.unmodifiableList(adjacent);
+    }
+
     public static boolean isController(World world, int x, int y, int z) {
         return world != null && AEApi.instance()
             .definitions()
             .blocks()
             .controller()
             .isSameAs(world, x, y, z);
+    }
+
+    private static void appendPartTargets(World world, int x, int y, int z, TileEntity tile, List<BindingTargetRef> targets) {
+        if (!(tile instanceof IPartHost)) {
+            return;
+        }
+
+        IPartHost partHost = (IPartHost) tile;
+        for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
+            if (partHost.getPart(side) == null || partHost.getPart(side).getGridNode() == null
+                || !partHost.getPart(side).getGridNode().hasFlag(GridFlags.REQUIRE_CHANNEL)) {
+                continue;
+            }
+
+            BindingTargetRef target = new BindingTargetRef(
+                BindingTargetKind.PART,
+                world.provider.dimensionId,
+                x,
+                y,
+                z,
+                side,
+                BindingNodeResolver.createFingerprint(tile, partHost.getPart(side)));
+            if (!targets.contains(target)) {
+                targets.add(target);
+            }
+        }
+    }
+
+    private static void appendTileTargets(World world, int x, int y, int z, TileEntity tile, List<BindingTargetRef> targets) {
+        if (!(tile instanceof IGridHost)) {
+            return;
+        }
+
+        IGridHost host = (IGridHost) tile;
+        for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
+            if (host.getGridNode(side) == null || !host.getGridNode(side).hasFlag(GridFlags.REQUIRE_CHANNEL)) {
+                continue;
+            }
+
+            BindingTargetRef target = new BindingTargetRef(
+                BindingTargetKind.TILE,
+                world.provider.dimensionId,
+                x,
+                y,
+                z,
+                side,
+                BindingNodeResolver.createFingerprint(tile, tile));
+            if (!targets.contains(target)) {
+                targets.add(target);
+            }
+        }
     }
 }

@@ -3,15 +3,20 @@ package com.github.nhaeutilities.modules.superwirelesskit.tool;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+import net.minecraftforge.common.util.ForgeDirection;
 
+import com.github.nhaeutilities.modules.superwirelesskit.data.BindingFingerprint;
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingRecord;
+import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetKind;
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetRef;
 import com.github.nhaeutilities.modules.superwirelesskit.data.ControllerEndpointRef;
 
@@ -76,6 +81,10 @@ public final class SuperWirelessKitStackState {
         return readTargetList(stack, QUEUED_TARGETS_KEY);
     }
 
+    public static int getQueuedTargetCount(ItemStack stack) {
+        return getQueuedTargets(stack).size();
+    }
+
     public static void clearQueuedTargets(ItemStack stack) {
         getOrCreateTag(stack).removeTag(QUEUED_TARGETS_KEY);
     }
@@ -83,10 +92,11 @@ public final class SuperWirelessKitStackState {
     public static void addQueuedTarget(ItemStack stack, BindingTargetRef target) {
         Objects.requireNonNull(target, "target");
         List<BindingTargetRef> targets = new ArrayList<BindingTargetRef>(getQueuedTargets(stack));
-        if (!targets.contains(target)) {
-            targets.add(target);
-            writeTargetList(stack, QUEUED_TARGETS_KEY, targets);
+        if (containsLogicalTarget(targets, target)) {
+            return;
         }
+        targets.add(target);
+        writeTargetList(stack, QUEUED_TARGETS_KEY, targets);
     }
 
     public static List<BindingRecord> getPendingBindings(ItemStack stack) {
@@ -103,6 +113,10 @@ public final class SuperWirelessKitStackState {
                         .getCompoundTag(LIST_ENTRY_KEY)));
         }
         return Collections.unmodifiableList(records);
+    }
+
+    public static int getPendingBindingCount(ItemStack stack) {
+        return getPendingBindings(stack).size();
     }
 
     public static void clearPendingBindings(ItemStack stack) {
@@ -127,20 +141,63 @@ public final class SuperWirelessKitStackState {
         }
     }
 
-    public static List<BindingRecord> promoteQueuedTargetsToBindings(ItemStack stack, ControllerEndpointRef controller,
+    public static boolean canAcceptNewTargets(ItemStack stack) {
+        return getPendingBindings(stack).isEmpty();
+    }
+
+    public static boolean containsTarget(ItemStack stack, BindingTargetRef target) {
+        Objects.requireNonNull(target, "target");
+        if (containsLogicalTarget(getQueuedTargets(stack), target)) {
+            return true;
+        }
+        for (BindingRecord record : getPendingBindings(stack)) {
+            if (isSameLogicalTarget(record.getTarget(), target)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static List<BindingRecord> prepareBindingsForController(ItemStack stack, ControllerEndpointRef controller,
         int binderPlayerId, UUID binderUuid, long createdAt) {
         Objects.requireNonNull(controller, "controller");
         Objects.requireNonNull(binderUuid, "binderUuid");
 
-        List<BindingTargetRef> queuedTargets = getQueuedTargets(stack);
-        if (queuedTargets.isEmpty()) {
+        List<BindingTargetRef> targets = new ArrayList<BindingTargetRef>();
+        List<BindingRecord> pendingBindings = getPendingBindings(stack);
+        if (!pendingBindings.isEmpty()) {
+            for (BindingRecord record : pendingBindings) {
+                addDistinctTarget(targets, record.getTarget());
+            }
+        } else {
+            for (BindingTargetRef queuedTarget : getQueuedTargets(stack)) {
+                addDistinctTarget(targets, queuedTarget);
+            }
+        }
+
+        if (targets.isEmpty()) {
             setController(stack, controller);
+            clearPendingBindings(stack);
             return Collections.emptyList();
         }
 
-        List<BindingRecord> promoted = new ArrayList<BindingRecord>(queuedTargets.size());
-        for (BindingTargetRef target : queuedTargets) {
-            promoted.add(
+        List<BindingRecord> drafted = createBindingRecords(targets, controller, binderPlayerId, binderUuid, createdAt);
+        setController(stack, controller);
+        clearQueuedTargets(stack);
+        writeBindingList(stack, PENDING_BINDINGS_KEY, drafted);
+        return Collections.unmodifiableList(drafted);
+    }
+
+    public static List<BindingRecord> promoteQueuedTargetsToBindings(ItemStack stack, ControllerEndpointRef controller,
+        int binderPlayerId, UUID binderUuid, long createdAt) {
+        return prepareBindingsForController(stack, controller, binderPlayerId, binderUuid, createdAt);
+    }
+
+    private static List<BindingRecord> createBindingRecords(List<BindingTargetRef> targets, ControllerEndpointRef controller,
+        int binderPlayerId, UUID binderUuid, long createdAt) {
+        List<BindingRecord> drafted = new ArrayList<BindingRecord>(targets.size());
+        for (BindingTargetRef target : targets) {
+            drafted.add(
                 new BindingRecord(
                     createBindingId(controller, target, binderUuid, createdAt),
                     controller,
@@ -149,17 +206,7 @@ public final class SuperWirelessKitStackState {
                     binderUuid,
                     createdAt));
         }
-
-        setController(stack, controller);
-        clearQueuedTargets(stack);
-        List<BindingRecord> existing = new ArrayList<BindingRecord>(getPendingBindings(stack));
-        for (BindingRecord record : promoted) {
-            if (!existing.contains(record)) {
-                existing.add(record);
-            }
-        }
-        writeBindingList(stack, PENDING_BINDINGS_KEY, existing);
-        return Collections.unmodifiableList(promoted);
+        return drafted;
     }
 
     private static UUID createBindingId(ControllerEndpointRef controller, BindingTargetRef target, UUID binderUuid,
@@ -208,14 +255,14 @@ public final class SuperWirelessKitStackState {
             return Collections.emptyList();
         }
         NBTTagList list = tag.getTagList(key, COMPOUND_TAG_ID);
-        List<BindingTargetRef> targets = new ArrayList<BindingTargetRef>(list.tagCount());
+        Map<TargetIdentity, BindingTargetRef> targets = new LinkedHashMap<TargetIdentity, BindingTargetRef>(list.tagCount());
         for (int i = 0; i < list.tagCount(); i++) {
-            targets.add(
-                BindingTargetRef.fromNbt(
-                    list.getCompoundTagAt(i)
-                        .getCompoundTag(LIST_ENTRY_KEY)));
+            BindingTargetRef target = BindingTargetRef.fromNbt(
+                list.getCompoundTagAt(i)
+                    .getCompoundTag(LIST_ENTRY_KEY));
+            targets.put(TargetIdentity.of(target), target);
         }
-        return Collections.unmodifiableList(targets);
+        return Collections.unmodifiableList(new ArrayList<BindingTargetRef>(targets.values()));
     }
 
     private static void writeTargetList(ItemStack stack, String key, List<BindingTargetRef> targets) {
@@ -253,5 +300,80 @@ public final class SuperWirelessKitStackState {
             stack.setTagCompound(new NBTTagCompound());
         }
         return stack.getTagCompound();
+    }
+
+    private static boolean containsLogicalTarget(List<BindingTargetRef> targets, BindingTargetRef candidate) {
+        for (BindingTargetRef existing : targets) {
+            if (isSameLogicalTarget(existing, candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void addDistinctTarget(List<BindingTargetRef> targets, BindingTargetRef candidate) {
+        if (!containsLogicalTarget(targets, candidate)) {
+            targets.add(candidate);
+        }
+    }
+
+    private static boolean isSameLogicalTarget(BindingTargetRef left, BindingTargetRef right) {
+        return TargetIdentity.of(left).equals(TargetIdentity.of(right));
+    }
+
+    private static final class TargetIdentity {
+
+        private final BindingTargetKind kind;
+        private final int dimensionId;
+        private final int x;
+        private final int y;
+        private final int z;
+        private final ForgeDirection side;
+        private final BindingFingerprint fingerprint;
+
+        private TargetIdentity(BindingTargetKind kind, int dimensionId, int x, int y, int z, ForgeDirection side,
+            BindingFingerprint fingerprint) {
+            this.kind = kind;
+            this.dimensionId = dimensionId;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.side = side;
+            this.fingerprint = fingerprint;
+        }
+
+        private static TargetIdentity of(BindingTargetRef target) {
+            ForgeDirection identitySide = target.getKind() == BindingTargetKind.PART ? target.getSide() : null;
+            return new TargetIdentity(
+                target.getKind(),
+                target.getDimensionId(),
+                target.getX(),
+                target.getY(),
+                target.getZ(),
+                identitySide,
+                target.getFingerprint());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof TargetIdentity)) {
+                return false;
+            }
+            TargetIdentity that = (TargetIdentity) o;
+            return dimensionId == that.dimensionId && x == that.x
+                && y == that.y
+                && z == that.z
+                && kind == that.kind
+                && side == that.side
+                && fingerprint.equals(that.fingerprint);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(kind, dimensionId, x, y, z, side, fingerprint);
+        }
     }
 }

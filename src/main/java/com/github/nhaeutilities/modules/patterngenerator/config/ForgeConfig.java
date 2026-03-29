@@ -8,14 +8,15 @@ import cpw.mods.fml.common.FMLLog;
 
 public final class ForgeConfig {
 
-    private static final String MODULE_PREFIX = "patternGenerator.";
+    private static final String MODULE_CATEGORY = "modules.patternGenerator";
+    private static final String MODULE_PREFIX = MODULE_CATEGORY + ".";
 
     private static final String CATEGORY_CONFLICT = MODULE_PREFIX + "conflict";
-    private static final String CATEGORY_DUPLICATE = MODULE_PREFIX + "duplicate";
+    private static final String CATEGORY_REQUEST_PROTECTION = MODULE_PREFIX + "requestProtection";
     private static final String CATEGORY_UI_PATTERN_GEN = MODULE_PREFIX + "ui.patternGen";
     private static final String CATEGORY_UI_RECIPE_PICKER = MODULE_PREFIX + "ui.recipePicker";
     private static final String CATEGORY_STORAGE = MODULE_PREFIX + "storage";
-    private static final String CATEGORY_ITEMS = MODULE_PREFIX + "items";
+    private static final String CATEGORY_ADVANCED = MODULE_PREFIX + "advanced";
 
     private static final int MIN_CONFLICT_BATCH_SIZE = 1;
     private static final int MAX_CONFLICT_BATCH_SIZE = 64;
@@ -77,10 +78,10 @@ public final class ForgeConfig {
         Objects.requireNonNull(cfg, "cfg");
         try {
             loadConflictConfig(cfg);
-            loadDuplicateConfig(cfg);
+            loadRequestProtectionConfig(cfg);
             loadUIConfig(cfg);
             loadStorageConfig(cfg);
-            loadItemsConfig(cfg);
+            loadAdvancedConfig(cfg);
             applyCategoryMetadata(cfg);
         } catch (RuntimeException e) {
             FMLLog.warning("[NHAEUtilities] Failed to load PatternGenerator config: %s", e.getMessage());
@@ -116,10 +117,10 @@ public final class ForgeConfig {
         maxConflictGroups = configuredMaxGroups;
     }
 
-    private static void loadDuplicateConfig(Configuration cfg) {
+    private static void loadRequestProtectionConfig(Configuration cfg) {
         int configuredWindowMs = cfg.getInt(
             "windowMs",
-            CATEGORY_DUPLICATE,
+            CATEGORY_REQUEST_PROTECTION,
             DEFAULT_DUPLICATE_WINDOW_MS,
             100,
             5000,
@@ -217,10 +218,10 @@ public final class ForgeConfig {
         recipeCacheDirectoryName = configuredRecipeCacheDirectoryName;
     }
 
-    private static void loadItemsConfig(Configuration cfg) {
+    private static void loadAdvancedConfig(Configuration cfg) {
         String configuredPatternId = cfg.getString(
             "encodedPatternId",
-            CATEGORY_ITEMS,
+            CATEGORY_ADVANCED,
             DEFAULT_ENCODED_PATTERN_ID,
             "Item ID of the AE2 encoded pattern item. Used for compatibility with different AE2 versions.");
         encodedPatternId = configuredPatternId;
@@ -228,12 +229,13 @@ public final class ForgeConfig {
 
     private static void applyCategoryMetadata(Configuration cfg) {
         String langPrefix = "nhaeutilities.config.";
-        cfg.getCategory("patternGenerator")
-            .setLanguageKey(langPrefix + "patternGenerator");
+        cfg.getCategory(MODULE_CATEGORY)
+            .setLanguageKey(langPrefix + MODULE_CATEGORY)
+            .setRequiresMcRestart(true);
         cfg.getCategory(CATEGORY_CONFLICT)
             .setLanguageKey(langPrefix + CATEGORY_CONFLICT);
-        cfg.getCategory(CATEGORY_DUPLICATE)
-            .setLanguageKey(langPrefix + CATEGORY_DUPLICATE);
+        cfg.getCategory(CATEGORY_REQUEST_PROTECTION)
+            .setLanguageKey(langPrefix + CATEGORY_REQUEST_PROTECTION);
         cfg.getCategory(MODULE_PREFIX + "ui")
             .setLanguageKey(langPrefix + MODULE_PREFIX + "ui");
         cfg.getCategory(CATEGORY_UI_PATTERN_GEN)
@@ -242,8 +244,8 @@ public final class ForgeConfig {
             .setLanguageKey(langPrefix + CATEGORY_UI_RECIPE_PICKER);
         cfg.getCategory(CATEGORY_STORAGE)
             .setLanguageKey(langPrefix + CATEGORY_STORAGE);
-        cfg.getCategory(CATEGORY_ITEMS)
-            .setLanguageKey(langPrefix + CATEGORY_ITEMS);
+        cfg.getCategory(CATEGORY_ADVANCED)
+            .setLanguageKey(langPrefix + CATEGORY_ADVANCED);
     }
 
     public static int getConflictBatchSize() {

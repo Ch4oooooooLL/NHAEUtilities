@@ -9,6 +9,7 @@ import net.minecraftforge.common.config.ConfigElement;
 import net.minecraftforge.common.config.Configuration;
 
 import com.github.nhaeutilities.NHAEUtilities;
+import com.github.nhaeutilities.core.config.ConfigGuiLayout;
 import com.github.nhaeutilities.core.config.CoreConfig;
 
 import cpw.mods.fml.client.config.GuiConfig;
@@ -30,32 +31,27 @@ public class NHAEUtilitiesConfigGui extends GuiConfig {
     }
 
     /**
-     * Builds config elements from only the root-level categories (those whose
-     * name does not contain a dot). Forge's {@link ConfigElement} automatically
-     * renders child categories hierarchically, so listing root categories is
-     * sufficient to display the full tree:
+     * Builds config elements from module categories only. The shared
+     * configuration may contain internal grouping roots, but the GUI should
+     * present module entries directly at the top level.
      *
      * <pre>
-     *   modules
-     *     patternGenerator   (enabled toggle)
-     *   patternGenerator
+     *   modules.patternGenerator
+     *     basic
      *     conflict
-     *     duplicate
+     *     requestProtection
      *     ui
-     *       patternGen
-     *       recipePicker
      *     storage
-     *     items
+     *     advanced
+     *   modules.superWirelessKit
+     *     basic
      * </pre>
      */
     private static List<IConfigElement> getConfigElements() {
         Configuration cfg = CoreConfig.getConfiguration();
         List<IConfigElement> list = new ArrayList<IConfigElement>();
 
-        for (String categoryName : cfg.getCategoryNames()) {
-            if (categoryName.contains(".")) {
-                continue;
-            }
+        for (String categoryName : ConfigGuiLayout.getTopLevelModuleCategoryNames(cfg)) {
             ConfigCategory category = cfg.getCategory(categoryName);
             list.add(new ConfigElement(category));
         }
