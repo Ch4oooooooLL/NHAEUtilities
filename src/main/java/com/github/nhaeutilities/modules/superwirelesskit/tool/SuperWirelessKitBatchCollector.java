@@ -13,8 +13,8 @@ import java.util.Set;
 
 import net.minecraftforge.common.util.ForgeDirection;
 
-import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetKind;
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingFingerprint;
+import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetKind;
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetRef;
 
 public final class SuperWirelessKitBatchCollector {

@@ -33,7 +33,7 @@ public class CommonProxy {
         Objects.requireNonNull(coreConfig, "coreConfig");
         Objects.requireNonNull(moduleRegistry, "moduleRegistry");
         moduleRegistry.register(new PatternGeneratorModule(coreConfig, this));
-        moduleRegistry.register(new SuperWirelessKitModule(coreConfig));
+        moduleRegistry.register(new SuperWirelessKitModule(coreConfig, this));
     }
 
     public void preInit(FMLPreInitializationEvent event, ModuleRegistry moduleRegistry) {
@@ -56,6 +56,10 @@ public class CommonProxy {
         registerPatternGeneratorGuiHandler(modInstance);
         registerPatternGeneratorWirelessHandler();
         registerPatternGeneratorRecipe();
+    }
+
+    public void registerSuperWirelessKitIntegration() {
+        registerSuperWirelessKitRecipe();
     }
 
     protected void registerPatternGeneratorGuiHandler(Object modInstance) {
@@ -90,15 +94,15 @@ public class CommonProxy {
             return;
         }
 
-        Item gtMetaItem = GameRegistry.findItem("gregtech", "gt.metaitem.01");
-        Item aeMaterial = GameRegistry.findItem("appliedenergistics2", "item.ItemMultiMaterial");
-        Item aePart = GameRegistry.findItem("appliedenergistics2", "item.ItemMultiPart");
+        Item gtMetaItem = findItem("gregtech", "gt.metaitem.01");
+        Item aeMaterial = findItem("appliedenergistics2", "item.ItemMultiMaterial");
+        Item aePart = findItem("appliedenergistics2", "item.ItemMultiPart");
         if (gtMetaItem == null || aeMaterial == null || aePart == null) {
             FMLLog.warning("[NHAEUtilities] Pattern generator recipe ingredients are missing.");
             return;
         }
 
-        GameRegistry.addShapedRecipe(
+        addShapedRecipe(
             new net.minecraft.item.ItemStack(ModItems.itemPatternGenerator),
             "ABA",
             "BCB",
@@ -109,6 +113,35 @@ public class CommonProxy {
             new net.minecraft.item.ItemStack(aeMaterial, 1, 52),
             'C',
             new net.minecraft.item.ItemStack(aePart, 1, 340));
+    }
+
+    protected void registerSuperWirelessKitRecipe() {
+        if (com.github.nhaeutilities.modules.superwirelesskit.item.ModItems.itemSuperWirelessKit == null) {
+            return;
+        }
+
+        Item advancedWirelessKit = findItem("ae2stuff", "AdvWirelessKit");
+        if (advancedWirelessKit == null) {
+            FMLLog.warning("[NHAEUtilities] Super wireless kit recipe ingredient ae2stuff:AdvWirelessKit is missing.");
+            return;
+        }
+
+        addShapedRecipe(
+            new net.minecraft.item.ItemStack(
+                com.github.nhaeutilities.modules.superwirelesskit.item.ModItems.itemSuperWirelessKit),
+            "AAA",
+            "AAA",
+            "AAA",
+            'A',
+            new net.minecraft.item.ItemStack(advancedWirelessKit));
+    }
+
+    protected Item findItem(String modId, String itemName) {
+        return GameRegistry.findItem(modId, itemName);
+    }
+
+    protected void addShapedRecipe(net.minecraft.item.ItemStack output, Object... inputs) {
+        GameRegistry.addShapedRecipe(output, inputs);
     }
 
     public void closeCurrentScreen() {}

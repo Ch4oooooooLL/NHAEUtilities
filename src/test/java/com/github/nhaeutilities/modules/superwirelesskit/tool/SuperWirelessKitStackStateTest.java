@@ -105,7 +105,10 @@ public class SuperWirelessKitStackStateTest {
         SuperWirelessKitStackState.addQueuedTarget(stack, north);
 
         assertEquals(1, SuperWirelessKitStackState.getQueuedTargetCount(stack));
-        assertEquals(1, SuperWirelessKitStackState.getQueuedTargets(stack).size());
+        assertEquals(
+            1,
+            SuperWirelessKitStackState.getQueuedTargets(stack)
+                .size());
         assertTrue(SuperWirelessKitStackState.containsTarget(stack, up));
         assertTrue(SuperWirelessKitStackState.containsTarget(stack, north));
     }
@@ -133,7 +136,13 @@ public class SuperWirelessKitStackStateTest {
     public void pendingBindingsAreRedraftedForNewController() {
         ItemStack stack = new ItemStack(new ItemSuperWirelessKit());
         BindingRecord oldPending = createBindingRecord(2, ForgeDirection.NORTH);
-        ControllerEndpointRef newController = new ControllerEndpointRef(0, 30, 31, 32, ForgeDirection.WEST, "controller");
+        ControllerEndpointRef newController = new ControllerEndpointRef(
+            0,
+            30,
+            31,
+            32,
+            ForgeDirection.WEST,
+            "controller");
 
         SuperWirelessKitStackState.addPendingBinding(stack, oldPending);
 
@@ -145,11 +154,23 @@ public class SuperWirelessKitStackStateTest {
             1234L);
 
         assertEquals(1, drafted.size());
-        assertEquals(newController, drafted.get(0).getController());
-        assertEquals(oldPending.getTarget(), drafted.get(0).getTarget());
+        assertEquals(
+            newController,
+            drafted.get(0)
+                .getController());
+        assertEquals(
+            oldPending.getTarget(),
+            drafted.get(0)
+                .getTarget());
         assertEquals(1, SuperWirelessKitStackState.getPendingBindingCount(stack));
-        assertEquals(newController, SuperWirelessKitStackState.getPendingBindings(stack).get(0).getController());
-        assertTrue(SuperWirelessKitStackState.getQueuedTargets(stack).isEmpty());
+        assertEquals(
+            newController,
+            SuperWirelessKitStackState.getPendingBindings(stack)
+                .get(0)
+                .getController());
+        assertTrue(
+            SuperWirelessKitStackState.getQueuedTargets(stack)
+                .isEmpty());
     }
 
     @Test

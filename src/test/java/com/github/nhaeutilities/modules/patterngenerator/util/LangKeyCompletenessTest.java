@@ -63,10 +63,14 @@ public class LangKeyCompletenessTest {
         Map<String, String> zhTranslations = readTranslations(ZH_CN);
 
         assertEquals("\u6837\u677f\u751f\u6210\u5668", zhTranslations.get("item.nhaeutilities.pattern_generator.name"));
-        assertEquals("\u8d85\u7ea7\u65e0\u7ebf\u5de5\u5177\u5305", zhTranslations.get("item.nhaeutilities.super_wireless_kit.name"));
+        assertEquals(
+            "\u8d85\u7ea7\u65e0\u7ebf\u8bbe\u7f6e\u5de5\u5177",
+            zhTranslations.get("item.nhaeutilities.super_wireless_kit.name"));
         assertEquals("\u8fd4\u56de", zhTranslations.get("nhaeutilities.gui.common.back"));
         assertEquals("\u6837\u677f\u751f\u6210\u5668", zhTranslations.get("nhaeutilities.gui.pattern_gen.title"));
-        assertEquals("\u8d85\u7ea7\u65e0\u7ebf\u5de5\u5177\u5305", zhTranslations.get("nhaeutilities.tooltip.swk.title"));
+        assertEquals(
+            "\u8d85\u7ea7\u65e0\u7ebf\u8bbe\u7f6e\u5de5\u5177",
+            zhTranslations.get("nhaeutilities.tooltip.swk.title"));
         assertEquals(
             "\u6a21\u5f0f\u5df2\u5207\u6362\u4e3a %s",
             zhTranslations.get("nhaeutilities.msg.swk.mode_switched"));

@@ -193,8 +193,8 @@ public final class SuperWirelessKitStackState {
         return prepareBindingsForController(stack, controller, binderPlayerId, binderUuid, createdAt);
     }
 
-    private static List<BindingRecord> createBindingRecords(List<BindingTargetRef> targets, ControllerEndpointRef controller,
-        int binderPlayerId, UUID binderUuid, long createdAt) {
+    private static List<BindingRecord> createBindingRecords(List<BindingTargetRef> targets,
+        ControllerEndpointRef controller, int binderPlayerId, UUID binderUuid, long createdAt) {
         List<BindingRecord> drafted = new ArrayList<BindingRecord>(targets.size());
         for (BindingTargetRef target : targets) {
             drafted.add(
@@ -255,7 +255,8 @@ public final class SuperWirelessKitStackState {
             return Collections.emptyList();
         }
         NBTTagList list = tag.getTagList(key, COMPOUND_TAG_ID);
-        Map<TargetIdentity, BindingTargetRef> targets = new LinkedHashMap<TargetIdentity, BindingTargetRef>(list.tagCount());
+        Map<TargetIdentity, BindingTargetRef> targets = new LinkedHashMap<TargetIdentity, BindingTargetRef>(
+            list.tagCount());
         for (int i = 0; i < list.tagCount(); i++) {
             BindingTargetRef target = BindingTargetRef.fromNbt(
                 list.getCompoundTagAt(i)
@@ -318,7 +319,8 @@ public final class SuperWirelessKitStackState {
     }
 
     private static boolean isSameLogicalTarget(BindingTargetRef left, BindingTargetRef right) {
-        return TargetIdentity.of(left).equals(TargetIdentity.of(right));
+        return TargetIdentity.of(left)
+            .equals(TargetIdentity.of(right));
     }
 
     private static final class TargetIdentity {

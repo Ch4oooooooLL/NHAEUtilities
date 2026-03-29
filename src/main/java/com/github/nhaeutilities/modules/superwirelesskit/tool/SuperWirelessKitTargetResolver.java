@@ -130,15 +130,19 @@ public final class SuperWirelessKitTargetResolver {
             .isSameAs(world, x, y, z);
     }
 
-    private static void appendPartTargets(World world, int x, int y, int z, TileEntity tile, List<BindingTargetRef> targets) {
+    private static void appendPartTargets(World world, int x, int y, int z, TileEntity tile,
+        List<BindingTargetRef> targets) {
         if (!(tile instanceof IPartHost)) {
             return;
         }
 
         IPartHost partHost = (IPartHost) tile;
         for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
-            if (partHost.getPart(side) == null || partHost.getPart(side).getGridNode() == null
-                || !partHost.getPart(side).getGridNode().hasFlag(GridFlags.REQUIRE_CHANNEL)) {
+            if (partHost.getPart(side) == null || partHost.getPart(side)
+                .getGridNode() == null
+                || !partHost.getPart(side)
+                    .getGridNode()
+                    .hasFlag(GridFlags.REQUIRE_CHANNEL)) {
                 continue;
             }
 
@@ -156,14 +160,16 @@ public final class SuperWirelessKitTargetResolver {
         }
     }
 
-    private static void appendTileTargets(World world, int x, int y, int z, TileEntity tile, List<BindingTargetRef> targets) {
+    private static void appendTileTargets(World world, int x, int y, int z, TileEntity tile,
+        List<BindingTargetRef> targets) {
         if (!(tile instanceof IGridHost)) {
             return;
         }
 
         IGridHost host = (IGridHost) tile;
         for (ForgeDirection side : ForgeDirection.VALID_DIRECTIONS) {
-            if (host.getGridNode(side) == null || !host.getGridNode(side).hasFlag(GridFlags.REQUIRE_CHANNEL)) {
+            if (host.getGridNode(side) == null || !host.getGridNode(side)
+                .hasFlag(GridFlags.REQUIRE_CHANNEL)) {
                 continue;
             }
 

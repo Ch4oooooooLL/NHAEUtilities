@@ -1,6 +1,5 @@
 package com.github.nhaeutilities.modules.superwirelesskit.service;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -11,7 +10,6 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingRecord;
 import com.github.nhaeutilities.modules.superwirelesskit.data.ControllerEndpointRef;
-import com.github.nhaeutilities.modules.superwirelesskit.runtime.BindingReconcileResult;
 import com.github.nhaeutilities.modules.superwirelesskit.runtime.ResolvedControllerEndpoint;
 import com.github.nhaeutilities.modules.superwirelesskit.runtime.SuperWirelessServices;
 import com.github.nhaeutilities.modules.superwirelesskit.tool.SuperWirelessKitStackState;
@@ -45,34 +43,20 @@ public final class SuperWirelessBindingService {
 
         BindingRegistry registry = SuperWirelessServices.runtimeManager()
             .getRegistry(world);
-        List<BindingRecord> failures = new ArrayList<BindingRecord>();
-        int successCount = 0;
+        BindingBatchResult result = new BindingBatchProcessor(
+            SuperWirelessServices.resolver(),
+            new BindingBatchProcessor.Reconciler() {
 
-        for (BindingRecord record : draftedBindings) {
-            if (record.getController()
-                .getDimensionId()
-                != record.getTarget()
-                    .getDimensionId()
-                || record.getController()
-                    .getFace() == ForgeDirection.UNKNOWN
-                || !registry.add(record)) {
-                failures.add(record);
-                continue;
-            }
+                @Override
+                public com.github.nhaeutilities.modules.superwirelesskit.runtime.BindingReconcileResult reconcile(
+                    World bindingWorld, BindingRecord record) {
+                    return SuperWirelessServices.runtimeManager()
+                        .reconcile(bindingWorld, record);
+                }
+            }).bind(world, controller, draftedBindings, registry);
 
-            BindingReconcileResult reconcileResult = SuperWirelessServices.runtimeManager()
-                .reconcile(world, record);
-            if (reconcileResult == BindingReconcileResult.CONNECTED
-                || reconcileResult == BindingReconcileResult.ALREADY_CONNECTED) {
-                successCount++;
-            } else {
-                registry.remove(record.getBindingId());
-                failures.add(record);
-            }
-        }
-
-        SuperWirelessKitStackState.setPendingBindings(stack, failures);
-        return new BindingBatchResult(successCount, failures);
+        SuperWirelessKitStackState.setPendingBindings(stack, result.getFailedRecords());
+        return result;
     }
 
     private static boolean canBuildOnController(EntityPlayer player, ResolvedControllerEndpoint controller) {

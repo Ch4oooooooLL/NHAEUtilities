@@ -1,6 +1,7 @@
 package com.github.nhaeutilities.modules.superwirelesskit.runtime;
 
 import net.minecraft.world.World;
+import net.minecraftforge.event.world.BlockEvent;
 import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
 
@@ -29,5 +30,14 @@ public class SuperWirelessLifecycleHandler {
             return;
         }
         runtimeManager.onWorldUnload(world);
+    }
+
+    @SubscribeEvent
+    public void onBlockBreak(BlockEvent.BreakEvent event) {
+        if (event == null || event.isCanceled() || event.world == null || event.world.isRemote) {
+            return;
+        }
+
+        runtimeManager.onBlockBroken(event.world, event.x, event.y, event.z);
     }
 }

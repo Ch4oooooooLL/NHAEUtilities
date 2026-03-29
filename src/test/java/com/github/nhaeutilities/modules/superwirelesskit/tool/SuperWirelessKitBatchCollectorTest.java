@@ -26,13 +26,9 @@ public class SuperWirelessKitBatchCollectorTest {
         BindingTargetRef next = createTarget(1);
         BindingTargetRef tail = createTarget(2);
 
-        SuperWirelessKitBatchCollector collector = new SuperWirelessKitBatchCollector(new GraphLookup(mapOf(
-            root,
-            Arrays.asList(next),
-            next,
-            Arrays.asList(root, tail),
-            tail,
-            Arrays.asList(next))));
+        SuperWirelessKitBatchCollector collector = new SuperWirelessKitBatchCollector(
+            new GraphLookup(
+                mapOf(root, Arrays.asList(next), next, Arrays.asList(root, tail), tail, Arrays.asList(next))));
 
         List<BindingTargetRef> collected = collector.collect(root, Collections.<BindingTargetRef>emptyList());
 
@@ -48,13 +44,15 @@ public class SuperWirelessKitBatchCollectorTest {
         BindingTargetRef known = createTarget(1);
         BindingTargetRef fresh = createTarget(2);
 
-        SuperWirelessKitBatchCollector collector = new SuperWirelessKitBatchCollector(new GraphLookup(mapOf(
-            root,
-            Arrays.asList(known, fresh),
-            known,
-            Arrays.asList(root, fresh),
-            fresh,
-            Arrays.asList(root))));
+        SuperWirelessKitBatchCollector collector = new SuperWirelessKitBatchCollector(
+            new GraphLookup(
+                mapOf(
+                    root,
+                    Arrays.asList(known, fresh),
+                    known,
+                    Arrays.asList(root, fresh),
+                    fresh,
+                    Arrays.asList(root))));
 
         List<BindingTargetRef> collected = collector.collect(root, Collections.singleton(known));
 
@@ -73,19 +71,21 @@ public class SuperWirelessKitBatchCollectorTest {
         BindingTargetRef tailDown = createTarget(2, ForgeDirection.DOWN);
         BindingTargetRef tailWest = createTarget(2, ForgeDirection.WEST);
 
-        SuperWirelessKitBatchCollector collector = new SuperWirelessKitBatchCollector(new GraphLookup(mapOf(
-            rootUp,
-            Arrays.asList(rootNorth, nextSouth, nextEast),
-            rootNorth,
-            Arrays.asList(rootUp, nextSouth),
-            nextSouth,
-            Arrays.asList(rootUp, rootNorth, nextEast, tailDown, tailWest),
-            nextEast,
-            Arrays.asList(rootUp, nextSouth, tailDown),
-            tailDown,
-            Arrays.asList(nextSouth, nextEast, tailWest),
-            tailWest,
-            Arrays.asList(nextSouth, tailDown))));
+        SuperWirelessKitBatchCollector collector = new SuperWirelessKitBatchCollector(
+            new GraphLookup(
+                mapOf(
+                    rootUp,
+                    Arrays.asList(rootNorth, nextSouth, nextEast),
+                    rootNorth,
+                    Arrays.asList(rootUp, nextSouth),
+                    nextSouth,
+                    Arrays.asList(rootUp, rootNorth, nextEast, tailDown, tailWest),
+                    nextEast,
+                    Arrays.asList(rootUp, nextSouth, tailDown),
+                    tailDown,
+                    Arrays.asList(nextSouth, nextEast, tailWest),
+                    tailWest,
+                    Arrays.asList(nextSouth, tailDown))));
 
         List<BindingTargetRef> collected = collector.collect(rootUp, Collections.<BindingTargetRef>emptyList());
 
@@ -105,13 +105,15 @@ public class SuperWirelessKitBatchCollectorTest {
         BindingTargetRef knownEast = createTarget(1, ForgeDirection.EAST);
         BindingTargetRef fresh = createTarget(2, ForgeDirection.DOWN);
 
-        SuperWirelessKitBatchCollector collector = new SuperWirelessKitBatchCollector(new GraphLookup(mapOf(
-            root,
-            Arrays.asList(knownEast, fresh),
-            knownEast,
-            Arrays.asList(root),
-            fresh,
-            Arrays.asList(root))));
+        SuperWirelessKitBatchCollector collector = new SuperWirelessKitBatchCollector(
+            new GraphLookup(
+                mapOf(
+                    root,
+                    Arrays.asList(knownEast, fresh),
+                    knownEast,
+                    Arrays.asList(root),
+                    fresh,
+                    Arrays.asList(root))));
 
         List<BindingTargetRef> collected = collector.collect(root, Collections.singleton(knownNorth));
 

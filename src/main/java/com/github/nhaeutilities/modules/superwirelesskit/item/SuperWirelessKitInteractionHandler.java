@@ -24,7 +24,8 @@ public class SuperWirelessKitInteractionHandler {
 
     @SubscribeEvent
     public void onPlayerInteract(PlayerInteractEvent event) {
-        if (event.action != PlayerInteractEvent.Action.LEFT_CLICK_BLOCK || event.world == null || event.world.isRemote) {
+        if (event.action != PlayerInteractEvent.Action.LEFT_CLICK_BLOCK || event.world == null
+            || event.world.isRemote) {
             return;
         }
 
@@ -45,11 +46,13 @@ public class SuperWirelessKitInteractionHandler {
             return;
         }
 
-        if (!SuperWirelessKitInteractionRules.shouldAttemptBatchCapture(player.isSneaking(), true, hasPendingBindings)) {
+        if (!SuperWirelessKitInteractionRules
+            .shouldAttemptBatchCapture(player.isSneaking(), true, hasPendingBindings)) {
             return;
         }
 
-        List<BindingTargetRef> roots = SuperWirelessKitTargetResolver.resolveTargetsAtBlock(event.world, event.x, event.y, event.z);
+        List<BindingTargetRef> roots = SuperWirelessKitTargetResolver
+            .resolveTargetsAtBlock(event.world, event.x, event.y, event.z);
         if (roots.isEmpty()) {
             return;
         }

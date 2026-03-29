@@ -68,8 +68,6 @@ public class SuperWirelessRuntimeManager {
             return;
         }
 
-        World world = node.getWorld();
-        BindingRegistry registry = world != null && !world.isRemote ? getRegistry(world) : null;
         for (Map.Entry<UUID, IGridConnection> entry : new HashMap<UUID, IGridConnection>(activeConnections)
             .entrySet()) {
             IGridConnection connection = entry.getValue();
@@ -80,10 +78,21 @@ public class SuperWirelessRuntimeManager {
 
             if (connection.a() == node || connection.b() == node) {
                 activeConnections.remove(entry.getKey());
-                if (registry != null) {
-                    registry.remove(entry.getKey());
-                }
             }
+        }
+    }
+
+    public void onBlockBroken(World world, int x, int y, int z) {
+        if (world == null || world.isRemote || world.provider == null) {
+            return;
+        }
+
+        BindingRegistry registry = getRegistry(world);
+        List<BindingRecord> touchedBindings = registry.getBindingsTouchingBlock(
+            new BindingBlockRef(world.provider.dimensionId, x, y, z));
+        for (BindingRecord record : touchedBindings) {
+            destroyActive(record.getBindingId());
+            registry.remove(record.getBindingId());
         }
     }
 
@@ -136,7 +145,20 @@ public class SuperWirelessRuntimeManager {
             activeConnections.put(record.getBindingId(), connection);
             return BindingReconcileResult.CONNECTED;
         } catch (FailedConnection e) {
-            LOGGER.warn("Failed to create SuperWirelessKit binding {}", record.getBindingId(), e);
+            LOGGER.warn(
+                "Failed to create SuperWirelessKit binding {} [{}: {}] controller={} target={} controllerNode={} targetNode={} targetMachine={}",
+                record.getBindingId(),
+                e.getClass()
+                    .getSimpleName(),
+                e.getMessage(),
+                formatController(record),
+                formatTarget(record),
+                System.identityHashCode(controller.getNode()),
+                System.identityHashCode(target.getNode()),
+                target.getMachine()
+                    .getClass()
+                    .getName(),
+                e);
             registry.remove(record.getBindingId());
             return BindingReconcileResult.CONNECTION_FAILED;
         }
@@ -154,12 +176,18 @@ public class SuperWirelessRuntimeManager {
             .getZ()
             : record.getTarget()
                 .getZ();
-        if (isChunkLoaded(world, x, z)) {
-            registry.remove(record.getBindingId());
-            return BindingReconcileResult.INVALID_BINDING_REMOVED;
+        if (!isChunkLoaded(world, x, z)) {
+            return controllerSide ? BindingReconcileResult.CONTROLLER_UNLOADED : BindingReconcileResult.TARGET_UNLOADED;
         }
 
-        return controllerSide ? BindingReconcileResult.CONTROLLER_UNLOADED : BindingReconcileResult.TARGET_UNLOADED;
+        boolean hostStillPresent = controllerSide ? resolver.hasControllerHost(world, record.getController())
+            : resolver.hasCompatibleTargetHost(world, record.getTarget());
+        if (hostStillPresent) {
+            return controllerSide ? BindingReconcileResult.CONTROLLER_UNLOADED : BindingReconcileResult.TARGET_UNLOADED;
+        }
+
+        registry.remove(record.getBindingId());
+        return BindingReconcileResult.INVALID_BINDING_REMOVED;
     }
 
     private IGridConnection connect(BindingRecord record, GridNode controllerNode, GridNode targetNode)
@@ -197,5 +225,45 @@ public class SuperWirelessRuntimeManager {
         return world != null && world.getChunkProvider() != null
             && world.getChunkProvider()
                 .chunkExists(x >> 4, z >> 4);
+    }
+
+    private static String formatController(BindingRecord record) {
+        return record.getController()
+            .getDimensionId()
+            + ":"
+            + record.getController()
+                .getX()
+            + ","
+            + record.getController()
+                .getY()
+            + ","
+            + record.getController()
+                .getZ()
+            + "/"
+            + record.getController()
+                .getFace()
+                .name();
+    }
+
+    private static String formatTarget(BindingRecord record) {
+        return record.getTarget()
+            .getKind()
+                .name()
+            + "@"
+            + record.getTarget()
+                .getDimensionId()
+            + ":"
+            + record.getTarget()
+                .getX()
+            + ","
+            + record.getTarget()
+                .getY()
+            + ","
+            + record.getTarget()
+                .getZ()
+            + "/"
+            + record.getTarget()
+                .getSide()
+                .name();
     }
 }

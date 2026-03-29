@@ -17,7 +17,9 @@ import java.util.Set;
 import net.minecraftforge.common.config.Configuration;
 
 import org.junit.Test;
+
 import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
+
 import cpw.mods.fml.relauncher.FMLInjectionData;
 
 public class CoreConfigStructureTest {

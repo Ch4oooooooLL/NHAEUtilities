@@ -13,10 +13,8 @@ public final class CoreConfig {
     private static final String SUPER_WIRELESS_KIT_CATEGORY = "modules.superWirelessKit";
     private static final String SUPER_WIRELESS_KIT_BASIC_CATEGORY = SUPER_WIRELESS_KIT_CATEGORY + ".basic";
     private static final String ENABLED_PROPERTY = "enabled";
-    private static final String PATTERN_GENERATOR_ENABLED_COMMENT =
-        "Enable the pattern generator module. [Requires MC restart]";
-    private static final String SUPER_WIRELESS_KIT_ENABLED_COMMENT =
-        "Enable the super wireless kit module. [Requires MC restart]";
+    private static final String PATTERN_GENERATOR_ENABLED_COMMENT = "Enable the pattern generator module. [Requires MC restart]";
+    private static final String SUPER_WIRELESS_KIT_ENABLED_COMMENT = "Enable the super wireless kit module. [Requires MC restart]";
 
     private static Configuration configuration;
 
@@ -91,22 +89,16 @@ public final class CoreConfig {
     }
 
     private static boolean readPatternGeneratorEnabled(Configuration cfg) {
-        Property property = cfg.get(
-            PATTERN_GENERATOR_BASIC_CATEGORY,
-            ENABLED_PROPERTY,
-            true,
-            PATTERN_GENERATOR_ENABLED_COMMENT);
+        Property property = cfg
+            .get(PATTERN_GENERATOR_BASIC_CATEGORY, ENABLED_PROPERTY, true, PATTERN_GENERATOR_ENABLED_COMMENT);
         property.setRequiresMcRestart(true);
         property.setLanguageKey("nhaeutilities.config." + PATTERN_GENERATOR_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
         return property.getBoolean();
     }
 
     private static boolean readSuperWirelessKitEnabled(Configuration cfg) {
-        Property property = cfg.get(
-            SUPER_WIRELESS_KIT_BASIC_CATEGORY,
-            ENABLED_PROPERTY,
-            true,
-            SUPER_WIRELESS_KIT_ENABLED_COMMENT);
+        Property property = cfg
+            .get(SUPER_WIRELESS_KIT_BASIC_CATEGORY, ENABLED_PROPERTY, true, SUPER_WIRELESS_KIT_ENABLED_COMMENT);
         property.setRequiresMcRestart(true);
         property.setLanguageKey("nhaeutilities.config." + SUPER_WIRELESS_KIT_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
         return property.getBoolean();

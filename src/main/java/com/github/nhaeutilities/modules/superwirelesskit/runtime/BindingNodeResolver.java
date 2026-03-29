@@ -1,5 +1,7 @@
 package com.github.nhaeutilities.modules.superwirelesskit.runtime;
 
+import java.lang.reflect.Method;
+
 import net.minecraft.block.Block;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.world.World;
@@ -20,6 +22,39 @@ import appeng.parts.AEBasePart;
 import appeng.tile.networking.TileController;
 
 public class BindingNodeResolver {
+
+    public boolean hasControllerHost(World world, ControllerEndpointRef controllerRef) {
+        if (!matchesWorld(world, controllerRef.getDimensionId())) {
+            return false;
+        }
+
+        return world
+            .getTileEntity(controllerRef.getX(), controllerRef.getY(), controllerRef.getZ()) instanceof TileController;
+    }
+
+    public boolean hasCompatibleTargetHost(World world, BindingTargetRef targetRef) {
+        if (!matchesWorld(world, targetRef.getDimensionId())) {
+            return false;
+        }
+
+        TileEntity hostTile = world.getTileEntity(targetRef.getX(), targetRef.getY(), targetRef.getZ());
+        if (hostTile == null) {
+            return false;
+        }
+
+        if (targetRef.getKind() == BindingTargetKind.PART) {
+            if (!(hostTile instanceof IPartHost)) {
+                return false;
+            }
+
+            IPart part = ((IPartHost) hostTile).getPart(targetRef.getSide());
+            return part != null && targetRef.getFingerprint()
+                .equals(createFingerprint(hostTile, part));
+        }
+
+        return hostTile instanceof IGridHost && targetRef.getFingerprint()
+            .equals(createFingerprint(hostTile, hostTile));
+    }
 
     public ResolvedControllerEndpoint resolveController(World world, ControllerEndpointRef controllerRef) {
         if (!matchesWorld(world, controllerRef.getDimensionId())) {
@@ -96,17 +131,10 @@ public class BindingNodeResolver {
             return null;
         }
 
-        Object machine = node.getGridBlock()
-            .getMachine();
-        if (machine instanceof AEBasePart) {
-            TileEntity tile = ((AEBasePart) machine).getTile();
-            if (tile != null) {
-                return new BindingBlockRef(node.getWorld().provider.dimensionId, tile.xCoord, tile.yCoord, tile.zCoord);
-            }
-        }
-
-        if (machine instanceof TileEntity) {
-            TileEntity tile = (TileEntity) machine;
+        TileEntity tile = resolveMachineTile(
+            node.getGridBlock()
+                .getMachine());
+        if (tile != null) {
             return new BindingBlockRef(node.getWorld().provider.dimensionId, tile.xCoord, tile.yCoord, tile.zCoord);
         }
 
@@ -133,5 +161,40 @@ public class BindingNodeResolver {
 
     private static boolean matchesWorld(World world, int dimensionId) {
         return world != null && world.provider != null && world.provider.dimensionId == dimensionId;
+    }
+
+    private static TileEntity resolveMachineTile(Object machine) {
+        if (machine instanceof AEBasePart) {
+            TileEntity tile = ((AEBasePart) machine).getTile();
+            if (tile != null) {
+                return tile;
+            }
+        }
+
+        if (machine instanceof TileEntity) {
+            return (TileEntity) machine;
+        }
+
+        TileEntity metaTileBase = invokeTileEntityAccessor(machine, "getBaseMetaTileEntity");
+        if (metaTileBase != null) {
+            return metaTileBase;
+        }
+
+        return invokeTileEntityAccessor(machine, "getTile");
+    }
+
+    private static TileEntity invokeTileEntityAccessor(Object machine, String methodName) {
+        if (machine == null) {
+            return null;
+        }
+
+        try {
+            Method accessor = machine.getClass()
+                .getMethod(methodName);
+            Object resolved = accessor.invoke(machine);
+            return resolved instanceof TileEntity ? (TileEntity) resolved : null;
+        } catch (ReflectiveOperationException ignored) {
+            return null;
+        }
     }
 }

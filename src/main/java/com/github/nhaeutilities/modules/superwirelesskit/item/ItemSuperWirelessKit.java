@@ -127,9 +127,8 @@ public class ItemSuperWirelessKit extends Item {
                 controller != null ? formatController(controller) : tr("nhaeutilities.gui.common.none")));
         if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
             list.add(
-                EnumChatFormatting.GRAY + tr(
-                    "nhaeutilities.tooltip.swk.queue",
-                    SuperWirelessKitStackState.getQueuedTargetCount(stack)));
+                EnumChatFormatting.GRAY
+                    + tr("nhaeutilities.tooltip.swk.queue", SuperWirelessKitStackState.getQueuedTargetCount(stack)));
             list.add(
                 EnumChatFormatting.GRAY + tr(
                     "nhaeutilities.tooltip.swk.pending",
