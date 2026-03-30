@@ -11,6 +11,8 @@ import net.minecraftforge.fluids.FluidStack;
 
 import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
+import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
+import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingNbt;
 
 /**
  * AE2 ????????????RecipeEntry ??? AE2 ?????? ItemStack
@@ -84,6 +86,16 @@ public class PatternEncoder {
         tag.setBoolean("isStandard", true);
 
         patternStack.setTagCompound(tag);
+        PatternRoutingNbt.writeRoutingData(
+            patternStack,
+            new PatternRoutingNbt.RoutingMetadata(
+                PatternRoutingKeys.CURRENT_VERSION,
+                recipe.recipeId,
+                "",
+                "",
+                "",
+                PatternRoutingKeys.SOURCE_GENERATOR,
+                false));
         return patternStack;
     }
 

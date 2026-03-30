@@ -16,6 +16,7 @@ import com.github.nhaeutilities.modules.superwirelesskit.data.BindingRecord;
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetRef;
 import com.github.nhaeutilities.modules.superwirelesskit.data.ControllerEndpointRef;
 import com.github.nhaeutilities.modules.superwirelesskit.data.SuperWirelessSavedData;
+import com.github.nhaeutilities.modules.superwirelesskit.runtime.SuperWirelessDebugLog;
 
 public class BindingRegistry {
 
@@ -40,13 +41,31 @@ public class BindingRegistry {
         Objects.requireNonNull(record, "record");
 
         if (findByTarget(record.getTarget()) != null) {
+            SuperWirelessDebugLog.log(
+                "REGISTRY_ADD_REJECT_DUPLICATE_TARGET",
+                "bindingId=%s controller=%s target=%s",
+                record.getBindingId(),
+                formatController(record.getController()),
+                formatTarget(record.getTarget()));
             return false;
         }
         if (getBindingsForFace(record.getController()).size() >= MAX_BINDINGS_PER_FACE) {
+            SuperWirelessDebugLog.log(
+                "REGISTRY_ADD_REJECT_FACE_LIMIT",
+                "bindingId=%s controller=%s limit=%d",
+                record.getBindingId(),
+                formatController(record.getController()),
+                Integer.valueOf(MAX_BINDINGS_PER_FACE));
             return false;
         }
         savedData.put(record);
         index(record);
+        SuperWirelessDebugLog.log(
+            "REGISTRY_ADD",
+            "bindingId=%s controller=%s target=%s",
+            record.getBindingId(),
+            formatController(record.getController()),
+            formatTarget(record.getTarget()));
         return true;
     }
 
@@ -63,8 +82,43 @@ public class BindingRegistry {
         BindingRecord removed = savedData.remove(bindingId);
         if (removed != null) {
             deindex(removed);
+            SuperWirelessDebugLog.log(
+                "REGISTRY_REMOVE",
+                "bindingId=%s controller=%s target=%s",
+                bindingId,
+                formatController(removed.getController()),
+                formatTarget(removed.getTarget()));
+        } else {
+            SuperWirelessDebugLog.log("REGISTRY_REMOVE_MISS", "bindingId=%s", bindingId);
         }
         return removed;
+    }
+
+    private static String formatController(ControllerEndpointRef controller) {
+        return controller.getDimensionId() + ":"
+            + controller.getX()
+            + ","
+            + controller.getY()
+            + ","
+            + controller.getZ()
+            + "/"
+            + controller.getFace()
+                .name();
+    }
+
+    private static String formatTarget(BindingTargetRef target) {
+        return target.getKind()
+            .name() + "@"
+            + target.getDimensionId()
+            + ":"
+            + target.getX()
+            + ","
+            + target.getY()
+            + ","
+            + target.getZ()
+            + "/"
+            + target.getSide()
+                .name();
     }
 
     public List<BindingRecord> getBindingsTouchingBlock(BindingBlockRef block) {

@@ -20,6 +20,7 @@ import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.IChunkProvider;
 import net.minecraftforge.common.util.ForgeDirection;
 
+import org.junit.After;
 import org.junit.Test;
 
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingBlockRef;
@@ -46,6 +47,11 @@ import sun.misc.Unsafe;
 
 public class SuperWirelessRuntimeManagerTest {
 
+    @After
+    public void tearDownDebugLog() {
+        SuperWirelessDebugLog.resetForTests();
+    }
+
     @Test
     public void onNodeDestroyedDropsRuntimeConnectionWithoutRemovingPersistedBinding() throws Exception {
         World world = allocateWorld(0);
@@ -63,12 +69,14 @@ public class SuperWirelessRuntimeManagerTest {
 
         GridNode controllerNode = new GridNode(new TestGridBlock(world, controllerBlock));
         GridNode targetNode = new GridNode(new TestGridBlock(world, BindingBlockRef.of(record.getTarget())));
-        activeConnectionMap(manager).put(record.getBindingId(), new TestGridConnection(controllerNode, targetNode));
+        TestGridConnection connection = new TestGridConnection(controllerNode, targetNode);
+        activeConnectionMap(manager).put(record.getBindingId(), connection);
 
         manager.onNodeDestroyed(controllerNode);
 
         assertNotNull(registry.findByTarget(record.getTarget()));
         assertTrue(activeConnectionMap(manager).isEmpty());
+        assertTrue(connection.destroyed);
     }
 
     @Test
@@ -125,10 +133,51 @@ public class SuperWirelessRuntimeManagerTest {
         GridNode targetNode = new GridNode(new TestGridBlock(world, BindingBlockRef.of(record.getTarget())));
         activeConnectionMap(manager).put(record.getBindingId(), new TestGridConnection(controllerNode, targetNode));
 
-        manager.onBlockBroken(world, record.getController().getX(), record.getController().getY(), record.getController().getZ());
+        manager.onBlockBroken(
+            world,
+            record.getController()
+                .getX(),
+            record.getController()
+                .getY(),
+            record.getController()
+                .getZ());
 
         assertNull(registry.findByTarget(record.getTarget()));
         assertTrue(activeConnectionMap(manager).isEmpty());
+    }
+
+    @Test
+    public void onBlockBrokenWritesDebugLifecycleEntryWhenEnabled() throws Exception {
+        World world = allocateWorld(0);
+        BindingRecord record = createRecord();
+        BindingRegistry registry = new BindingRegistry(new SuperWirelessSavedData("test"));
+        assertTrue(registry.add(record));
+
+        BindingDataStore dataStore = new BindingDataStore();
+        registryMap(dataStore).put(world, registry);
+
+        CapturingDebugSink sink = new CapturingDebugSink();
+        SuperWirelessDebugLog.installSinkForTests(sink);
+        SuperWirelessDebugLog.configure(true);
+
+        SuperWirelessRuntimeManager manager = new SuperWirelessRuntimeManager(dataStore, new BindingNodeResolver());
+        manager.onBlockBroken(
+            world,
+            record.getController()
+                .getX(),
+            record.getController()
+                .getY(),
+            record.getController()
+                .getZ());
+
+        assertTrue(
+            sink.contents()
+                .contains("BLOCK_BROKEN"));
+        assertTrue(
+            sink.contents()
+                .contains(
+                    record.getBindingId()
+                        .toString()));
     }
 
     private static BindingRecord createRecord() {
@@ -312,6 +361,7 @@ public class SuperWirelessRuntimeManagerTest {
 
         private final GridNode a;
         private final GridNode b;
+        private boolean destroyed;
 
         private TestGridConnection(GridNode a, GridNode b) {
             this.a = a;
@@ -332,7 +382,9 @@ public class SuperWirelessRuntimeManagerTest {
         }
 
         @Override
-        public void destroy() {}
+        public void destroy() {
+            destroyed = true;
+        }
 
         @Override
         public IGridNode a() {
@@ -422,5 +474,23 @@ public class SuperWirelessRuntimeManagerTest {
 
         @Override
         public void saveExtraData() {}
+    }
+
+    private static final class CapturingDebugSink implements SuperWirelessDebugLog.DebugSink {
+
+        private final StringBuilder contents = new StringBuilder();
+
+        @Override
+        public void write(String line) {
+            contents.append(line)
+                .append('\n');
+        }
+
+        @Override
+        public void close() {}
+
+        private String contents() {
+            return contents.toString();
+        }
     }
 }

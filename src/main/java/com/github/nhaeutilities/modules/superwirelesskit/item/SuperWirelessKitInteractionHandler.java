@@ -14,6 +14,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingRecord;
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetRef;
+import com.github.nhaeutilities.modules.superwirelesskit.runtime.SuperWirelessDebugLog;
 import com.github.nhaeutilities.modules.superwirelesskit.tool.SuperWirelessKitBatchCollector;
 import com.github.nhaeutilities.modules.superwirelesskit.tool.SuperWirelessKitStackState;
 import com.github.nhaeutilities.modules.superwirelesskit.tool.SuperWirelessKitTargetResolver;
@@ -56,6 +57,16 @@ public class SuperWirelessKitInteractionHandler {
         if (roots.isEmpty()) {
             return;
         }
+        SuperWirelessDebugLog.log(
+            "QUEUE_BATCH_START",
+            "worldDim=%d origin=%d,%d,%d roots=%d queued=%d pending=%d",
+            Integer.valueOf(event.world.provider.dimensionId),
+            Integer.valueOf(event.x),
+            Integer.valueOf(event.y),
+            Integer.valueOf(event.z),
+            Integer.valueOf(roots.size()),
+            Integer.valueOf(SuperWirelessKitStackState.getQueuedTargetCount(stack)),
+            Integer.valueOf(SuperWirelessKitStackState.getPendingBindingCount(stack)));
 
         Set<BindingTargetRef> knownTargets = new LinkedHashSet<BindingTargetRef>();
         knownTargets.addAll(SuperWirelessKitStackState.getQueuedTargets(stack));
@@ -78,6 +89,14 @@ public class SuperWirelessKitInteractionHandler {
         }
 
         if (acceptedTargets.isEmpty()) {
+            SuperWirelessDebugLog.log(
+                "QUEUE_BATCH_NO_NEW_TARGETS",
+                "worldDim=%d origin=%d,%d,%d known=%d",
+                Integer.valueOf(event.world.provider.dimensionId),
+                Integer.valueOf(event.x),
+                Integer.valueOf(event.y),
+                Integer.valueOf(event.z),
+                Integer.valueOf(knownTargets.size()));
             sendMessage(player, EnumChatFormatting.YELLOW, "nhaeutilities.msg.swk.no_new_targets");
             event.setCanceled(true);
             return;
@@ -93,6 +112,15 @@ public class SuperWirelessKitInteractionHandler {
             "nhaeutilities.msg.swk.batch_queued_targets",
             acceptedTargets.size(),
             SuperWirelessKitStackState.getQueuedTargetCount(stack));
+        SuperWirelessDebugLog.log(
+            "QUEUE_BATCH_RESULT",
+            "worldDim=%d origin=%d,%d,%d accepted=%d queuedNow=%d",
+            Integer.valueOf(event.world.provider.dimensionId),
+            Integer.valueOf(event.x),
+            Integer.valueOf(event.y),
+            Integer.valueOf(event.z),
+            Integer.valueOf(acceptedTargets.size()),
+            Integer.valueOf(SuperWirelessKitStackState.getQueuedTargetCount(stack)));
         event.setCanceled(true);
     }
 

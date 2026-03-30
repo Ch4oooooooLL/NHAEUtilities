@@ -224,3 +224,16 @@ nhaeutilities.config.modules.patternGenerator.advanced=兼容与高级
 nhaeutilities.config.modules.superWirelessKit=超级无线设置工具
 nhaeutilities.config.modules.superWirelessKit.basic=基础设置
 nhaeutilities.config.modules.superWirelessKit.basic.enabled=启用
+
+
+nhaeutilities.msg.pattern.routed_fallback_inventory=[NHAEUtilities] 当前无可用的暂存目标。样板已返还到你的背包。
+nhaeutilities.msg.pattern.route_success=[NHAEUtilities] 已将编码样板直接写入匹配的合成输入仓。
+nhaeutilities.msg.pattern.route_target_full=[NHAEUtilities] 已找到匹配的合成输入仓，但其中没有空闲样板位。
+nhaeutilities.msg.pattern.routed_fallback_drop=[NHAEUtilities] 背包已满。样板已掉落在你附近。
+nhaeutilities.msg.pattern.staged_unmatched=[NHAEUtilities] 未找到直接匹配的合成输入仓。样板已暂存到你绑定的索引仓库。
+nhaeutilities.tooltip.pattern_index.enable_staging=携带此物品可暂存未匹配的 NEI 编码样板。
+nhaeutilities.tooltip.pattern_index.player_bound=暂存样板会绑定到你的玩家 UUID。
+nhaeutilities.msg.pattern_index.empty=[NHAEUtilities] 你的索引当前没有暂存样板。
+nhaeutilities.msg.pattern_index.summary=[NHAEUtilities] 暂存分组：%s，样板总数：%s
+nhaeutilities.msg.pattern_index.group_entry=[NHAEUtilities] %s x%s -> %s
+item.nhaeutilities.pattern_index.name=样板索引
