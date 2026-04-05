@@ -74,6 +74,10 @@ public class BindingRegistry {
         return bindingId != null ? savedData.get(bindingId) : null;
     }
 
+    public BindingRecord findById(UUID bindingId) {
+        return bindingId != null ? savedData.get(bindingId) : null;
+    }
+
     public List<BindingRecord> getBindingsForFace(ControllerEndpointRef controller) {
         return resolveBindingIds(bindingIdsByFace.get(controller));
     }

@@ -1,6 +1,5 @@
 package com.github.nhaeutilities.modules.patterngenerator.routing;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,7 +9,6 @@ import net.minecraft.item.ItemStack;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
 import com.github.nhaeutilities.accessor.patterngenerator.HatchAssignmentHolder;
-import gregtech.common.tileentities.machines.MTEHatchCraftingInputME;
 
 public final class PatternRouterService {
 
@@ -32,20 +30,19 @@ public final class PatternRouterService {
             return RouteResult.noMatchingHatch();
         }
 
-        List<MTEHatchCraftingInputME> matches = new ArrayList<MTEHatchCraftingInputME>();
+        List<Object> matches = new ArrayList<Object>();
         List<HatchAssignmentData> assignments = new ArrayList<HatchAssignmentData>();
         for (IGridNode gridNode : grid.getNodes()) {
             Object machine = gridNode != null ? gridNode.getMachine() : null;
-            if (!(machine instanceof MTEHatchCraftingInputME)) {
+            if (!CraftingInputHatchAccess.isCraftingInputHatch(machine)) {
                 continue;
             }
-            MTEHatchCraftingInputME hatch = (MTEHatchCraftingInputME) machine;
-            if (!(hatch instanceof HatchAssignmentHolder)) {
+            if (!(machine instanceof HatchAssignmentHolder)) {
                 continue;
             }
-            HatchAssignmentData assignment = ((HatchAssignmentHolder) hatch).nhaeutilities$getAssignmentData();
+            HatchAssignmentData assignment = ((HatchAssignmentHolder) machine).nhaeutilities$getAssignmentData();
             if (matchesAssignment(metadata, assignment)) {
-                matches.add(hatch);
+                matches.add(machine);
                 assignments.add(assignment);
             }
         }
@@ -61,7 +58,7 @@ public final class PatternRouterService {
 
         boolean targetFull = false;
         for (int i = 0; i < matches.size(); i++) {
-            MTEHatchCraftingInputME hatch = matches.get(i);
+            Object hatch = matches.get(i);
             HatchAssignmentData assignment = assignments.get(i);
             if (!resolvedAssignment.assignmentKey.equals(assignment.assignmentKey)) {
                 continue;
@@ -102,9 +99,8 @@ public final class PatternRouterService {
         return matchedAssignment;
     }
 
-    private static boolean tryInsertIntoHatch(MTEHatchCraftingInputME hatch, ItemStack pattern,
-        HatchAssignmentData assignment) {
-        IInventory inventory = hatch.getPatterns();
+    private static boolean tryInsertIntoHatch(Object hatch, ItemStack pattern, HatchAssignmentData assignment) {
+        IInventory inventory = CraftingInputHatchAccess.getPatterns(hatch);
         if (inventory == null || pattern == null || assignment == null || assignment.assignmentKey.isEmpty()) {
             return false;
         }
@@ -174,34 +170,16 @@ public final class PatternRouterService {
         return true;
     }
 
-    private static int resolvePatternSlotLimit(MTEHatchCraftingInputME hatch, IInventory inventory) {
-        int reflected = readStaticIntField(hatch.getClass(), "MAX_PATTERN_COUNT");
-        if (reflected > 0) {
-            return Math.min(reflected, inventory.getSizeInventory());
-        }
-        return Math.min(FALLBACK_PATTERN_SLOT_LIMIT, inventory.getSizeInventory());
-    }
-
-    private static int readStaticIntField(Class<?> type, String fieldName) {
-        Class<?> current = type;
-        while (current != null) {
-            try {
-                Field field = current.getDeclaredField(fieldName);
-                field.setAccessible(true);
-                return field.getInt(null);
-            } catch (Exception ignored) {
-                current = current.getSuperclass();
-            }
-        }
-        return -1;
+    private static int resolvePatternSlotLimit(Object hatch, IInventory inventory) {
+        return CraftingInputHatchAccess.getPatternSlotLimit(hatch, inventory, FALLBACK_PATTERN_SLOT_LIMIT);
     }
 
     public static final class RouteResult {
 
         public final RouteStatus status;
-        public final MTEHatchCraftingInputME target;
+        public final Object target;
 
-        private RouteResult(RouteStatus status, MTEHatchCraftingInputME target) {
+        private RouteResult(RouteStatus status, Object target) {
             this.status = status;
             this.target = target;
         }
@@ -210,7 +188,7 @@ public final class PatternRouterService {
             return status == RouteStatus.ROUTED;
         }
 
-        public static RouteResult routed(MTEHatchCraftingInputME target) {
+        public static RouteResult routed(Object target) {
             return new RouteResult(RouteStatus.ROUTED, target);
         }
 

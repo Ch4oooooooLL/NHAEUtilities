@@ -2,6 +2,7 @@ package com.github.nhaeutilities.modules.patterngenerator.mixin;
 
 import net.minecraft.nbt.NBTTagCompound;
 
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,9 +13,8 @@ import com.github.nhaeutilities.accessor.patterngenerator.HatchAssignmentHolder;
 import com.github.nhaeutilities.modules.patterngenerator.routing.HatchAssignmentData;
 import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
 
-import gregtech.common.tileentities.machines.MTEHatchCraftingInputME;
-
-@Mixin(value = MTEHatchCraftingInputME.class, remap = false)
+@Pseudo
+@Mixin(targets = "gregtech.common.tileentities.machines.MTEHatchCraftingInputME", remap = false)
 public abstract class MixinMTEHatchCraftingInputME implements HatchAssignmentHolder {
 
     @Unique

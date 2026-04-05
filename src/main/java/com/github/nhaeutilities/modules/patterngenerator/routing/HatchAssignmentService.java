@@ -12,30 +12,36 @@ import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.metatileentity.implementations.MTEMultiBlockBase;
 import gregtech.api.recipe.RecipeMap;
 import gregtech.common.tileentities.machines.IDualInputHatch;
-import gregtech.common.tileentities.machines.MTEHatchCraftingInputME;
 
 public final class HatchAssignmentService {
 
     private HatchAssignmentService() {}
 
-    public static void refreshAssignments(MTEMultiBlockBase controller) {
+    public static void refreshAssignments(Object controller) {
         if (controller == null) {
             return;
         }
 
-        String recipeFamily = resolveRecipeFamily(controller);
-        for (IDualInputHatch dualInputHatch : controller.mDualInputHatches) {
-            if (!(dualInputHatch instanceof MTEHatchCraftingInputME)) {
+        if (!(controller instanceof MTEMultiBlockBase)) {
+            return;
+        }
+
+        MTEMultiBlockBase multiBlock = (MTEMultiBlockBase) controller;
+
+        String recipeFamily = resolveRecipeFamily(multiBlock);
+        for (IDualInputHatch dualInputHatch : multiBlock.mDualInputHatches) {
+            if (!CraftingInputHatchAccess.isCraftingInputHatch(dualInputHatch)) {
                 continue;
             }
 
-            MTEHatchCraftingInputME hatch = (MTEHatchCraftingInputME) dualInputHatch;
-            if (!(hatch instanceof HatchAssignmentHolder)) {
+            if (!(dualInputHatch instanceof HatchAssignmentHolder)) {
                 continue;
             }
 
-            ItemStack circuit = hatch.getCircuitSlot() >= 0 ? hatch.getStackInSlot(hatch.getCircuitSlot()) : null;
-            ItemStack[] sharedItems = hatch.getSharedItems();
+            int circuitSlot = CraftingInputHatchAccess.getCircuitSlot(dualInputHatch);
+            ItemStack circuit = circuitSlot >= 0 ? CraftingInputHatchAccess.getStackInSlot(dualInputHatch, circuitSlot)
+                : null;
+            ItemStack[] sharedItems = CraftingInputHatchAccess.getSharedItems(dualInputHatch);
             ItemStack[] manualItems = extractManualItems(sharedItems);
             String circuitKey = PatternRoutingNbt.circuitKey(circuit);
             String manualItemsKey = PatternRoutingNbt.manualItemsKey(manualItems);
@@ -45,7 +51,7 @@ public final class HatchAssignmentService {
                 circuitKey,
                 manualItemsKey);
 
-            ((HatchAssignmentHolder) hatch).nhaeutilities$setAssignmentData(
+            ((HatchAssignmentHolder) dualInputHatch).nhaeutilities$setAssignmentData(
                 new HatchAssignmentData(assignmentKey, recipeFamily, "", circuitKey, manualItemsKey));
         }
     }
