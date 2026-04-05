@@ -15,10 +15,28 @@ public class RecipeEntry {
     public final ItemStack[] specialItems;
     public final int duration;
     public final int euPerTick;
+    public final String recipeId;
 
     public RecipeEntry(String sourceType, String recipeMapId, String machineDisplayName, ItemStack[] inputs,
         ItemStack[] outputs, FluidStack[] fluidInputs, FluidStack[] fluidOutputs, ItemStack[] specialItems,
         int duration, int euPerTick) {
+        this(
+            sourceType,
+            recipeMapId,
+            machineDisplayName,
+            inputs,
+            outputs,
+            fluidInputs,
+            fluidOutputs,
+            specialItems,
+            duration,
+            euPerTick,
+            "");
+    }
+
+    public RecipeEntry(String sourceType, String recipeMapId, String machineDisplayName, ItemStack[] inputs,
+        ItemStack[] outputs, FluidStack[] fluidInputs, FluidStack[] fluidOutputs, ItemStack[] specialItems,
+        int duration, int euPerTick, String recipeId) {
         this.sourceType = sourceType;
         this.recipeMapId = recipeMapId;
         this.machineDisplayName = machineDisplayName;
@@ -29,5 +47,6 @@ public class RecipeEntry {
         this.specialItems = specialItems != null ? specialItems : new ItemStack[0];
         this.duration = duration;
         this.euPerTick = euPerTick;
+        this.recipeId = recipeId != null ? recipeId : "";
     }
 }
