@@ -1,8 +1,12 @@
 package com.github.nhaeutilities.modules.superwirelesskit.runtime;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import net.minecraft.world.World;
@@ -24,14 +28,28 @@ import appeng.me.GridNode;
 public class SuperWirelessRuntimeManager {
 
     private static final Logger LOGGER = LogManager.getLogger("NHAEUtilities-SuperWirelessKit");
+    private static final GridConnectionFactory DEFAULT_CONNECTION_FACTORY = new DefaultGridConnectionFactory();
 
     private final BindingDataStore dataStore;
     private final BindingNodeResolver resolver;
+    private final GridConnectionFactory connectionFactory;
     private final Map<UUID, IGridConnection> activeConnections = new HashMap<UUID, IGridConnection>();
+    private final Map<World, Set<UUID>> deferredBindingsByWorld = new IdentityHashMap<World, Set<UUID>>();
+
+    public interface GridConnectionFactory {
+
+        IGridConnection connect(BindingRecord record, GridNode controllerNode, GridNode targetNode) throws FailedConnection;
+    }
 
     public SuperWirelessRuntimeManager(BindingDataStore dataStore, BindingNodeResolver resolver) {
+        this(dataStore, resolver, DEFAULT_CONNECTION_FACTORY);
+    }
+
+    public SuperWirelessRuntimeManager(BindingDataStore dataStore, BindingNodeResolver resolver,
+        GridConnectionFactory connectionFactory) {
         this.dataStore = dataStore;
         this.resolver = resolver;
+        this.connectionFactory = connectionFactory;
     }
 
     public BindingRegistry getRegistry(World world) {
@@ -102,6 +120,33 @@ public class SuperWirelessRuntimeManager {
             Integer.valueOf(removedCount));
     }
 
+    public void refreshDeferredBindings(World world) {
+        if (world == null || world.isRemote) {
+            return;
+        }
+
+        Set<UUID> deferredBindings = deferredBindingsByWorld.get(world);
+        if (deferredBindings == null || deferredBindings.isEmpty()) {
+            return;
+        }
+
+        BindingRegistry registry = getRegistry(world);
+        List<UUID> deferredSnapshot = new ArrayList<UUID>(deferredBindings);
+        SuperWirelessDebugLog.log(
+            "REFRESH_DEFERRED",
+            "dimension=%d pending=%d",
+            Integer.valueOf(world.provider != null ? world.provider.dimensionId : 0),
+            Integer.valueOf(deferredSnapshot.size()));
+        for (UUID bindingId : deferredSnapshot) {
+            BindingRecord record = registry.findById(bindingId);
+            if (record == null) {
+                clearDeferred(world, bindingId);
+                continue;
+            }
+            reconcile(world, record);
+        }
+    }
+
     public void onBlockBroken(World world, int x, int y, int z) {
         if (world == null || world.isRemote || world.provider == null) {
             return;
@@ -126,6 +171,7 @@ public class SuperWirelessRuntimeManager {
                 formatController(record),
                 formatTarget(record));
             destroyActive(record.getBindingId());
+            clearDeferred(world, record.getBindingId());
             registry.remove(record.getBindingId());
         }
     }
@@ -158,6 +204,7 @@ public class SuperWirelessRuntimeManager {
             "dimension=%d removedRuntimeConnections=%d",
             Integer.valueOf(world.provider != null ? world.provider.dimensionId : 0),
             Integer.valueOf(removedCount));
+        deferredBindingsByWorld.remove(world);
         dataStore.clearWorld(world);
     }
 
@@ -172,12 +219,12 @@ public class SuperWirelessRuntimeManager {
 
         ResolvedControllerEndpoint controller = resolver.resolveController(world, record.getController());
         if (controller == null) {
-            return invalidateOrDefer(world, registry, record, true);
+            return trackDeferredState(world, record.getBindingId(), invalidateOrDefer(world, registry, record, true));
         }
 
         ResolvedBindingTarget target = resolver.resolveTarget(world, record.getTarget());
         if (target == null) {
-            return invalidateOrDefer(world, registry, record, false);
+            return trackDeferredState(world, record.getBindingId(), invalidateOrDefer(world, registry, record, false));
         }
 
         IGridConnection existing = activeConnections.get(record.getBindingId());
@@ -188,7 +235,7 @@ public class SuperWirelessRuntimeManager {
                 record.getBindingId(),
                 Integer.valueOf(System.identityHashCode(controller.getNode())),
                 Integer.valueOf(System.identityHashCode(target.getNode())));
-            return BindingReconcileResult.ALREADY_CONNECTED;
+            return trackDeferredState(world, record.getBindingId(), BindingReconcileResult.ALREADY_CONNECTED);
         }
 
         destroyActive(record.getBindingId());
@@ -202,7 +249,7 @@ public class SuperWirelessRuntimeManager {
                 record.getBindingId(),
                 Integer.valueOf(System.identityHashCode(controller.getNode())),
                 Integer.valueOf(System.identityHashCode(target.getNode())));
-            return BindingReconcileResult.CONNECTED;
+            return trackDeferredState(world, record.getBindingId(), BindingReconcileResult.CONNECTED);
         } catch (FailedConnection e) {
             SuperWirelessDebugLog.log(
                 "RECONCILE_CONNECTION_FAILED",
@@ -228,7 +275,7 @@ public class SuperWirelessRuntimeManager {
                     .getName(),
                 e);
             registry.remove(record.getBindingId());
-            return BindingReconcileResult.CONNECTION_FAILED;
+            return trackDeferredState(world, record.getBindingId(), BindingReconcileResult.CONNECTION_FAILED);
         }
     }
 
@@ -278,24 +325,7 @@ public class SuperWirelessRuntimeManager {
 
     private IGridConnection connect(BindingRecord record, GridNode controllerNode, GridNode targetNode)
         throws FailedConnection {
-        GridNodeAccess targetAccess = (GridNodeAccess) (Object) targetNode;
-        GridNodeAccess controllerAccess = (GridNodeAccess) (Object) controllerNode;
-
-        int originalTargetPlayerId = targetAccess.nhaeutilities$getPlayerIdRaw();
-        int originalControllerPlayerId = controllerAccess.nhaeutilities$getPlayerIdRaw();
-
-        try {
-            targetAccess.nhaeutilities$setPlayerIdRaw(record.getBinderPlayerId());
-            controllerAccess.nhaeutilities$setPlayerIdRaw(record.getBinderPlayerId());
-
-            return new GridConnection(
-                controllerNode,
-                targetNode,
-                VirtualGridConnectionRules.connectionDirectionForVirtualLink());
-        } finally {
-            targetAccess.nhaeutilities$setPlayerIdRaw(originalTargetPlayerId);
-            controllerAccess.nhaeutilities$setPlayerIdRaw(originalControllerPlayerId);
-        }
+        return connectionFactory.connect(record, controllerNode, targetNode);
     }
 
     private void destroyActive(UUID bindingId) {
@@ -305,6 +335,44 @@ public class SuperWirelessRuntimeManager {
             try {
                 existing.destroy();
             } catch (RuntimeException ignored) {}
+        }
+    }
+
+    private BindingReconcileResult trackDeferredState(World world, UUID bindingId, BindingReconcileResult result) {
+        if (result == BindingReconcileResult.CONTROLLER_UNLOADED || result == BindingReconcileResult.TARGET_UNLOADED) {
+            markDeferred(world, bindingId);
+        } else {
+            clearDeferred(world, bindingId);
+        }
+        return result;
+    }
+
+    private void markDeferred(World world, UUID bindingId) {
+        if (world == null || bindingId == null) {
+            return;
+        }
+
+        Set<UUID> deferredBindings = deferredBindingsByWorld.get(world);
+        if (deferredBindings == null) {
+            deferredBindings = new LinkedHashSet<UUID>();
+            deferredBindingsByWorld.put(world, deferredBindings);
+        }
+        deferredBindings.add(bindingId);
+    }
+
+    private void clearDeferred(World world, UUID bindingId) {
+        if (world == null || bindingId == null) {
+            return;
+        }
+
+        Set<UUID> deferredBindings = deferredBindingsByWorld.get(world);
+        if (deferredBindings == null) {
+            return;
+        }
+
+        deferredBindings.remove(bindingId);
+        if (deferredBindings.isEmpty()) {
+            deferredBindingsByWorld.remove(world);
         }
     }
 
@@ -354,5 +422,31 @@ public class SuperWirelessRuntimeManager {
 
     private static String formatBlock(BindingBlockRef blockRef) {
         return blockRef.getDimensionId() + ":" + blockRef.getX() + "," + blockRef.getY() + "," + blockRef.getZ();
+    }
+
+    private static final class DefaultGridConnectionFactory implements GridConnectionFactory {
+
+        @Override
+        public IGridConnection connect(BindingRecord record, GridNode controllerNode, GridNode targetNode)
+            throws FailedConnection {
+            GridNodeAccess targetAccess = (GridNodeAccess) (Object) targetNode;
+            GridNodeAccess controllerAccess = (GridNodeAccess) (Object) controllerNode;
+
+            int originalTargetPlayerId = targetAccess.nhaeutilities$getPlayerIdRaw();
+            int originalControllerPlayerId = controllerAccess.nhaeutilities$getPlayerIdRaw();
+
+            try {
+                targetAccess.nhaeutilities$setPlayerIdRaw(record.getBinderPlayerId());
+                controllerAccess.nhaeutilities$setPlayerIdRaw(record.getBinderPlayerId());
+
+                return new GridConnection(
+                    controllerNode,
+                    targetNode,
+                    VirtualGridConnectionRules.connectionDirectionForVirtualLink());
+            } finally {
+                targetAccess.nhaeutilities$setPlayerIdRaw(originalTargetPlayerId);
+                controllerAccess.nhaeutilities$setPlayerIdRaw(originalControllerPlayerId);
+            }
+        }
     }
 }

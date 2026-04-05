@@ -64,6 +64,7 @@ nhaeutilities.msg.pattern.insufficient_blank_pattern=[NHAEUtilities] Generation 
 nhaeutilities.msg.common.unknown_item=Unknown Item
 
 item.nhaeutilities.pattern_generator.name=Pattern Generator
+item.nhaeutilities.pattern_index.name=Pattern Index
 item.nhaeutilities.super_wireless_kit.name=Super Wireless Kit
 nhaeutilities.module.super_wireless_kit.name=Super Wireless Kit
 nhaeutilities.module.super_wireless_kit.status.todo=Super Wireless Kit is scaffolded but not implemented yet.
@@ -199,6 +200,8 @@ nhaeutilities.tooltip.hint.quick_detect_export=Shift + right-click block to dete
 nhaeutilities.tooltip.hint.hold_shift_prefix=Hold
 nhaeutilities.tooltip.key.shift=Shift
 nhaeutilities.tooltip.hint.hold_shift=to view detailed features
+nhaeutilities.tooltip.pattern_index.enable_staging=Carry this item to stage unmatched NEI-encoded patterns.
+nhaeutilities.tooltip.pattern_index.player_bound=Staged patterns are bound to your player UUID.
 
 nhaeutilities.msg.item.block_not_detectable=[NHAEUtilities] This block cannot be scanned.
 nhaeutilities.msg.item.detected_recipe_map=[NHAEUtilities] Recipe map detected and saved: %s
@@ -208,6 +211,11 @@ nhaeutilities.msg.item.storage_empty_export=[NHAEUtilities] Storage is empty. No
 nhaeutilities.msg.item.storage_update_failed=[NHAEUtilities] Storage update failed. Please retry later.
 nhaeutilities.msg.item.exported=[NHAEUtilities] Exported %s pattern(s) to target container.
 nhaeutilities.msg.item.exported_with_remaining=[NHAEUtilities] Exported %s pattern(s) to target container (%s remaining).
+nhaeutilities.msg.pattern.route_success=[NHAEUtilities] Routed encoded pattern directly into a matching crafting input hatch.
+nhaeutilities.msg.pattern.route_target_full=[NHAEUtilities] Matching crafting input hatch was found, but it has no free pattern slot.
+nhaeutilities.msg.pattern.staged_unmatched=[NHAEUtilities] No direct hatch match. Pattern was staged to your player-bound index storage.
+nhaeutilities.msg.pattern.routed_fallback_inventory=[NHAEUtilities] No staging target available. Pattern was returned to your inventory.
+nhaeutilities.msg.pattern.routed_fallback_drop=[NHAEUtilities] Inventory full. Pattern was dropped near you.
 
 # Config GUI categories
 nhaeutilities.config.modules=Modules
@@ -224,3 +232,6 @@ nhaeutilities.config.modules.patternGenerator.advanced=Compatibility & Advanced
 nhaeutilities.config.modules.superWirelessKit=Super Wireless Kit
 nhaeutilities.config.modules.superWirelessKit.basic=Basic Settings
 nhaeutilities.config.modules.superWirelessKit.basic.enabled=Enabled
+nhaeutilities.msg.pattern_index.empty=[NHAEUtilities] No staged patterns for your index.
+nhaeutilities.msg.pattern_index.summary=[NHAEUtilities] Staged groups: %s, patterns: %s
+nhaeutilities.msg.pattern_index.group_entry=[NHAEUtilities] %s x%s -> %s

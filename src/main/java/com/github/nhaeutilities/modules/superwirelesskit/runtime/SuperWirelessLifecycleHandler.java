@@ -6,8 +6,11 @@ import net.minecraftforge.event.world.ChunkEvent;
 import net.minecraftforge.event.world.WorldEvent;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.gameevent.TickEvent;
 
 public class SuperWirelessLifecycleHandler {
+
+    private static final long DEFERRED_REFRESH_INTERVAL_TICKS = 20L;
 
     private final SuperWirelessRuntimeManager runtimeManager;
 
@@ -30,6 +33,20 @@ public class SuperWirelessLifecycleHandler {
             return;
         }
         runtimeManager.onWorldUnload(world);
+    }
+
+    @SubscribeEvent
+    public void onWorldTick(TickEvent.WorldTickEvent event) {
+        World world = event.world;
+        if (event.phase != TickEvent.Phase.END || world == null || world.isRemote) {
+            return;
+        }
+
+        if (world.getTotalWorldTime() % DEFERRED_REFRESH_INTERVAL_TICKS != 0L) {
+            return;
+        }
+
+        runtimeManager.refreshDeferredBindings(world);
     }
 
     @SubscribeEvent

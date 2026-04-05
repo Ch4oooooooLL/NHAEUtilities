@@ -7,6 +7,7 @@ import cpw.mods.fml.common.registry.GameRegistry;
 public final class ModItems {
 
     public static Item itemPatternGenerator;
+    public static Item itemPatternIndex;
 
     private ModItems() {}
 
@@ -17,5 +18,8 @@ public final class ModItems {
 
         itemPatternGenerator = new ItemPatternGenerator();
         GameRegistry.registerItem(itemPatternGenerator, "pattern_generator");
+
+        itemPatternIndex = new ItemPatternIndex();
+        GameRegistry.registerItem(itemPatternIndex, "pattern_index");
     }
 }

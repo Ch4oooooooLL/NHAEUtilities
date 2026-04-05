@@ -2,6 +2,7 @@ package com.github.nhaeutilities.modules.superwirelesskit.runtime;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
@@ -96,6 +97,35 @@ public class SuperWirelessRuntimeManagerTest {
         manager.reconcile(world, record);
 
         assertNotNull(registry.findByTarget(record.getTarget()));
+    }
+
+    @Test
+    public void refreshDeferredBindingsReconnectsPersistedBindingWhenNodesBecomeReady() throws Exception {
+        World world = allocateWorld(0, true);
+        BindingRecord record = createRecord();
+        BindingRegistry registry = new BindingRegistry(new SuperWirelessSavedData("test"));
+        assertTrue(registry.add(record));
+
+        BindingDataStore dataStore = new BindingDataStore();
+        registryMap(dataStore).put(world, registry);
+
+        ToggleableResolver resolver = new ToggleableResolver(world, record);
+        TestGridConnectionFactory connectionFactory = new TestGridConnectionFactory();
+        SuperWirelessRuntimeManager manager = new SuperWirelessRuntimeManager(dataStore, resolver, connectionFactory);
+
+        resolver.ready = false;
+        assertSame(BindingReconcileResult.CONTROLLER_UNLOADED, manager.reconcile(world, record));
+
+        resolver.ready = true;
+        manager.refreshDeferredBindings(world);
+
+        assertNotNull(registry.findByTarget(record.getTarget()));
+        assertSame(
+            connectionFactory.lastConnection,
+            activeConnectionMap(manager).get(
+                record.getBindingId()));
+        assertSame(resolver.controllerNode, connectionFactory.lastControllerNode);
+        assertSame(resolver.targetNode, connectionFactory.lastTargetNode);
     }
 
     @Test
@@ -282,6 +312,63 @@ public class SuperWirelessRuntimeManagerTest {
         }
     }
 
+    private static final class ToggleableResolver extends BindingNodeResolver {
+
+        private final ResolvedControllerEndpoint controller;
+        private final ResolvedBindingTarget target;
+        private boolean ready;
+        private final GridNode controllerNode;
+        private final GridNode targetNode;
+
+        private ToggleableResolver(World world, BindingRecord record) {
+            this.controllerNode = new GridNode(new TestGridBlock(world, BindingBlockRef.of(record.getController())));
+            this.targetNode = new GridNode(new TestGridBlock(world, BindingBlockRef.of(record.getTarget())));
+            TestControllerTile controllerTile = new TestControllerTile();
+            this.controller = new ResolvedControllerEndpoint(
+                record.getController(),
+                controllerTile,
+                controllerNode,
+                record.getController()
+                    .getFace());
+            this.target = new ResolvedBindingTarget(record.getTarget(), controllerTile, controllerTile, targetNode);
+        }
+
+        @Override
+        public ResolvedControllerEndpoint resolveController(World world, ControllerEndpointRef controllerRef) {
+            return ready ? controller : null;
+        }
+
+        @Override
+        public boolean hasControllerHost(World world, ControllerEndpointRef controllerRef) {
+            return true;
+        }
+
+        @Override
+        public ResolvedBindingTarget resolveTarget(World world, BindingTargetRef targetRef) {
+            return ready ? target : null;
+        }
+
+        @Override
+        public boolean hasCompatibleTargetHost(World world, BindingTargetRef targetRef) {
+            return true;
+        }
+    }
+
+    private static final class TestGridConnectionFactory implements SuperWirelessRuntimeManager.GridConnectionFactory {
+
+        private GridNode lastControllerNode;
+        private GridNode lastTargetNode;
+        private TestGridConnection lastConnection;
+
+        @Override
+        public IGridConnection connect(BindingRecord record, GridNode controllerNode, GridNode targetNode) {
+            this.lastControllerNode = controllerNode;
+            this.lastTargetNode = targetNode;
+            this.lastConnection = new TestGridConnection(controllerNode, targetNode);
+            return lastConnection;
+        }
+    }
+
     private static final class TestGridBlock implements IGridBlock {
 
         private final DimensionalCoord location;
@@ -356,6 +443,8 @@ public class SuperWirelessRuntimeManagerTest {
         @Override
         public void securityBreak() {}
     }
+
+    private static final class TestControllerTile extends appeng.tile.networking.TileController {}
 
     private static final class TestGridConnection implements IGridConnection {
 

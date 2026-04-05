@@ -2,6 +2,7 @@ package com.github.nhaeutilities.modules.patterngenerator.encoder;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.lang.reflect.InvocationTargetException;
@@ -17,6 +18,7 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
 
 public class PatternEncoderTest {
@@ -50,7 +52,8 @@ public class PatternEncoderTest {
             new net.minecraftforge.fluids.FluidStack[0],
             new ItemStack[0],
             120,
-            30);
+            30,
+            "generator-recipe-1");
 
         ItemStack encoded = PatternEncoder.encode(recipe);
 
@@ -68,6 +71,18 @@ public class PatternEncoderTest {
             encoded.getTagCompound()
                 .getTagList("out", 10)
                 .tagCount());
+        assertEquals(
+            "generator-recipe-1",
+            encoded.getTagCompound()
+                .getCompoundTag(PatternRoutingKeys.ROOT_KEY)
+                .getCompoundTag(PatternRoutingKeys.ROUTING_KEY)
+                .getString(PatternRoutingKeys.RECIPE_ID_KEY));
+        assertEquals(
+            PatternRoutingKeys.SOURCE_GENERATOR,
+            encoded.getTagCompound()
+                .getCompoundTag(PatternRoutingKeys.ROOT_KEY)
+                .getCompoundTag(PatternRoutingKeys.ROUTING_KEY)
+                .getString(PatternRoutingKeys.SOURCE_KEY));
     }
 
     @Test
@@ -79,6 +94,45 @@ public class PatternEncoderTest {
         NBTTagCompound inputTag = inputList.getCompoundTagAt(0);
         assertEquals(300, inputTag.getInteger("Count"));
         assertEquals(300L, inputTag.getLong("Cnt"));
+    }
+
+    @Test
+    public void encodeWritesUniformRoutingNbtForEmptyRecipeId() {
+        final Item patternItem = new Item();
+        PatternEncoder.setPatternItemResolver(() -> patternItem);
+        RecipeEntry recipe = new RecipeEntry(
+            "gt",
+            "gt.recipe.assembler",
+            "Assembler",
+            new ItemStack[] { new ItemStack(Items.iron_ingot, 1, 0) },
+            new ItemStack[] { new ItemStack(Items.gold_ingot, 1, 0) },
+            new net.minecraftforge.fluids.FluidStack[0],
+            new net.minecraftforge.fluids.FluidStack[0],
+            new ItemStack[0],
+            120,
+            30);
+
+        ItemStack encoded = PatternEncoder.encode(recipe);
+
+        assertNotNull(encoded);
+        assertNotNull(encoded.getTagCompound());
+        assertTrue(encoded.getTagCompound().hasKey(PatternRoutingKeys.ROOT_KEY));
+        assertTrue(
+            encoded.getTagCompound()
+                .getCompoundTag(PatternRoutingKeys.ROOT_KEY)
+                .hasKey(PatternRoutingKeys.ROUTING_KEY));
+        assertEquals(
+            "",
+            encoded.getTagCompound()
+                .getCompoundTag(PatternRoutingKeys.ROOT_KEY)
+                .getCompoundTag(PatternRoutingKeys.ROUTING_KEY)
+                .getString(PatternRoutingKeys.RECIPE_ID_KEY));
+        assertEquals(
+            PatternRoutingKeys.SOURCE_GENERATOR,
+            encoded.getTagCompound()
+                .getCompoundTag(PatternRoutingKeys.ROOT_KEY)
+                .getCompoundTag(PatternRoutingKeys.ROUTING_KEY)
+                .getString(PatternRoutingKeys.SOURCE_KEY));
     }
 
     @After
