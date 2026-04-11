@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.routing;
+package com.github.nhaeutilities.modules.patternrouting.core;
 
 public interface PacketRecipeTransferMetadataAccess {
 

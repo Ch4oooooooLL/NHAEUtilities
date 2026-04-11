@@ -1,6 +1,6 @@
-package com.github.nhaeutilities.accessor.patterngenerator;
+package com.github.nhaeutilities.accessor.patternrouting;
 
-import com.github.nhaeutilities.modules.patterngenerator.routing.HatchAssignmentData;
+import com.github.nhaeutilities.modules.patternrouting.core.HatchAssignmentData;
 
 public interface HatchAssignmentHolder {
 

@@ -11,8 +11,8 @@ import net.minecraftforge.fluids.FluidStack;
 
 import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
-import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
-import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingNbt;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingKeys;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingNbt;
 
 /**
  * AE2 ????????????RecipeEntry ??? AE2 ?????? ItemStack

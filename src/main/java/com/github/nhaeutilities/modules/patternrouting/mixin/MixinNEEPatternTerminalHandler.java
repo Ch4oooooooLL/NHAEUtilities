@@ -1,12 +1,13 @@
-package com.github.nhaeutilities.modules.patterngenerator.mixin;
+package com.github.nhaeutilities.modules.patternrouting.mixin;
 
-import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.github.nhaeutilities.modules.patterngenerator.routing.PacketRecipeTransferMetadataAccess;
+import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
+import com.github.nhaeutilities.modules.patternrouting.core.PacketRecipeTransferMetadataAccess;
 
 import codechicken.nei.recipe.IRecipeHandler;
 import codechicken.nei.recipe.Recipe;
@@ -20,12 +21,15 @@ public abstract class MixinNEEPatternTerminalHandler {
     private void nhaeutilities$attachRecipeTransferMetadata(IRecipeHandler recipe, int recipeIndex, int multiplier,
         CallbackInfoReturnable<Object> cir) {
         Object packet = cir.getReturnValue();
-        if (packet == null || isCraftingRecipe(recipe) || !(packet instanceof PacketRecipeTransferMetadataAccess)) {
+        if (!PatternRoutingRuntime.isEnabled() || packet == null
+            || isCraftingRecipe(recipe)
+            || !(packet instanceof PacketRecipeTransferMetadataAccess)) {
             return;
         }
 
         try {
-            Recipe.RecipeId recipeId = Recipe.of(recipe, recipeIndex).getRecipeId();
+            Recipe.RecipeId recipeId = Recipe.of(recipe, recipeIndex)
+                .getRecipeId();
             if (recipeId == null) {
                 return;
             }
@@ -37,7 +41,9 @@ public abstract class MixinNEEPatternTerminalHandler {
             }
 
             PacketRecipeTransferMetadataAccess accessor = (PacketRecipeTransferMetadataAccess) packet;
-            accessor.nhaeutilities$setRecipeId(recipeId.toJsonObject().toString());
+            accessor.nhaeutilities$setRecipeId(
+                recipeId.toJsonObject()
+                    .toString());
             accessor.nhaeutilities$setOverlayIdentifier(overlayIdentifier);
         } catch (Throwable ignored) {}
     }

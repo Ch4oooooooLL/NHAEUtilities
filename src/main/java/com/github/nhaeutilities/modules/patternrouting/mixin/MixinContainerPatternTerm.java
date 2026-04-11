@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.mixin;
+package com.github.nhaeutilities.modules.patternrouting.mixin;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -10,8 +10,9 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingDeliveryService;
-import com.github.nhaeutilities.modules.patterngenerator.routing.PendingRecipeTransferContext;
+import com.github.nhaeutilities.modules.patterngenerator.PatternRoutingFallbackService;
+import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
+import com.github.nhaeutilities.modules.patternrouting.core.PendingRecipeTransferContext;
 
 import appeng.container.implementations.ContainerPatternTerm;
 import appeng.container.slot.SlotRestrictedInput;
@@ -27,13 +28,14 @@ public abstract class MixinContainerPatternTerm {
     @Inject(method = "encode", at = @At("TAIL"), remap = false)
     private void nhaeutilities$handlePatternRoutingAfterEncode(CallbackInfo ci) {
         EntityPlayer player = ((ContainerPatternTerm) (Object) this).getPlayerInv().player;
-        if (player == null || player.worldObj == null || player.worldObj.isRemote) {
+        if (!PatternRoutingRuntime.isEnabled() || player == null
+            || player.worldObj == null
+            || player.worldObj.isRemote) {
             return;
         }
 
-        PendingRecipeTransferContext.PendingTransfer transfer = PendingRecipeTransferContext.consume(
-            player.getUniqueID(),
-            System.currentTimeMillis());
+        PendingRecipeTransferContext.PendingTransfer transfer = PendingRecipeTransferContext
+            .consume(player.getUniqueID(), System.currentTimeMillis());
         if (transfer == null) {
             return;
         }
@@ -43,12 +45,9 @@ public abstract class MixinContainerPatternTerm {
             return;
         }
 
-        PatternRoutingDeliveryService.DeliveryResult result = PatternRoutingDeliveryService.decorateAndDeliver(
-            player,
-            ((IContainerCraftingPacket) (Object) this).getNetworkNode(),
-            output,
-            transfer);
-        if (result != PatternRoutingDeliveryService.DeliveryResult.NO_ACTION) {
+        PatternRoutingFallbackService.DeliveryResult result = PatternRoutingFallbackService
+            .decorateAndDeliver(player, ((IContainerCraftingPacket) (Object) this).getNetworkNode(), output, transfer);
+        if (result != PatternRoutingFallbackService.DeliveryResult.NO_ACTION) {
             this.patternSlotOUT.putStack(null);
             ((ContainerPatternTerm) (Object) this).detectAndSendChanges();
         }

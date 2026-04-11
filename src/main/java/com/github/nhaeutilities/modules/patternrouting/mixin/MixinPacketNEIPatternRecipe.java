@@ -1,13 +1,14 @@
-package com.github.nhaeutilities.modules.patterngenerator.mixin;
+package com.github.nhaeutilities.modules.patternrouting.mixin;
 
-import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import com.github.nhaeutilities.modules.patterngenerator.routing.PacketRecipeTransferMetadataAccess;
+import com.github.nhaeutilities.modules.patternrouting.core.PacketRecipeTransferMetadataAccess;
+
 import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 

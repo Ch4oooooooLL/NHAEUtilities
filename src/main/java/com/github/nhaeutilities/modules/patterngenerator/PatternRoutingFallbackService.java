@@ -1,19 +1,22 @@
-package com.github.nhaeutilities.modules.patterngenerator.routing;
+package com.github.nhaeutilities.modules.patterngenerator;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
-import appeng.api.networking.IGridNode;
-
 import com.github.nhaeutilities.modules.patterngenerator.item.PatternIndexLocator;
 import com.github.nhaeutilities.modules.patterngenerator.storage.PatternStagingStorage;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRouterService;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingDeliveryService;
+import com.github.nhaeutilities.modules.patternrouting.core.PendingRecipeTransferContext;
 
-public final class PatternRoutingDeliveryService {
+import appeng.api.networking.IGridNode;
 
-    private PatternRoutingDeliveryService() {}
+public final class PatternRoutingFallbackService {
+
+    private PatternRoutingFallbackService() {}
 
     public static DeliveryResult decorateAndDeliver(EntityPlayer player, IGridNode node, ItemStack pattern,
         PendingRecipeTransferContext.PendingTransfer transfer) {
@@ -21,15 +24,17 @@ public final class PatternRoutingDeliveryService {
             return DeliveryResult.NO_ACTION;
         }
 
-        PatternRoutingNbt.writeRoutingData(pattern, buildRoutingMetadata(pattern, transfer));
-
-        PatternRouterService.RouteResult routeResult = PatternRouterService.tryRoute(pattern, node);
+        PatternRouterService.RouteResult routeResult = PatternRoutingDeliveryService
+            .decorateAndRoute(node, pattern, transfer);
+        if (routeResult.status == PatternRouterService.RouteStatus.NO_METADATA) {
+            return DeliveryResult.NO_ACTION;
+        }
         if (routeResult.isRouted()) {
             send(player, EnumChatFormatting.GREEN, "nhaeutilities.msg.pattern.route_success");
             return DeliveryResult.ROUTED;
         }
 
-        String warningMessageKey = warningMessageKeyFor(routeResult.status);
+        String warningMessageKey = PatternRoutingDeliveryService.warningMessageKeyFor(routeResult.status);
         if (!warningMessageKey.isEmpty()) {
             send(player, EnumChatFormatting.GOLD, warningMessageKey);
         }
@@ -54,27 +59,6 @@ public final class PatternRoutingDeliveryService {
 
     private static void send(EntityPlayer player, EnumChatFormatting color, String key, Object... args) {
         player.addChatMessage(new ChatComponentText(color + I18nUtil.tr(key, args)));
-    }
-
-    static PatternRoutingNbt.RoutingMetadata buildRoutingMetadata(ItemStack pattern,
-        PendingRecipeTransferContext.PendingTransfer transfer) {
-        String circuitKey = PatternRoutingNbt.inferCircuitKeyFromEncodedPattern(pattern);
-        String manualItemsKey = "";
-        return new PatternRoutingNbt.RoutingMetadata(
-            PatternRoutingKeys.CURRENT_VERSION,
-            transfer.recipeId,
-            "",
-            circuitKey,
-            manualItemsKey,
-            transfer.source,
-            false,
-            transfer.overlayIdentifier);
-    }
-
-    static String warningMessageKeyFor(PatternRouterService.RouteStatus status) {
-        return status == PatternRouterService.RouteStatus.TARGET_FULL
-            ? "nhaeutilities.msg.pattern.route_target_full"
-            : "";
     }
 
     public enum DeliveryResult {

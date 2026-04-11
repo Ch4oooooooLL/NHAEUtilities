@@ -16,8 +16,8 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
-import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingNbt;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingKeys;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingNbt;
 
 public class PatternStagingStorageTest {
 
@@ -43,25 +43,18 @@ public class PatternStagingStorageTest {
 
     @Test
     public void appendCreatesGroupsByRecipeAndKeys() throws Exception {
-        File tempRoot = Files.createTempDirectory("pattern-staging-test").toFile();
+        File tempRoot = Files.createTempDirectory("pattern-staging-test")
+            .toFile();
         PatternStagingStorage.setStorageRootForTests(tempRoot);
         UUID playerId = UUID.randomUUID();
 
         assertTrue(
-            PatternStagingStorage.append(
-                playerId,
-                stagedPattern("recipe-a", "circuit-a", "manual-a", "Output A"),
-                10L));
+            PatternStagingStorage
+                .append(playerId, stagedPattern("recipe-a", "circuit-a", "manual-a", "Output A"), 10L));
         assertTrue(
-            PatternStagingStorage.append(
-                playerId,
-                stagedPattern("recipe-a", "circuit-a", "manual-a", "Output B"),
-                20L));
-        assertTrue(
-            PatternStagingStorage.append(
-                playerId,
-                stagedPattern("recipe-b", "", "", "Output C"),
-                30L));
+            PatternStagingStorage
+                .append(playerId, stagedPattern("recipe-a", "circuit-a", "manual-a", "Output B"), 20L));
+        assertTrue(PatternStagingStorage.append(playerId, stagedPattern("recipe-b", "", "", "Output C"), 30L));
 
         List<PatternStagingGroup> groups = PatternStagingStorage.loadGroups(playerId);
 
@@ -84,10 +77,13 @@ public class PatternStagingStorageTest {
 
     @Test
     public void summaryIsEmptyWhenPlayerHasNoStagedPatterns() throws Exception {
-        File tempRoot = Files.createTempDirectory("pattern-staging-empty").toFile();
+        File tempRoot = Files.createTempDirectory("pattern-staging-empty")
+            .toFile();
         PatternStagingStorage.setStorageRootForTests(tempRoot);
 
-        assertTrue(PatternStagingStorage.getSummary(UUID.randomUUID()).isEmpty());
+        assertTrue(
+            PatternStagingStorage.getSummary(UUID.randomUUID())
+                .isEmpty());
     }
 
     private static ItemStack stagedPattern(String recipeId, String circuitKey, String manualItemsKey, String label) {

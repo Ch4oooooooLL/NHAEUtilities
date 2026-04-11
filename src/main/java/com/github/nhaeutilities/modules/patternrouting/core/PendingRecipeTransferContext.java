@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.routing;
+package com.github.nhaeutilities.modules.patternrouting.core;
 
 import java.util.Map;
 import java.util.UUID;
@@ -18,7 +18,11 @@ public final class PendingRecipeTransferContext {
         }
         PENDING_TRANSFERS.put(
             playerId,
-            new PendingTransfer(recipeId, overlayIdentifier, source, timestamp >= 0L ? timestamp : System.currentTimeMillis()));
+            new PendingTransfer(
+                recipeId,
+                overlayIdentifier,
+                source,
+                timestamp >= 0L ? timestamp : System.currentTimeMillis()));
     }
 
     public static PendingTransfer peek(UUID playerId, long now) {
