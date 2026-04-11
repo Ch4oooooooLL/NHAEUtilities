@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.github.nhaeutilities.modules.patterngenerator.util.LangKeyCompletenessTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2026-03-28T18:04:54" hostname="CHAO" time="0.004">
-  <properties/>
-  <testcase name="enAndZhMustContainSameKeys" classname="com.github.nhaeutilities.modules.patterngenerator.util.LangKeyCompletenessTest" time="0.002"/>
-  <testcase name="requiredKeysMustExistInBothFiles" classname="com.github.nhaeutilities.modules.patterngenerator.util.LangKeyCompletenessTest" time="0.002"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

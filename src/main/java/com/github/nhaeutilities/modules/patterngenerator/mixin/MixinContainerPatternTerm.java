@@ -31,9 +31,8 @@ public abstract class MixinContainerPatternTerm {
             return;
         }
 
-        PendingRecipeTransferContext.PendingTransfer transfer = PendingRecipeTransferContext.consume(
-            player.getUniqueID(),
-            System.currentTimeMillis());
+        PendingRecipeTransferContext.PendingTransfer transfer = PendingRecipeTransferContext
+            .consume(player.getUniqueID(), System.currentTimeMillis());
         if (transfer == null) {
             return;
         }
@@ -43,11 +42,8 @@ public abstract class MixinContainerPatternTerm {
             return;
         }
 
-        PatternRoutingDeliveryService.DeliveryResult result = PatternRoutingDeliveryService.decorateAndDeliver(
-            player,
-            ((IContainerCraftingPacket) (Object) this).getNetworkNode(),
-            output,
-            transfer);
+        PatternRoutingDeliveryService.DeliveryResult result = PatternRoutingDeliveryService
+            .decorateAndDeliver(player, ((IContainerCraftingPacket) (Object) this).getNetworkNode(), output, transfer);
         if (result != PatternRoutingDeliveryService.DeliveryResult.NO_ACTION) {
             this.patternSlotOUT.putStack(null);
             ((ContainerPatternTerm) (Object) this).detectAndSendChanges();

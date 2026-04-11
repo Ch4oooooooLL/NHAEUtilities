@@ -2,8 +2,8 @@ package com.github.nhaeutilities.modules.patterngenerator.mixin;
 
 import net.minecraft.nbt.NBTTagCompound;
 
-import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -37,7 +37,8 @@ public abstract class MixinMTEHatchCraftingInputME implements HatchAssignmentHol
             return;
         }
         NBTTagCompound root = aNBT.getCompoundTag(PatternRoutingKeys.ROOT_KEY);
-        nhaeutilities$assignmentData = HatchAssignmentData.fromNbt(root.getCompoundTag(PatternRoutingKeys.HATCH_ASSIGNMENT_KEY));
+        nhaeutilities$assignmentData = HatchAssignmentData
+            .fromNbt(root.getCompoundTag(PatternRoutingKeys.HATCH_ASSIGNMENT_KEY));
     }
 
     @Override

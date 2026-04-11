@@ -54,7 +54,12 @@ public class PatternStagingGroupTest {
         PatternStagingGroup restored = PatternStagingGroup.fromNbt(groupTag);
 
         assertEquals(1, restored.patterns.size());
-        assertNotNull(restored.patterns.get(0).getItem());
-        assertEquals("Staged Pattern", restored.patterns.get(0).getDisplayName());
+        assertNotNull(
+            restored.patterns.get(0)
+                .getItem());
+        assertEquals(
+            "Staged Pattern",
+            restored.patterns.get(0)
+                .getDisplayName());
     }
 }

@@ -120,10 +120,7 @@ public class SuperWirelessRuntimeManagerTest {
         manager.refreshDeferredBindings(world);
 
         assertNotNull(registry.findByTarget(record.getTarget()));
-        assertSame(
-            connectionFactory.lastConnection,
-            activeConnectionMap(manager).get(
-                record.getBindingId()));
+        assertSame(connectionFactory.lastConnection, activeConnectionMap(manager).get(record.getBindingId()));
         assertSame(resolver.controllerNode, connectionFactory.lastControllerNode);
         assertSame(resolver.targetNode, connectionFactory.lastTargetNode);
     }
@@ -444,7 +441,8 @@ public class SuperWirelessRuntimeManagerTest {
         public void securityBreak() {}
     }
 
-    private static final class TestControllerTile extends appeng.tile.networking.TileController {}
+    private static final class TestControllerTile extends appeng.tile.networking.TileController {
+    }
 
     private static final class TestGridConnection implements IGridConnection {
 

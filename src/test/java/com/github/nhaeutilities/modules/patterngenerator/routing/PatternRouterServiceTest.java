@@ -86,7 +86,8 @@ public class PatternRouterServiceTest {
 
         HatchAssignmentData resolved = PatternRouterService.resolveAssignment(
             metadata,
-            Arrays.asList(new HatchAssignmentData("key-b", "gt.recipe.assembler", "recipe-b", "circuit-a", "manual-a")));
+            Arrays
+                .asList(new HatchAssignmentData("key-b", "gt.recipe.assembler", "recipe-b", "circuit-a", "manual-a")));
 
         assertNull(resolved);
     }

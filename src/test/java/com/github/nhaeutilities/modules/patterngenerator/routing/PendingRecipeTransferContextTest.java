@@ -40,11 +40,9 @@ public class PendingRecipeTransferContextTest {
     public void consumeDropsStaleTransfers() {
         UUID playerId = UUID.randomUUID();
 
-        PendingRecipeTransferContext.store(playerId, "recipe-a", "gt.recipe.assembler", PatternRoutingKeys.SOURCE_NEI, 0L);
+        PendingRecipeTransferContext
+            .store(playerId, "recipe-a", "gt.recipe.assembler", PatternRoutingKeys.SOURCE_NEI, 0L);
 
-        assertNull(
-            PendingRecipeTransferContext.consume(
-                playerId,
-                PendingRecipeTransferContext.DEFAULT_EXPIRY_MS + 1L));
+        assertNull(PendingRecipeTransferContext.consume(playerId, PendingRecipeTransferContext.DEFAULT_EXPIRY_MS + 1L));
     }
 }

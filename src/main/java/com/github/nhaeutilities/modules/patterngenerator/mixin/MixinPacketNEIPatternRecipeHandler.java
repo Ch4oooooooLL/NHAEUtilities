@@ -2,8 +2,8 @@ package com.github.nhaeutilities.modules.patterngenerator.mixin;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 
-import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import com.github.nhaeutilities.modules.patterngenerator.routing.PacketRecipeTransferMetadataAccess;
 import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
 import com.github.nhaeutilities.modules.patterngenerator.routing.PendingRecipeTransferContext;
+
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 

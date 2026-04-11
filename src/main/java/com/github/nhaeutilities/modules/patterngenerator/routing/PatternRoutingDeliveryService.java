@@ -5,11 +5,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
-import appeng.api.networking.IGridNode;
-
 import com.github.nhaeutilities.modules.patterngenerator.item.PatternIndexLocator;
 import com.github.nhaeutilities.modules.patterngenerator.storage.PatternStagingStorage;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
+
+import appeng.api.networking.IGridNode;
 
 public final class PatternRoutingDeliveryService {
 
@@ -72,8 +72,7 @@ public final class PatternRoutingDeliveryService {
     }
 
     static String warningMessageKeyFor(PatternRouterService.RouteStatus status) {
-        return status == PatternRouterService.RouteStatus.TARGET_FULL
-            ? "nhaeutilities.msg.pattern.route_target_full"
+        return status == PatternRouterService.RouteStatus.TARGET_FULL ? "nhaeutilities.msg.pattern.route_target_full"
             : "";
     }
 

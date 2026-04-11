@@ -38,7 +38,8 @@ public class SuperWirelessRuntimeManager {
 
     public interface GridConnectionFactory {
 
-        IGridConnection connect(BindingRecord record, GridNode controllerNode, GridNode targetNode) throws FailedConnection;
+        IGridConnection connect(BindingRecord record, GridNode controllerNode, GridNode targetNode)
+            throws FailedConnection;
     }
 
     public SuperWirelessRuntimeManager(BindingDataStore dataStore, BindingNodeResolver resolver) {

@@ -18,7 +18,11 @@ public final class PendingRecipeTransferContext {
         }
         PENDING_TRANSFERS.put(
             playerId,
-            new PendingTransfer(recipeId, overlayIdentifier, source, timestamp >= 0L ? timestamp : System.currentTimeMillis()));
+            new PendingTransfer(
+                recipeId,
+                overlayIdentifier,
+                source,
+                timestamp >= 0L ? timestamp : System.currentTimeMillis()));
     }
 
     public static PendingTransfer peek(UUID playerId, long now) {

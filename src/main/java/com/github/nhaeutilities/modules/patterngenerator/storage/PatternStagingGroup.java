@@ -51,7 +51,8 @@ public final class PatternStagingGroup {
             }
             NBTTagCompound patternTag = new NBTTagCompound();
             pattern.writeToNBT(patternTag);
-            Object registryName = pattern.getItem() != null ? Item.itemRegistry.getNameForObject(pattern.getItem()) : null;
+            Object registryName = pattern.getItem() != null ? Item.itemRegistry.getNameForObject(pattern.getItem())
+                : null;
             if (registryName != null) {
                 patternTag.setString(KEY_FALLBACK_ITEM_ID, registryName.toString());
             }

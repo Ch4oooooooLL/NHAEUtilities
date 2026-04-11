@@ -53,11 +53,7 @@ public class MixinMTEMultiBlockBaseTest {
             IGregTechTileEntity.class,
             CallbackInfoReturnable.class);
         method.setAccessible(true);
-        method.invoke(
-            mixin,
-            false,
-            null,
-            new CallbackInfoReturnable<Boolean>("checkStructure", false, structureValid));
+        method.invoke(mixin, false, null, new CallbackInfoReturnable<Boolean>("checkStructure", false, structureValid));
     }
 
     private static final class TestMixin extends MixinMTEMultiBlockBase {

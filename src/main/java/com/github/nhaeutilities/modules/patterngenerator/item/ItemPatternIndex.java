@@ -31,7 +31,9 @@ public class ItemPatternIndex extends Item {
             return stack;
         }
 
-        List<String> lines = buildSummaryLines(PatternStagingStorage.getSummary(player.getUniqueID()), MAX_SUMMARY_GROUPS);
+        List<String> lines = buildSummaryLines(
+            PatternStagingStorage.getSummary(player.getUniqueID()),
+            MAX_SUMMARY_GROUPS);
         for (String line : lines) {
             sendSummaryLine(player, line);
         }
@@ -57,8 +59,7 @@ public class ItemPatternIndex extends Item {
             return lines;
         }
 
-        lines.add(
-            "nhaeutilities.msg.pattern_index.summary|" + summary.groupCount + "|" + summary.totalPatterns);
+        lines.add("nhaeutilities.msg.pattern_index.summary|" + summary.groupCount + "|" + summary.totalPatterns);
 
         int limit = Math.max(0, maxGroups);
         int count = 0;
@@ -67,7 +68,10 @@ public class ItemPatternIndex extends Item {
                 break;
             }
             lines.add(
-                "nhaeutilities.msg.pattern_index.group_entry|" + group.groupKey + "|" + group.patternCount + "|"
+                "nhaeutilities.msg.pattern_index.group_entry|" + group.groupKey
+                    + "|"
+                    + group.patternCount
+                    + "|"
                     + group.preview);
             count++;
         }

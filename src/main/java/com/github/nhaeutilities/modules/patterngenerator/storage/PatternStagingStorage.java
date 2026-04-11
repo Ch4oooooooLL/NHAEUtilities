@@ -179,7 +179,8 @@ public final class PatternStagingStorage {
     }
 
     private static File getStorageFile(UUID playerId) {
-        File worldDir = storageRootForTests != null ? storageRootForTests : DimensionManager.getCurrentSaveRootDirectory();
+        File worldDir = storageRootForTests != null ? storageRootForTests
+            : DimensionManager.getCurrentSaveRootDirectory();
         File storageDir = new File(new File(worldDir, ForgeConfig.getStorageDirectoryName()), STAGING_DIRECTORY);
         return new File(storageDir, playerId.toString() + ".dat");
     }
@@ -259,8 +260,10 @@ public final class PatternStagingStorage {
                 builder.append(", ");
             }
             long count = outList.getCompoundTagAt(i)
-                .hasKey("Cnt") ? outList.getCompoundTagAt(i)
-                    .getLong("Cnt") : output.stackSize;
+                .hasKey("Cnt")
+                    ? outList.getCompoundTagAt(i)
+                        .getLong("Cnt")
+                    : output.stackSize;
             if (count <= 0) {
                 count = 1;
             }

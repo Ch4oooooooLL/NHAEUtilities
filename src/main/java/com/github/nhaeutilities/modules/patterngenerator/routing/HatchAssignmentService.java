@@ -8,7 +8,6 @@ import net.minecraft.item.ItemStack;
 import com.github.nhaeutilities.accessor.patterngenerator.HatchAssignmentHolder;
 
 import gregtech.api.interfaces.tileentity.RecipeMapWorkable;
-import gregtech.api.metatileentity.MetaTileEntity;
 import gregtech.api.metatileentity.implementations.MTEMultiBlockBase;
 import gregtech.api.recipe.RecipeMap;
 import gregtech.common.tileentities.machines.IDualInputHatch;
@@ -45,11 +44,7 @@ public final class HatchAssignmentService {
             ItemStack[] manualItems = extractManualItems(sharedItems);
             String circuitKey = PatternRoutingNbt.circuitKey(circuit);
             String manualItemsKey = PatternRoutingNbt.manualItemsKey(manualItems);
-            String assignmentKey = PatternRoutingNbt.buildAssignmentKey(
-                recipeFamily,
-                "",
-                circuitKey,
-                manualItemsKey);
+            String assignmentKey = PatternRoutingNbt.buildAssignmentKey(recipeFamily, "", circuitKey, manualItemsKey);
 
             ((HatchAssignmentHolder) dualInputHatch).nhaeutilities$setAssignmentData(
                 new HatchAssignmentData(assignmentKey, recipeFamily, "", circuitKey, manualItemsKey));
@@ -80,8 +75,9 @@ public final class HatchAssignmentService {
 
     private static String resolveRecipeFamily(MTEMultiBlockBase controller) {
         RecipeMap<?> recipeMap = resolveRecipeMap(controller);
-        if (recipeMap != null && recipeMap.getFrontend() != null && recipeMap.getFrontend()
-            .getUIProperties() != null) {
+        if (recipeMap != null && recipeMap.getFrontend() != null
+            && recipeMap.getFrontend()
+                .getUIProperties() != null) {
             String transferId = recipeMap.getFrontend()
                 .getUIProperties().neiTransferRectId;
             if (transferId != null && !transferId.isEmpty()) {

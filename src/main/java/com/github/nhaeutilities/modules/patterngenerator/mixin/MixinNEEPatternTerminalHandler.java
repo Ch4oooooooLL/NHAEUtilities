@@ -1,7 +1,7 @@
 package com.github.nhaeutilities.modules.patterngenerator.mixin;
 
-import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -25,7 +25,8 @@ public abstract class MixinNEEPatternTerminalHandler {
         }
 
         try {
-            Recipe.RecipeId recipeId = Recipe.of(recipe, recipeIndex).getRecipeId();
+            Recipe.RecipeId recipeId = Recipe.of(recipe, recipeIndex)
+                .getRecipeId();
             if (recipeId == null) {
                 return;
             }
@@ -37,7 +38,9 @@ public abstract class MixinNEEPatternTerminalHandler {
             }
 
             PacketRecipeTransferMetadataAccess accessor = (PacketRecipeTransferMetadataAccess) packet;
-            accessor.nhaeutilities$setRecipeId(recipeId.toJsonObject().toString());
+            accessor.nhaeutilities$setRecipeId(
+                recipeId.toJsonObject()
+                    .toString());
             accessor.nhaeutilities$setOverlayIdentifier(overlayIdentifier);
         } catch (Throwable ignored) {}
     }

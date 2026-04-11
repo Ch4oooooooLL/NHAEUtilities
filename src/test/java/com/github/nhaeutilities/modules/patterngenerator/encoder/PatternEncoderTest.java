@@ -18,8 +18,8 @@ import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
+import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
 
 public class PatternEncoderTest {
 
@@ -116,7 +116,9 @@ public class PatternEncoderTest {
 
         assertNotNull(encoded);
         assertNotNull(encoded.getTagCompound());
-        assertTrue(encoded.getTagCompound().hasKey(PatternRoutingKeys.ROOT_KEY));
+        assertTrue(
+            encoded.getTagCompound()
+                .hasKey(PatternRoutingKeys.ROOT_KEY));
         assertTrue(
             encoded.getTagCompound()
                 .getCompoundTag(PatternRoutingKeys.ROOT_KEY)
