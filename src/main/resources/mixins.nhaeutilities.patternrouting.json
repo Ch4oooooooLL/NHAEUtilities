@@ -1,0 +1,18 @@
+{
+  "required": false,
+  "minVersion": "0.8",
+  "package": "com.github.nhaeutilities.modules.patternrouting.mixin",
+  "refmap": "mixins.nhaeutilities.refmap.json",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "MixinContainerPatternTerm",
+    "MixinContainerPatternTermEx",
+    "MixinMTEHatchCraftingInputME",
+    "MixinMTEMultiBlockBase",
+    "MixinNEEPatternTerminalHandler",
+    "MixinPacketNEIPatternRecipe",
+    "MixinPacketNEIPatternRecipeHandler"
+  ],
+  "client": [],
+  "server": []
+}

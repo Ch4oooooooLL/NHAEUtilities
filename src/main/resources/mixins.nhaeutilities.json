@@ -4,15 +4,7 @@
   "package": "com.github.nhaeutilities.modules.patterngenerator.mixin",
   "refmap": "mixins.nhaeutilities.refmap.json",
   "compatibilityLevel": "JAVA_8",
-  "mixins": [
-    "MixinContainerPatternTerm",
-    "MixinContainerPatternTermEx",
-    "MixinMTEHatchCraftingInputME",
-    "MixinMTEMultiBlockBase",
-    "MixinNEEPatternTerminalHandler",
-    "MixinPacketNEIPatternRecipe",
-    "MixinPacketNEIPatternRecipeHandler"
-  ],
+  "mixins": [],
   "client": [],
   "server": []
 }

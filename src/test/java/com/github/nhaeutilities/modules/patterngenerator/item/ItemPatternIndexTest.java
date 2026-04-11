@@ -19,15 +19,23 @@ public class ItemPatternIndexTest {
             3,
             20L,
             Arrays.asList(
-                new PatternStagingStorage.GroupSummary("recipe-a|circuit-a|manual-a", "recipe-a", "circuit-a",
-                    "manual-a", 2, 20L, "Output B"),
+                new PatternStagingStorage.GroupSummary(
+                    "recipe-a|circuit-a|manual-a",
+                    "recipe-a",
+                    "circuit-a",
+                    "manual-a",
+                    2,
+                    20L,
+                    "Output B"),
                 new PatternStagingStorage.GroupSummary("recipe-b||", "recipe-b", "", "", 1, 30L, "Output C")));
 
         List<String> lines = ItemPatternIndex.buildSummaryLines(summary, 5);
 
         assertEquals(3, lines.size());
         assertEquals("nhaeutilities.msg.pattern_index.summary|2|3", lines.get(0));
-        assertEquals("nhaeutilities.msg.pattern_index.group_entry|recipe-a|circuit-a|manual-a|2|Output B", lines.get(1));
+        assertEquals(
+            "nhaeutilities.msg.pattern_index.group_entry|recipe-a|circuit-a|manual-a|2|Output B",
+            lines.get(1));
         assertEquals("nhaeutilities.msg.pattern_index.group_entry|recipe-b|||1|Output C", lines.get(2));
     }
 
@@ -36,6 +44,8 @@ public class ItemPatternIndexTest {
         List<String> lines = ItemPatternIndex.buildSummaryLines(PatternStagingStorage.StorageSummary.EMPTY, 5);
 
         assertEquals(1, lines.size());
-        assertTrue(lines.get(0).startsWith("nhaeutilities.msg.pattern_index.empty"));
+        assertTrue(
+            lines.get(0)
+                .startsWith("nhaeutilities.msg.pattern_index.empty"));
     }
 }

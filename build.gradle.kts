@@ -6,7 +6,7 @@ plugins {
 tasks.withType<Jar>().configureEach {
     manifest {
         attributes(
-            "MixinConfigs" to "mixins.nhaeutilities.json,mixins.nhaeutilities.superwirelesskit.json"
+            "MixinConfigs" to "mixins.nhaeutilities.json,mixins.nhaeutilities.patternrouting.json,mixins.nhaeutilities.superwirelesskit.json"
         )
     }
 }

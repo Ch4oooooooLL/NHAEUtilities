@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.routing;
+package com.github.nhaeutilities.modules.patternrouting.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -86,7 +86,8 @@ public class PatternRouterServiceTest {
 
         HatchAssignmentData resolved = PatternRouterService.resolveAssignment(
             metadata,
-            Arrays.asList(new HatchAssignmentData("key-b", "gt.recipe.assembler", "recipe-b", "circuit-a", "manual-a")));
+            Arrays
+                .asList(new HatchAssignmentData("key-b", "gt.recipe.assembler", "recipe-b", "circuit-a", "manual-a")));
 
         assertNull(resolved);
     }

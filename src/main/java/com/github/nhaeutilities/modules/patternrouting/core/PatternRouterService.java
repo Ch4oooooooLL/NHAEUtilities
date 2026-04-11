@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.routing;
+package com.github.nhaeutilities.modules.patternrouting.core;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,9 +6,10 @@ import java.util.List;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 
+import com.github.nhaeutilities.accessor.patternrouting.HatchAssignmentHolder;
+
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
-import com.github.nhaeutilities.accessor.patterngenerator.HatchAssignmentHolder;
 
 public final class PatternRouterService {
 
@@ -145,7 +146,8 @@ public final class PatternRouterService {
         return !metadata.overlayIdentifier.isEmpty();
     }
 
-    private static boolean matchesAssignment(PatternRoutingNbt.RoutingMetadata metadata, HatchAssignmentData assignment) {
+    private static boolean matchesAssignment(PatternRoutingNbt.RoutingMetadata metadata,
+        HatchAssignmentData assignment) {
         if (assignment == null || assignment.assignmentKey.isEmpty()) {
             return false;
         }

@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.mixin;
+package com.github.nhaeutilities.modules.patternrouting.mixin;
 
 import static org.junit.Assert.assertEquals;
 
@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import org.junit.Test;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import com.github.nhaeutilities.accessor.patterngenerator.HatchAssignmentHolder;
-import com.github.nhaeutilities.modules.patterngenerator.routing.HatchAssignmentData;
+import com.github.nhaeutilities.accessor.patternrouting.HatchAssignmentHolder;
+import com.github.nhaeutilities.modules.patternrouting.core.HatchAssignmentData;
 
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.common.tileentities.machines.IDualInputHatch;
@@ -53,11 +53,7 @@ public class MixinMTEMultiBlockBaseTest {
             IGregTechTileEntity.class,
             CallbackInfoReturnable.class);
         method.setAccessible(true);
-        method.invoke(
-            mixin,
-            false,
-            null,
-            new CallbackInfoReturnable<Boolean>("checkStructure", false, structureValid));
+        method.invoke(mixin, false, null, new CallbackInfoReturnable<Boolean>("checkStructure", false, structureValid));
     }
 
     private static final class TestMixin extends MixinMTEMultiBlockBase {

@@ -2,6 +2,7 @@ package com.github.nhaeutilities.core.config;
 
 import com.github.nhaeutilities.NHAEUtilities;
 import com.github.nhaeutilities.core.module.ModuleRegistry;
+import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
 
 import cpw.mods.fml.client.event.ConfigChangedEvent;
 import cpw.mods.fml.common.FMLLog;
@@ -33,6 +34,7 @@ public class ConfigChangeHandler {
 
         try {
             coreConfig.reload();
+            PatternRoutingRuntime.setEnabled(coreConfig.isPatternRoutingEnabled());
             moduleRegistry.loadAllConfigs(CoreConfig.getConfiguration());
             CoreConfig.saveIfChanged();
         } catch (RuntimeException e) {

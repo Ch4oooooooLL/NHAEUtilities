@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.routing;
+package com.github.nhaeutilities.modules.patternrouting.core;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -39,8 +39,7 @@ public final class PatternRoutingNbt {
 
         NBTTagCompound routingTag = root.getCompoundTag(PatternRoutingKeys.ROUTING_KEY);
         return new RoutingMetadata(
-            routingTag.hasKey(PatternRoutingKeys.VERSION_KEY)
-                ? routingTag.getInteger(PatternRoutingKeys.VERSION_KEY)
+            routingTag.hasKey(PatternRoutingKeys.VERSION_KEY) ? routingTag.getInteger(PatternRoutingKeys.VERSION_KEY)
                 : PatternRoutingKeys.CURRENT_VERSION,
             getString(routingTag, PatternRoutingKeys.RECIPE_ID_KEY),
             getString(routingTag, PatternRoutingKeys.ASSIGNMENT_KEY),
@@ -140,7 +139,9 @@ public final class PatternRoutingNbt {
         if (metadata == null) {
             return "||";
         }
-        return nullToEmpty(metadata.recipeId) + "|" + nullToEmpty(metadata.circuitKey) + "|"
+        return nullToEmpty(metadata.recipeId) + "|"
+            + nullToEmpty(metadata.circuitKey)
+            + "|"
             + nullToEmpty(metadata.manualItemsKey);
     }
 
@@ -217,8 +218,12 @@ public final class PatternRoutingNbt {
         }
 
         public boolean isEmpty() {
-            return recipeId.isEmpty() && assignmentKey.isEmpty() && circuitKey.isEmpty() && manualItemsKey.isEmpty()
-                && source.isEmpty() && overlayIdentifier.isEmpty() && !hasDirectRoute;
+            return recipeId.isEmpty() && assignmentKey.isEmpty()
+                && circuitKey.isEmpty()
+                && manualItemsKey.isEmpty()
+                && source.isEmpty()
+                && overlayIdentifier.isEmpty()
+                && !hasDirectRoute;
         }
     }
 }

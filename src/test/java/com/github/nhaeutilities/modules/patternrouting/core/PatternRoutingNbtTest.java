@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.routing;
+package com.github.nhaeutilities.modules.patternrouting.core;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -77,9 +77,7 @@ public class PatternRoutingNbtTest {
 
         assertEquals("", PatternRoutingNbt.circuitKey(null));
         assertEquals("", PatternRoutingNbt.manualItemsKey(null));
-        assertEquals(
-            PatternRoutingNbt.itemSignature(circuit),
-            PatternRoutingNbt.circuitKey(circuit));
+        assertEquals(PatternRoutingNbt.itemSignature(circuit), PatternRoutingNbt.circuitKey(circuit));
         String manualKey = PatternRoutingNbt.manualItemsKey(new ItemStack[] { first, null, second });
         assertFalse(manualKey.isEmpty());
         assertTrue(manualKey.contains(PatternRoutingNbt.itemSignature(first)));

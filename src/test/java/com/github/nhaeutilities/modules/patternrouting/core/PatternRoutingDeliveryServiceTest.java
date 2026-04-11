@@ -1,4 +1,4 @@
-package com.github.nhaeutilities.modules.patterngenerator.routing;
+package com.github.nhaeutilities.modules.patternrouting.core;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,12 +36,12 @@ public class PatternRoutingDeliveryServiceTest {
     @Test
     public void buildRoutingMetadataLeavesAssignmentKeyEmptyBeforeRouteResolution() {
         UUID playerId = UUID.randomUUID();
-        PendingRecipeTransferContext.store(playerId, "recipe-a", "gt.recipe.assembler", PatternRoutingKeys.SOURCE_NEI, 1L);
+        PendingRecipeTransferContext
+            .store(playerId, "recipe-a", "gt.recipe.assembler", PatternRoutingKeys.SOURCE_NEI, 1L);
 
         PendingRecipeTransferContext.PendingTransfer transfer = PendingRecipeTransferContext.consume(playerId, 2L);
-        PatternRoutingNbt.RoutingMetadata metadata = PatternRoutingDeliveryService.buildRoutingMetadata(
-            new ItemStack(Items.paper, 1, 0),
-            transfer);
+        PatternRoutingNbt.RoutingMetadata metadata = PatternRoutingDeliveryService
+            .buildRoutingMetadata(new ItemStack(Items.paper, 1, 0), transfer);
 
         assertEquals("recipe-a", metadata.recipeId);
         assertEquals("", metadata.assignmentKey);
@@ -51,13 +51,13 @@ public class PatternRoutingDeliveryServiceTest {
 
     @Test
     public void warningMessageKeyOnlyExistsForTargetFullRouteResult() {
-        assertEquals("", PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.NO_METADATA));
+        assertEquals(
+            "",
+            PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.NO_METADATA));
         assertEquals(
             "",
             PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.NO_MATCHING_HATCH));
-        assertEquals(
-            "",
-            PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.ROUTED));
+        assertEquals("", PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.ROUTED));
         assertEquals(
             "nhaeutilities.msg.pattern.route_target_full",
             PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.TARGET_FULL));
