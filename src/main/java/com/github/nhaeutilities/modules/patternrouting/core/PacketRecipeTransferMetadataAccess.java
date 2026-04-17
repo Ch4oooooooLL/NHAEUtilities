@@ -9,4 +9,16 @@ public interface PacketRecipeTransferMetadataAccess {
     String nhaeutilities$getOverlayIdentifier();
 
     void nhaeutilities$setOverlayIdentifier(String overlayIdentifier);
+
+    String nhaeutilities$getProgrammingCircuit();
+
+    void nhaeutilities$setProgrammingCircuit(String programmingCircuit);
+
+    String nhaeutilities$getNonConsumables();
+
+    void nhaeutilities$setNonConsumables(String nonConsumables);
+
+    String nhaeutilities$getRecipeSnapshot();
+
+    void nhaeutilities$setRecipeSnapshot(String recipeSnapshot);
 }

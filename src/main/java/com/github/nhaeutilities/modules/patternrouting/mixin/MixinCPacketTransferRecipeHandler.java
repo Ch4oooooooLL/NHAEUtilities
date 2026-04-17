@@ -18,17 +18,17 @@ import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.MessageContext;
 
 @Pseudo
-@Mixin(targets = "com.github.vfyjxf.nee.network.packet.PacketNEIPatternRecipe$Handler", remap = false)
-public abstract class MixinPacketNEIPatternRecipeHandler {
+@Mixin(targets = "com.glodblock.github.network.CPacketTransferRecipe$Handler", remap = false)
+public abstract class MixinCPacketTransferRecipeHandler {
 
     @Inject(method = "onMessage", at = @At("HEAD"), remap = false)
-    private void nhaeutilities$storePendingTransfer(com.github.vfyjxf.nee.network.packet.PacketNEIPatternRecipe message,
+    private void nhaeutilities$storePendingTransfer(com.glodblock.github.network.CPacketTransferRecipe message,
         MessageContext ctx, CallbackInfoReturnable<IMessage> cir) {
         if (!PatternRoutingRuntime.isEnabled() || !(message instanceof PacketRecipeTransferMetadataAccess)
             || ctx == null
             || ctx.getServerHandler() == null) {
             PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] NEE handler skip enabled=%s messageAccess=%s ctx=%s serverHandler=%s messageClass=%s",
+                "[NHAEUtilities][patternrouting] AE2FC handler skip enabled=%s messageAccess=%s ctx=%s serverHandler=%s messageClass=%s",
                 PatternRoutingRuntime.isEnabled(),
                 message instanceof PacketRecipeTransferMetadataAccess,
                 ctx != null,
@@ -42,7 +42,7 @@ public abstract class MixinPacketNEIPatternRecipeHandler {
         if (accessor.nhaeutilities$getRecipeId()
             .isEmpty()) {
             PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] NEE handler saw empty recipeId overlay=%s messageClass=%s",
+                "[NHAEUtilities][patternrouting] AE2FC handler saw empty recipeId overlay=%s messageClass=%s",
                 accessor.nhaeutilities$getOverlayIdentifier(),
                 message.getClass()
                     .getName());
@@ -57,11 +57,11 @@ public abstract class MixinPacketNEIPatternRecipeHandler {
             accessor.nhaeutilities$getProgrammingCircuit(),
             accessor.nhaeutilities$getNonConsumables(),
             accessor.nhaeutilities$getRecipeSnapshot(),
-            PatternRoutingKeys.SOURCE_NEI,
+            PatternRoutingKeys.SOURCE_AE2FC,
             System.currentTimeMillis());
         PatternRoutingLog.info(
             "[NHAEUtilities][patternrouting] store pending transfer source=%s player=%s recipeId=%s overlay=%s circuit=%s nc=%s",
-            PatternRoutingKeys.SOURCE_NEI,
+            PatternRoutingKeys.SOURCE_AE2FC,
             player.getCommandSenderName(),
             accessor.nhaeutilities$getRecipeId(),
             accessor.nhaeutilities$getOverlayIdentifier(),

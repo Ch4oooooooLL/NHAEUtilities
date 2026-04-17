@@ -14,8 +14,8 @@ import cpw.mods.fml.common.network.ByteBufUtils;
 import io.netty.buffer.ByteBuf;
 
 @Pseudo
-@Mixin(targets = "com.github.vfyjxf.nee.network.packet.PacketNEIPatternRecipe", remap = false)
-public abstract class MixinPacketNEIPatternRecipe implements PacketRecipeTransferMetadataAccess {
+@Mixin(targets = "com.glodblock.github.network.CPacketTransferRecipe", remap = false)
+public abstract class MixinCPacketTransferRecipe implements PacketRecipeTransferMetadataAccess {
 
     @Unique
     private String nhaeutilities$recipeId = "";
@@ -55,7 +55,7 @@ public abstract class MixinPacketNEIPatternRecipe implements PacketRecipeTransfe
             ByteBufUtils.writeUTF8String(buf, nhaeutilities$recipeSnapshot);
         }
         PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] NEE packet toBytes recipeId=%s overlay=%s circuit=%s nc=%s snapshotSize=%s",
+            "[NHAEUtilities][patternrouting] AE2FC packet toBytes recipeId=%s overlay=%s circuit=%s nc=%s snapshotSize=%s",
             nhaeutilities$recipeId,
             nhaeutilities$overlayIdentifier,
             nhaeutilities$programmingCircuit,
@@ -67,7 +67,7 @@ public abstract class MixinPacketNEIPatternRecipe implements PacketRecipeTransfe
     private void nhaeutilities$readTransferMetadata(ByteBuf buf, CallbackInfo ci) {
         if (buf.readableBytes() <= 0) {
             cpw.mods.fml.common.FMLLog
-                .info("[NHAEUtilities][patternrouting] NEE packet fromBytes no extra metadata bytes");
+                .info("[NHAEUtilities][patternrouting] AE2FC packet fromBytes no extra metadata bytes");
             return;
         }
 
@@ -76,7 +76,7 @@ public abstract class MixinPacketNEIPatternRecipe implements PacketRecipeTransfe
         }
         if (buf.readableBytes() <= 0) {
             PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] NEE packet fromBytes recipeId=%s overlay=%s remaining=0",
+                "[NHAEUtilities][patternrouting] AE2FC packet fromBytes recipeId=%s overlay=%s remaining=0",
                 nhaeutilities$recipeId,
                 nhaeutilities$overlayIdentifier);
             return;
@@ -94,7 +94,7 @@ public abstract class MixinPacketNEIPatternRecipe implements PacketRecipeTransfe
             nhaeutilities$recipeSnapshot = ByteBufUtils.readUTF8String(buf);
         }
         PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] NEE packet fromBytes recipeId=%s overlay=%s circuit=%s nc=%s remaining=%s",
+            "[NHAEUtilities][patternrouting] AE2FC packet fromBytes recipeId=%s overlay=%s circuit=%s nc=%s remaining=%s",
             nhaeutilities$recipeId,
             nhaeutilities$overlayIdentifier,
             nhaeutilities$programmingCircuit,

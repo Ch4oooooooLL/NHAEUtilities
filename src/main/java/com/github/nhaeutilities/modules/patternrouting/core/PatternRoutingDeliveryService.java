@@ -16,14 +16,44 @@ public final class PatternRoutingDeliveryService {
             return PatternRouterService.RouteResult.noMetadata();
         }
 
-        PatternRoutingNbt.writeRoutingData(pattern, buildRoutingMetadata(pattern, transfer));
-        return PatternRouterService.tryRoute(pattern, node);
+        PatternRoutingNbt.RoutingMetadata metadata = buildRoutingMetadata(pattern, transfer);
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] decorate route start item=%s node=%s recipeId=%s overlay=%s circuit=%s manual=%s source=%s nc=%s",
+            PatternRoutingNbt.itemSignature(pattern),
+            node != null,
+            metadata.recipeId,
+            metadata.overlayIdentifier,
+            metadata.circuitKey,
+            metadata.manualItemsKey,
+            metadata.source,
+            metadata.nonConsumables);
+        PatternRoutingNbt.writeRoutingData(pattern, metadata);
+        PatternRouterService.RouteResult result = PatternRouterService.tryRoute(pattern, node);
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] decorate route result status=%s target=%s item=%s",
+            result.status,
+            result.target != null ? result.target.getClass()
+                .getName() : "null",
+            PatternRoutingNbt.itemSignature(pattern));
+        return result;
     }
 
     static PatternRoutingNbt.RoutingMetadata buildRoutingMetadata(ItemStack pattern,
         PendingRecipeTransferContext.PendingTransfer transfer) {
-        String circuitKey = PatternRoutingNbt.inferCircuitKeyFromEncodedPattern(pattern);
-        String manualItemsKey = "";
+        boolean usedTransferCircuit = !transfer.programmingCircuit.isEmpty();
+        String circuitKey = usedTransferCircuit ? transfer.programmingCircuit
+            : PatternRoutingNbt.inferCircuitKeyFromEncodedPattern(pattern);
+        String manualItemsKey = PatternRoutingNbt.manualItemsKeyFromJson(transfer.nonConsumables);
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] build routing metadata recipeId=%s overlay=%s circuitSource=%s manualSource=%s circuit=%s manual=%s snapshotSize=%s",
+            transfer.recipeId,
+            transfer.overlayIdentifier,
+            usedTransferCircuit ? "transfer" : "encodedPatternFallback",
+            transfer.nonConsumables != null && !transfer.nonConsumables.isEmpty()
+                && !"[]".equals(transfer.nonConsumables) ? "transferNc" : "empty",
+            circuitKey,
+            manualItemsKey,
+            transfer.recipeSnapshot.length());
         return new PatternRoutingNbt.RoutingMetadata(
             PatternRoutingKeys.CURRENT_VERSION,
             transfer.recipeId,
@@ -32,7 +62,10 @@ public final class PatternRoutingDeliveryService {
             manualItemsKey,
             transfer.source,
             false,
-            transfer.overlayIdentifier);
+            transfer.overlayIdentifier,
+            transfer.programmingCircuit,
+            transfer.nonConsumables,
+            transfer.recipeSnapshot);
     }
 
     public static String warningMessageKeyFor(PatternRouterService.RouteStatus status) {

@@ -8,6 +8,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
 import com.github.nhaeutilities.modules.patternrouting.core.PacketRecipeTransferMetadataAccess;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingLog;
+import com.github.nhaeutilities.modules.patternrouting.core.RecipeTransferMetadataExtractor;
 
 import codechicken.nei.recipe.IRecipeHandler;
 import codechicken.nei.recipe.Recipe;
@@ -41,11 +43,26 @@ public abstract class MixinNEEPatternTerminalHandler {
             }
 
             PacketRecipeTransferMetadataAccess accessor = (PacketRecipeTransferMetadataAccess) packet;
-            accessor.nhaeutilities$setRecipeId(
-                recipeId.toJsonObject()
-                    .toString());
+            String recipeIdJson = recipeId.toJsonObject()
+                .toString();
+            RecipeTransferMetadataExtractor.Metadata metadata = RecipeTransferMetadataExtractor
+                .extract(recipe, recipeIndex, recipeIdJson, overlayIdentifier);
+            accessor.nhaeutilities$setRecipeId(recipeIdJson);
             accessor.nhaeutilities$setOverlayIdentifier(overlayIdentifier);
-        } catch (Throwable ignored) {}
+            accessor.nhaeutilities$setProgrammingCircuit(metadata.programmingCircuit);
+            accessor.nhaeutilities$setNonConsumables(metadata.nonConsumables);
+            accessor.nhaeutilities$setRecipeSnapshot(metadata.recipeSnapshot);
+            PatternRoutingLog.info(
+                "[NHAEUtilities][patternrouting] NEE attach metadata recipeId=%s overlay=%s circuit=%s nc=%s packet=%s",
+                accessor.nhaeutilities$getRecipeId(),
+                accessor.nhaeutilities$getOverlayIdentifier(),
+                accessor.nhaeutilities$getProgrammingCircuit(),
+                accessor.nhaeutilities$getNonConsumables(),
+                packet.getClass()
+                    .getName());
+        } catch (Throwable t) {
+            PatternRoutingLog.warning("[NHAEUtilities][patternrouting] NEE attach metadata failed: %s", t.toString());
+        }
     }
 
     private static boolean isCraftingRecipe(IRecipeHandler recipe) {

@@ -227,6 +227,8 @@ nhaeutilities.config.modules.superWirelessKit.basic.enabled=启用
 nhaeutilities.config.modules.patternRouting=样板路由
 nhaeutilities.config.modules.patternRouting.basic=基础设置
 nhaeutilities.config.modules.patternRouting.basic.enabled=启用
+nhaeutilities.config.modules.patternRouting.debug=调试
+nhaeutilities.config.modules.patternRouting.debug.enabled=启用
 
 
 nhaeutilities.msg.pattern.routed_fallback_inventory=[NHAEUtilities] 当前无可用的暂存目标。样板已返还到你的背包。

@@ -7,11 +7,12 @@
   "mixins": [
     "MixinContainerPatternTerm",
     "MixinContainerPatternTermEx",
+    "MixinCPacketTransferRecipe",
+    "MixinCPacketTransferRecipeHandler",
+    "MixinFCContainerEncodeTerminal",
+    "MixinFluidPatternTerminalRecipeTransferHandler",
     "MixinMTEHatchCraftingInputME",
-    "MixinMTEMultiBlockBase",
-    "MixinNEEPatternTerminalHandler",
-    "MixinPacketNEIPatternRecipe",
-    "MixinPacketNEIPatternRecipeHandler"
+    "MixinMTEMultiBlockBase"
   ],
   "client": [],
   "server": []

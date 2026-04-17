@@ -5,6 +5,7 @@ import net.minecraft.item.ItemStack;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -15,20 +16,26 @@ import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
 import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingLog;
 import com.github.nhaeutilities.modules.patternrouting.core.PendingRecipeTransferContext;
 
-import appeng.container.implementations.ContainerPatternTerm;
 import appeng.container.slot.SlotRestrictedInput;
 import appeng.helpers.IContainerCraftingPacket;
 
-@Mixin(value = ContainerPatternTerm.class, remap = false)
-public abstract class MixinContainerPatternTerm {
+@Pseudo
+@Mixin(targets = "com.glodblock.github.client.gui.container.base.FCContainerEncodeTerminal", remap = false)
+public abstract class MixinFCContainerEncodeTerminal {
 
     @Shadow
     @Final
-    private SlotRestrictedInput patternSlotOUT;
+    protected SlotRestrictedInput patternSlotOUT;
+
+    @Shadow
+    protected abstract net.minecraft.entity.player.InventoryPlayer getPlayerInv();
+
+    @Shadow
+    public abstract void detectAndSendChanges();
 
     @Inject(method = "encode", at = @At("TAIL"), remap = false)
     private void nhaeutilities$handlePatternRoutingAfterEncode(CallbackInfo ci) {
-        EntityPlayer player = ((ContainerPatternTerm) (Object) this).getPlayerInv().player;
+        EntityPlayer player = this.getPlayerInv().player;
         if (!PatternRoutingRuntime.isEnabled() || player == null
             || player.worldObj == null
             || player.worldObj.isRemote) {
@@ -40,7 +47,7 @@ public abstract class MixinContainerPatternTerm {
             .peek(player.getUniqueID(), now);
         if (transfer == null) {
             PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] AE2 encode no pending transfer player=%s output=%s",
+                "[NHAEUtilities][patternrouting] AE2FC encode no pending transfer player=%s output=%s",
                 player.getCommandSenderName(),
                 this.patternSlotOUT.getStack());
             return;
@@ -49,7 +56,7 @@ public abstract class MixinContainerPatternTerm {
         ItemStack output = this.patternSlotOUT.getStack();
         if (output == null) {
             PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] AE2 encode defers pending player=%s recipeId=%s overlay=%s output=null",
+                "[NHAEUtilities][patternrouting] AE2FC encode defers pending player=%s recipeId=%s overlay=%s output=null",
                 player.getCommandSenderName(),
                 transfer.recipeId,
                 transfer.overlayIdentifier);
@@ -59,13 +66,13 @@ public abstract class MixinContainerPatternTerm {
         transfer = PendingRecipeTransferContext.consume(player.getUniqueID(), now);
         if (transfer == null) {
             PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] AE2 encode lost pending before consume player=%s output=%s",
+                "[NHAEUtilities][patternrouting] AE2FC encode lost pending before consume player=%s output=%s",
                 player.getCommandSenderName(),
                 output);
             return;
         }
         PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] AE2 encode consume pending player=%s recipeId=%s overlay=%s source=%s circuit=%s nc=%s snapshotSize=%s output=%s",
+            "[NHAEUtilities][patternrouting] AE2FC encode consume pending player=%s recipeId=%s overlay=%s source=%s circuit=%s nc=%s snapshotSize=%s output=%s",
             player.getCommandSenderName(),
             transfer.recipeId,
             transfer.overlayIdentifier,
@@ -79,7 +86,7 @@ public abstract class MixinContainerPatternTerm {
             .decorateAndDeliver(player, ((IContainerCraftingPacket) (Object) this).getNetworkNode(), output, transfer);
         if (result != PatternRoutingFallbackService.DeliveryResult.NO_ACTION) {
             this.patternSlotOUT.putStack(null);
-            ((ContainerPatternTerm) (Object) this).detectAndSendChanges();
+            this.detectAndSendChanges();
         }
     }
 }

@@ -36,8 +36,15 @@ public class PatternRoutingDeliveryServiceTest {
     @Test
     public void buildRoutingMetadataLeavesAssignmentKeyEmptyBeforeRouteResolution() {
         UUID playerId = UUID.randomUUID();
-        PendingRecipeTransferContext
-            .store(playerId, "recipe-a", "gt.recipe.assembler", PatternRoutingKeys.SOURCE_NEI, 1L);
+        PendingRecipeTransferContext.store(
+            playerId,
+            "recipe-a",
+            "gt.recipe.assembler",
+            "gt.integrated_circuit@5",
+            "[{\"item\":\"minecraft:bucket@0\",\"count\":0,\"nc\":true}]",
+            "{\"recipeId\":\"recipe-a\"}",
+            PatternRoutingKeys.SOURCE_NEI,
+            1L);
 
         PendingRecipeTransferContext.PendingTransfer transfer = PendingRecipeTransferContext.consume(playerId, 2L);
         PatternRoutingNbt.RoutingMetadata metadata = PatternRoutingDeliveryService
@@ -47,6 +54,10 @@ public class PatternRoutingDeliveryServiceTest {
         assertEquals("", metadata.assignmentKey);
         assertEquals("gt.recipe.assembler", metadata.overlayIdentifier);
         assertEquals(PatternRoutingKeys.SOURCE_NEI, metadata.source);
+        assertEquals("gt.integrated_circuit@5", metadata.circuitKey);
+        assertEquals("minecraft:bucket@0", metadata.manualItemsKey);
+        assertEquals("gt.integrated_circuit@5", metadata.programmingCircuit);
+        assertEquals("[{\"item\":\"minecraft:bucket@0\",\"count\":0,\"nc\":true}]", metadata.nonConsumables);
     }
 
     @Test

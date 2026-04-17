@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
 import com.github.nhaeutilities.modules.patternrouting.core.HatchAssignmentService;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingLog;
 
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.common.tileentities.machines.IDualInputHatch;
@@ -31,6 +32,11 @@ public abstract class MixinMTEMultiBlockBase {
         if (!PatternRoutingRuntime.isEnabled()) {
             return;
         }
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] clearHatches controller=%s dualInputCount=%s",
+            this.getClass()
+                .getName(),
+            this.mDualInputHatches != null ? this.mDualInputHatches.size() : 0);
         HatchAssignmentService.clearAssignments(this.mDualInputHatches);
     }
 
@@ -43,9 +49,24 @@ public abstract class MixinMTEMultiBlockBase {
         if (!PatternRoutingRuntime.isEnabled()) {
             return;
         }
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] checkStructure result=%s mMachine=%s controller=%s dualInputCount=%s",
+            cir.getReturnValue(),
+            this.mMachine,
+            this.getClass()
+                .getName(),
+            this.mDualInputHatches != null ? this.mDualInputHatches.size() : 0);
         if (Boolean.TRUE.equals(cir.getReturnValue()) && this.mMachine) {
+            PatternRoutingLog.info(
+                "[NHAEUtilities][patternrouting] checkStructure refreshing hatch assignments controller=%s",
+                this.getClass()
+                    .getName());
             HatchAssignmentService.refreshAssignments(this);
         } else {
+            PatternRoutingLog.info(
+                "[NHAEUtilities][patternrouting] checkStructure clearing hatch assignments controller=%s",
+                this.getClass()
+                    .getName());
             HatchAssignmentService.clearAssignments(this.mDualInputHatches);
         }
     }
