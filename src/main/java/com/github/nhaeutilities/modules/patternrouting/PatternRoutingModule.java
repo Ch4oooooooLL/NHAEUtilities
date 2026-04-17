@@ -6,6 +6,7 @@ import net.minecraftforge.common.config.Configuration;
 
 import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleDefinition;
+import com.github.nhaeutilities.modules.patternrouting.config.ForgeConfig;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
@@ -31,11 +32,14 @@ public class PatternRoutingModule implements ModuleDefinition {
     }
 
     @Override
-    public void loadConfig(Configuration configuration) {}
+    public void loadConfig(Configuration configuration) {
+        ForgeConfig.load(configuration);
+    }
 
     @Override
     public void preInit(FMLPreInitializationEvent event) {
         PatternRoutingRuntime.setEnabled(coreConfig.isPatternRoutingEnabled());
+        PatternRoutingRuntime.setDebugLogEnabled(ForgeConfig.isDebugModeEnabled());
     }
 
     @Override

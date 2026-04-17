@@ -28,6 +28,12 @@ public final class HatchAssignmentService {
         MTEMultiBlockBase multiBlock = (MTEMultiBlockBase) controller;
 
         String recipeFamily = resolveRecipeFamily(multiBlock);
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] refresh assignments controller=%s recipeFamily=%s hatchCount=%s",
+            multiBlock.getClass()
+                .getName(),
+            recipeFamily,
+            multiBlock.mDualInputHatches != null ? multiBlock.mDualInputHatches.size() : 0);
         for (IDualInputHatch dualInputHatch : multiBlock.mDualInputHatches) {
             if (!CraftingInputHatchAccess.isCraftingInputHatch(dualInputHatch)) {
                 continue;
@@ -46,8 +52,22 @@ public final class HatchAssignmentService {
             String manualItemsKey = PatternRoutingNbt.manualItemsKey(manualItems);
             String assignmentKey = PatternRoutingNbt.buildAssignmentKey(recipeFamily, "", circuitKey, manualItemsKey);
 
-            ((HatchAssignmentHolder) dualInputHatch).nhaeutilities$setAssignmentData(
-                new HatchAssignmentData(assignmentKey, recipeFamily, "", circuitKey, manualItemsKey));
+            HatchAssignmentData assignmentData = new HatchAssignmentData(
+                assignmentKey,
+                recipeFamily,
+                "",
+                circuitKey,
+                manualItemsKey);
+            ((HatchAssignmentHolder) dualInputHatch).nhaeutilities$setAssignmentData(assignmentData);
+            PatternRoutingLog.info(
+                "[NHAEUtilities][patternrouting] assign hatch hatch=%s recipeFamily=%s recipeId=%s circuit=%s manual=%s assignment=%s",
+                dualInputHatch.getClass()
+                    .getName(),
+                recipeFamily,
+                assignmentData.recipeId,
+                circuitKey,
+                manualItemsKey,
+                assignmentKey);
         }
     }
 
@@ -56,11 +76,14 @@ public final class HatchAssignmentService {
             return;
         }
 
+        int cleared = 0;
         for (IDualInputHatch dualInputHatch : dualInputHatches) {
             if (dualInputHatch instanceof HatchAssignmentHolder) {
                 ((HatchAssignmentHolder) dualInputHatch).nhaeutilities$clearAssignmentData();
+                cleared++;
             }
         }
+        PatternRoutingLog.info("[NHAEUtilities][patternrouting] cleared hatch assignments count=%s", cleared);
     }
 
     private static ItemStack[] extractManualItems(ItemStack[] sharedItems) {
@@ -81,14 +104,30 @@ public final class HatchAssignmentService {
             String transferId = recipeMap.getFrontend()
                 .getUIProperties().neiTransferRectId;
             if (transferId != null && !transferId.isEmpty()) {
+                PatternRoutingLog.info(
+                    "[NHAEUtilities][patternrouting] resolve recipeFamily via neiTransferRectId controller=%s recipeFamily=%s",
+                    controller.getClass()
+                        .getName(),
+                    transferId);
                 return transferId;
             }
             if (recipeMap.unlocalizedName != null && !recipeMap.unlocalizedName.isEmpty()) {
+                PatternRoutingLog.info(
+                    "[NHAEUtilities][patternrouting] resolve recipeFamily via recipeMap.unlocalizedName controller=%s recipeFamily=%s",
+                    controller.getClass()
+                        .getName(),
+                    recipeMap.unlocalizedName);
                 return recipeMap.unlocalizedName;
             }
         }
-        return controller.getClass()
+        String fallback = controller.getClass()
             .getName();
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] resolve recipeFamily via controller class controller=%s recipeFamily=%s",
+            controller.getClass()
+                .getName(),
+            fallback);
+        return fallback;
     }
 
     private static RecipeMap<?> resolveRecipeMap(MTEMultiBlockBase controller) {

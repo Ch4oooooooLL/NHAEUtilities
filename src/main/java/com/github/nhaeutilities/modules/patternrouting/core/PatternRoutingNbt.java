@@ -23,7 +23,21 @@ public final class PatternRoutingNbt {
         setString(routingTag, PatternRoutingKeys.SOURCE_KEY, metadata.source);
         routingTag.setBoolean(PatternRoutingKeys.HAS_DIRECT_ROUTE_KEY, metadata.hasDirectRoute);
         setString(routingTag, PatternRoutingKeys.OVERLAY_IDENTIFIER_KEY, metadata.overlayIdentifier);
+        setString(routingTag, PatternRoutingKeys.PROGRAMMING_CIRCUIT_KEY, metadata.programmingCircuit);
+        setString(routingTag, PatternRoutingKeys.NON_CONSUMABLES_KEY, metadata.nonConsumables);
+        setString(routingTag, PatternRoutingKeys.RECIPE_SNAPSHOT_KEY, metadata.recipeSnapshot);
         pattern.setTagCompound(stackTag);
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] write routing nbt item=%s recipeId=%s assignment=%s circuit=%s manual=%s source=%s direct=%s overlay=%s nc=%s",
+            itemSignature(pattern),
+            metadata.recipeId,
+            metadata.assignmentKey,
+            metadata.circuitKey,
+            metadata.manualItemsKey,
+            metadata.source,
+            metadata.hasDirectRoute,
+            metadata.overlayIdentifier,
+            metadata.nonConsumables);
     }
 
     public static RoutingMetadata readRoutingData(ItemStack pattern) {
@@ -47,7 +61,10 @@ public final class PatternRoutingNbt {
             getString(routingTag, PatternRoutingKeys.MANUAL_ITEMS_KEY),
             getString(routingTag, PatternRoutingKeys.SOURCE_KEY),
             routingTag.getBoolean(PatternRoutingKeys.HAS_DIRECT_ROUTE_KEY),
-            getString(routingTag, PatternRoutingKeys.OVERLAY_IDENTIFIER_KEY));
+            getString(routingTag, PatternRoutingKeys.OVERLAY_IDENTIFIER_KEY),
+            getString(routingTag, PatternRoutingKeys.PROGRAMMING_CIRCUIT_KEY),
+            getString(routingTag, PatternRoutingKeys.NON_CONSUMABLES_KEY),
+            getString(routingTag, PatternRoutingKeys.RECIPE_SNAPSHOT_KEY));
     }
 
     public static boolean hasRoutingData(ItemStack pattern) {
@@ -98,6 +115,38 @@ public final class PatternRoutingNbt {
                 key.append("|");
             }
             key.append(signature);
+        }
+        return key.toString();
+    }
+
+    public static String manualItemsKeyFromJson(String nonConsumablesJson) {
+        if (nonConsumablesJson == null || nonConsumablesJson.trim()
+            .isEmpty() || "[]".equals(nonConsumablesJson.trim())) {
+            return "";
+        }
+
+        StringBuilder key = new StringBuilder();
+        int index = 0;
+        while (index >= 0 && index < nonConsumablesJson.length()) {
+            index = nonConsumablesJson.indexOf("\"item\":\"", index);
+            if (index < 0) {
+                break;
+            }
+            index += 8;
+            int end = nonConsumablesJson.indexOf('"', index);
+            if (end < 0) {
+                break;
+            }
+            String signature = nonConsumablesJson.substring(index, end)
+                .replace("\\\"", "\"")
+                .replace("\\\\", "\\");
+            if (!signature.isEmpty()) {
+                if (key.length() > 0) {
+                    key.append("|");
+                }
+                key.append(signature);
+            }
+            index = end + 1;
         }
         return key.toString();
     }
@@ -189,6 +238,9 @@ public final class PatternRoutingNbt {
             "",
             "",
             false,
+            "",
+            "",
+            "",
             "");
 
         public final int version;
@@ -199,14 +251,45 @@ public final class PatternRoutingNbt {
         public final String source;
         public final boolean hasDirectRoute;
         public final String overlayIdentifier;
+        public final String programmingCircuit;
+        public final String nonConsumables;
+        public final String recipeSnapshot;
 
         public RoutingMetadata(int version, String recipeId, String assignmentKey, String circuitKey,
             String manualItemsKey, String source, boolean hasDirectRoute) {
-            this(version, recipeId, assignmentKey, circuitKey, manualItemsKey, source, hasDirectRoute, "");
+            this(
+                version,
+                recipeId,
+                assignmentKey,
+                circuitKey,
+                manualItemsKey,
+                source,
+                hasDirectRoute,
+                "",
+                "",
+                "[]",
+                "{}");
         }
 
         public RoutingMetadata(int version, String recipeId, String assignmentKey, String circuitKey,
             String manualItemsKey, String source, boolean hasDirectRoute, String overlayIdentifier) {
+            this(
+                version,
+                recipeId,
+                assignmentKey,
+                circuitKey,
+                manualItemsKey,
+                source,
+                hasDirectRoute,
+                overlayIdentifier,
+                "",
+                "[]",
+                "{}");
+        }
+
+        public RoutingMetadata(int version, String recipeId, String assignmentKey, String circuitKey,
+            String manualItemsKey, String source, boolean hasDirectRoute, String overlayIdentifier,
+            String programmingCircuit, String nonConsumables, String recipeSnapshot) {
             this.version = version;
             this.recipeId = nullToEmpty(recipeId);
             this.assignmentKey = nullToEmpty(assignmentKey);
@@ -215,6 +298,9 @@ public final class PatternRoutingNbt {
             this.source = nullToEmpty(source);
             this.hasDirectRoute = hasDirectRoute;
             this.overlayIdentifier = nullToEmpty(overlayIdentifier);
+            this.programmingCircuit = nullToEmpty(programmingCircuit);
+            this.nonConsumables = nullToEmpty(nonConsumables);
+            this.recipeSnapshot = nullToEmpty(recipeSnapshot);
         }
 
         public boolean isEmpty() {
@@ -223,6 +309,9 @@ public final class PatternRoutingNbt {
                 && manualItemsKey.isEmpty()
                 && source.isEmpty()
                 && overlayIdentifier.isEmpty()
+                && programmingCircuit.isEmpty()
+                && (nonConsumables.isEmpty() || "[]".equals(nonConsumables))
+                && (recipeSnapshot.isEmpty() || "{}".equals(recipeSnapshot))
                 && !hasDirectRoute;
         }
     }

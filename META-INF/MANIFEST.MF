@@ -3,4 +3,3 @@ FMLCorePluginContainsFMLMod: true
 TweakClass: org.spongepowered.asm.launch.MixinTweaker
 MixinConfigs: mixins.nhaeutilities.json,mixins.nhaeutilities.patternrouting.json,mixins.nhaeutilities.superwirelesskit.json
 ForceLoadAsMod: true
-

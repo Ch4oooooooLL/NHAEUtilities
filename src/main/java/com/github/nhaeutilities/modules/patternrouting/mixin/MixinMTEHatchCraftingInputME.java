@@ -13,6 +13,7 @@ import com.github.nhaeutilities.accessor.patternrouting.HatchAssignmentHolder;
 import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
 import com.github.nhaeutilities.modules.patternrouting.core.HatchAssignmentData;
 import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingKeys;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingLog;
 
 @Pseudo
 @Mixin(targets = "gregtech.common.tileentities.machines.MTEHatchCraftingInputME", remap = false)
@@ -32,6 +33,15 @@ public abstract class MixinMTEHatchCraftingInputME implements HatchAssignmentHol
             aNBT.setTag(PatternRoutingKeys.ROOT_KEY, root);
         }
         root.setTag(PatternRoutingKeys.HATCH_ASSIGNMENT_KEY, nhaeutilities$assignmentData.toNbt());
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] save hatch assignment hatch=%s assignment=%s recipeFamily=%s recipeId=%s circuit=%s manual=%s",
+            this.getClass()
+                .getName(),
+            nhaeutilities$assignmentData.assignmentKey,
+            nhaeutilities$assignmentData.recipeFamily,
+            nhaeutilities$assignmentData.recipeId,
+            nhaeutilities$assignmentData.circuitKey,
+            nhaeutilities$assignmentData.manualItemsKey);
     }
 
     @Inject(method = "loadNBTData", at = @At("TAIL"), remap = false)
@@ -42,11 +52,24 @@ public abstract class MixinMTEHatchCraftingInputME implements HatchAssignmentHol
         }
         if (!aNBT.hasKey(PatternRoutingKeys.ROOT_KEY)) {
             nhaeutilities$assignmentData = HatchAssignmentData.EMPTY;
+            PatternRoutingLog.info(
+                "[NHAEUtilities][patternrouting] load hatch assignment missing root hatch=%s",
+                this.getClass()
+                    .getName());
             return;
         }
         NBTTagCompound root = aNBT.getCompoundTag(PatternRoutingKeys.ROOT_KEY);
         nhaeutilities$assignmentData = HatchAssignmentData
             .fromNbt(root.getCompoundTag(PatternRoutingKeys.HATCH_ASSIGNMENT_KEY));
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] load hatch assignment hatch=%s assignment=%s recipeFamily=%s recipeId=%s circuit=%s manual=%s",
+            this.getClass()
+                .getName(),
+            nhaeutilities$assignmentData.assignmentKey,
+            nhaeutilities$assignmentData.recipeFamily,
+            nhaeutilities$assignmentData.recipeId,
+            nhaeutilities$assignmentData.circuitKey,
+            nhaeutilities$assignmentData.manualItemsKey);
     }
 
     @Override
@@ -57,10 +80,23 @@ public abstract class MixinMTEHatchCraftingInputME implements HatchAssignmentHol
     @Override
     public void nhaeutilities$setAssignmentData(HatchAssignmentData assignmentData) {
         nhaeutilities$assignmentData = assignmentData != null ? assignmentData : HatchAssignmentData.EMPTY;
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] set hatch assignment hatch=%s assignment=%s recipeFamily=%s recipeId=%s circuit=%s manual=%s",
+            this.getClass()
+                .getName(),
+            nhaeutilities$assignmentData.assignmentKey,
+            nhaeutilities$assignmentData.recipeFamily,
+            nhaeutilities$assignmentData.recipeId,
+            nhaeutilities$assignmentData.circuitKey,
+            nhaeutilities$assignmentData.manualItemsKey);
     }
 
     @Override
     public void nhaeutilities$clearAssignmentData() {
         nhaeutilities$assignmentData = HatchAssignmentData.EMPTY;
+        PatternRoutingLog.info(
+            "[NHAEUtilities][patternrouting] clear hatch assignment hatch=%s",
+            this.getClass()
+                .getName());
     }
 }
