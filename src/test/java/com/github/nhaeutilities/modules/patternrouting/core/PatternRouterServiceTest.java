@@ -10,84 +10,183 @@ import org.junit.Test;
 public class PatternRouterServiceTest {
 
     @Test
-    public void resolveAssignmentPrefersExactAssignmentKeyWhenPresent() {
+    public void selectCandidateRejectsDifferentRecipeCategory() {
         PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
             1,
-            "recipe-a",
-            "key-b",
-            "circuit-a",
-            "manual-a",
+            "gt.recipe.canner",
+            "",
+            "",
+            "gt.integrated_circuit@5",
+            "minecraft:bucket@0",
             PatternRoutingKeys.SOURCE_NEI,
-            false,
-            "overlay-a");
+            false);
 
-        HatchAssignmentData resolved = PatternRouterService.resolveAssignment(
+        HatchRoutingCandidate selected = PatternRouterService.selectCandidate(
             metadata,
             Arrays.asList(
-                new HatchAssignmentData("key-a", "overlay-a", "", "circuit-a", "manual-a"),
-                new HatchAssignmentData("key-b", "overlay-b", "", "", "")));
+                HatchRoutingCandidate.empty(
+                    new HatchAssignmentData(
+                        "a",
+                        "gt.recipe.assembler",
+                        "gt.integrated_circuit@5",
+                        "minecraft:bucket@0"))));
 
-        assertEquals("key-b", resolved.assignmentKey);
+        assertNull(selected);
     }
 
     @Test
-    public void resolveAssignmentFallsBackToOverlayCircuitAndManualKeys() {
+    public void selectCandidateRejectsDifferentCircuitKey() {
         PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
             1,
-            "recipe-a",
+            "gt.recipe.canner",
             "",
-            "circuit-a",
-            "manual-a",
+            "",
+            "gt.integrated_circuit@5",
+            "minecraft:bucket@0",
             PatternRoutingKeys.SOURCE_NEI,
-            false,
-            "gt.recipe.assembler");
+            false);
 
-        HatchAssignmentData resolved = PatternRouterService.resolveAssignment(
+        HatchRoutingCandidate selected = PatternRouterService.selectCandidate(
             metadata,
             Arrays.asList(
-                new HatchAssignmentData("key-a", "gt.recipe.cutter", "", "circuit-a", "manual-a"),
-                new HatchAssignmentData("key-b", "gt.recipe.assembler", "", "circuit-a", "manual-a")));
+                HatchRoutingCandidate.empty(
+                    new HatchAssignmentData(
+                        "a",
+                        "gt.recipe.canner",
+                        "gt.integrated_circuit@1",
+                        "minecraft:bucket@0"))));
 
-        assertEquals("key-b", resolved.assignmentKey);
+        assertNull(selected);
     }
 
     @Test
-    public void resolveAssignmentRejectsAmbiguousFallbackMatches() {
+    public void selectCandidateRejectsDifferentManualItemsKey() {
         PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
             1,
-            "recipe-a",
+            "gt.recipe.canner",
             "",
-            "circuit-a",
-            "manual-a",
+            "",
+            "gt.integrated_circuit@5",
+            "minecraft:bucket@0|minecraft:cell@0",
             PatternRoutingKeys.SOURCE_NEI,
-            false,
-            "gt.recipe.assembler");
+            false);
+
+        HatchRoutingCandidate selected = PatternRouterService.selectCandidate(
+            metadata,
+            Arrays.asList(
+                HatchRoutingCandidate.empty(
+                    new HatchAssignmentData(
+                        "a",
+                        "gt.recipe.canner",
+                        "gt.integrated_circuit@5",
+                        "minecraft:bucket@0"))));
+
+        assertNull(selected);
+    }
+
+    @Test
+    public void matchingHatchesWithExistingPatternsArePreferredOverEmptyHatches() {
+        PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
+            1,
+            "gt.recipe.canner",
+            "",
+            "",
+            "gt.integrated_circuit@5",
+            "minecraft:bucket@0",
+            PatternRoutingKeys.SOURCE_NEI,
+            false);
+
+        HatchRoutingCandidate empty = HatchRoutingCandidate
+            .empty(new HatchAssignmentData("a", "gt.recipe.canner", "gt.integrated_circuit@5", "minecraft:bucket@0"));
+        HatchRoutingCandidate populated = HatchRoutingCandidate.withPatterns(
+            new HatchAssignmentData("b", "gt.recipe.canner", "gt.integrated_circuit@5", "minecraft:bucket@0"));
+
+        HatchRoutingCandidate selected = PatternRouterService
+            .selectCandidate(metadata, Arrays.asList(empty, populated));
+
+        assertEquals("b", selected.assignment.assignmentKey);
+    }
+
+    @Test
+    public void fullHatchesAreExcludedBeforeSelection() {
+        PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
+            1,
+            "gt.recipe.canner",
+            "",
+            "",
+            "gt.integrated_circuit@5",
+            "minecraft:bucket@0",
+            PatternRoutingKeys.SOURCE_NEI,
+            false);
+
+        HatchRoutingCandidate full = HatchRoutingCandidate
+            .full(new HatchAssignmentData("a", "gt.recipe.canner", "gt.integrated_circuit@5", "minecraft:bucket@0"));
+        HatchRoutingCandidate empty = HatchRoutingCandidate
+            .empty(new HatchAssignmentData("b", "gt.recipe.canner", "gt.integrated_circuit@5", "minecraft:bucket@0"));
+
+        HatchRoutingCandidate selected = PatternRouterService.selectCandidate(metadata, Arrays.asList(full, empty));
+
+        assertEquals("b", selected.assignment.assignmentKey);
+    }
+
+    @Test
+    public void firstEmptyMatchIsSelectedWhenNoCandidateHasPatterns() {
+        PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
+            1,
+            "gt.recipe.canner",
+            "",
+            "",
+            "gt.integrated_circuit@5",
+            "minecraft:bucket@0|minecraft:cell@0",
+            PatternRoutingKeys.SOURCE_NEI,
+            false);
+
+        HatchRoutingCandidate first = HatchRoutingCandidate.empty(
+            new HatchAssignmentData(
+                "a",
+                "gt.recipe.canner",
+                "gt.integrated_circuit@5",
+                "minecraft:bucket@0|minecraft:cell@0"));
+        HatchRoutingCandidate second = HatchRoutingCandidate.empty(
+            new HatchAssignmentData(
+                "b",
+                "gt.recipe.canner",
+                "gt.integrated_circuit@5",
+                "minecraft:bucket@0|minecraft:cell@0"));
+
+        HatchRoutingCandidate selected = PatternRouterService.selectCandidate(metadata, Arrays.asList(first, second));
+
+        assertEquals("a", selected.assignment.assignmentKey);
+    }
+
+    @Test
+    public void resolveAssignmentDoesNotFallbackWhenAssignmentKeyIsExplicitButMissing() {
+        PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
+            1,
+            "gt.recipe.canner",
+            "",
+            "missing-key",
+            "gt.integrated_circuit@5",
+            "minecraft:bucket@0",
+            PatternRoutingKeys.SOURCE_NEI,
+            false);
 
         HatchAssignmentData resolved = PatternRouterService.resolveAssignment(
             metadata,
             Arrays.asList(
-                new HatchAssignmentData("key-a", "gt.recipe.assembler", "", "circuit-a", "manual-a"),
-                new HatchAssignmentData("key-b", "gt.recipe.assembler", "", "circuit-a", "manual-a")));
+                new HatchAssignmentData("key-b", "gt.recipe.canner", "gt.integrated_circuit@5", "minecraft:bucket@0")));
 
         assertNull(resolved);
     }
 
     @Test
-    public void resolveAssignmentRejectsRecipeIdMismatchWhenHatchDeclaresSpecificRecipeId() {
-        PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
-            1,
-            "recipe-a",
-            "",
-            "circuit-a",
-            "manual-a",
-            PatternRoutingKeys.SOURCE_NEI,
-            false,
-            "gt.recipe.assembler");
+    public void resolveAssignmentReturnsNullWhenMetadataIsNotResolvable() {
+        PatternRoutingNbt.RoutingMetadata metadata = PatternRoutingNbt.RoutingMetadata.EMPTY;
 
         HatchAssignmentData resolved = PatternRouterService.resolveAssignment(
             metadata,
-            Arrays
-                .asList(new HatchAssignmentData("key-b", "gt.recipe.assembler", "recipe-b", "circuit-a", "manual-a")));
+            Arrays.asList(
+                new HatchAssignmentData("key-b", "gt.recipe.canner", "gt.integrated_circuit@5", "minecraft:bucket@0")));
 
         assertNull(resolved);
     }

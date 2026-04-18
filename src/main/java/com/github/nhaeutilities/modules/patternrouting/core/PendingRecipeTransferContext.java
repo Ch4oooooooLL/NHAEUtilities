@@ -12,30 +12,46 @@ public final class PendingRecipeTransferContext {
 
     private PendingRecipeTransferContext() {}
 
-    public static void store(UUID playerId, String recipeId, String overlayIdentifier, String programmingCircuit,
-        String nonConsumables, String recipeSnapshot, String source, long timestamp) {
-        if (playerId == null || isBlank(recipeId)) {
+    public static void store(UUID playerId, String recipeCategory, String programmingCircuit, String nonConsumables,
+        String recipeSnapshot, String source, long timestamp) {
+        if (playerId == null || isBlank(recipeCategory)) {
             return;
         }
         PendingTransfer previous = PENDING_TRANSFERS.put(
             playerId,
-            new PendingTransfer(
-                recipeId,
-                overlayIdentifier,
+            createLegacyTransfer(
+                "",
+                recipeCategory,
                 programmingCircuit,
                 nonConsumables,
                 recipeSnapshot,
                 source,
-                timestamp >= 0L ? timestamp : System.currentTimeMillis()));
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] pending store player=%s recipeId=%s overlay=%s circuit=%s nc=%s snapshotSize=%s replaced=%s",
+                timestamp));
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] pending store player=%s recipeCategory=%s circuit=%s nc=%s snapshotSize=%s replaced=%s",
             playerId,
-            recipeId,
-            overlayIdentifier,
+            recipeCategory,
             programmingCircuit,
             nonConsumables,
             recipeSnapshot != null ? recipeSnapshot.length() : 0,
             previous != null);
+    }
+
+    public static void store(UUID playerId, String recipeId, String overlayIdentifier, String programmingCircuit,
+        String nonConsumables, String recipeSnapshot, String source, long timestamp) {
+        store(playerId, overlayIdentifier, programmingCircuit, nonConsumables, recipeSnapshot, source, timestamp);
+    }
+
+    private static PendingTransfer createLegacyTransfer(String recipeId, String recipeCategory,
+        String programmingCircuit, String nonConsumables, String recipeSnapshot, String source, long timestamp) {
+        return new PendingTransfer(
+            recipeId,
+            recipeCategory,
+            programmingCircuit,
+            nonConsumables,
+            recipeSnapshot,
+            source,
+            timestamp >= 0L ? timestamp : System.currentTimeMillis());
     }
 
     public static PendingTransfer peek(UUID playerId, long now) {
@@ -48,8 +64,8 @@ public final class PendingRecipeTransferContext {
         }
         if (isExpired(transfer, now)) {
             PENDING_TRANSFERS.remove(playerId);
-            PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] pending expired player=%s recipeId=%s overlay=%s",
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][nbt] pending expire player=%s recipeId=%s overlay=%s",
                 playerId,
                 transfer.recipeId,
                 transfer.overlayIdentifier);
@@ -59,31 +75,42 @@ public final class PendingRecipeTransferContext {
     }
 
     public static PendingTransfer consume(UUID playerId, long now) {
-        PendingTransfer transfer = peek(playerId, now);
-        if (transfer != null) {
-            PENDING_TRANSFERS.remove(playerId);
-            PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] pending consume player=%s recipeId=%s overlay=%s circuit=%s nc=%s snapshotSize=%s",
+        if (playerId == null) {
+            return null;
+        }
+        PendingTransfer transfer = PENDING_TRANSFERS.remove(playerId);
+        if (transfer == null) {
+            return null;
+        }
+        if (isExpired(transfer, now)) {
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][nbt] pending expire player=%s recipeId=%s overlay=%s",
                 playerId,
                 transfer.recipeId,
-                transfer.overlayIdentifier,
-                transfer.programmingCircuit,
-                transfer.nonConsumables,
-                transfer.recipeSnapshot.length());
+                transfer.overlayIdentifier);
+            return null;
         }
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] pending consume player=%s recipeId=%s overlay=%s circuit=%s nc=%s snapshotSize=%s",
+            playerId,
+            transfer.recipeId,
+            transfer.overlayIdentifier,
+            transfer.programmingCircuit,
+            transfer.nonConsumables,
+            transfer.recipeSnapshot.length());
         return transfer;
     }
 
     public static void clear(UUID playerId) {
         if (playerId != null) {
             PENDING_TRANSFERS.remove(playerId);
-            PatternRoutingLog.info("[NHAEUtilities][patternrouting] pending clear player=%s", playerId);
+            PatternRoutingLog.debug("[NHAEUtilities][patternrouting][nbt] pending clear player=%s", playerId);
         }
     }
 
     public static void clearAll() {
         PENDING_TRANSFERS.clear();
-        PatternRoutingLog.info("[NHAEUtilities][patternrouting] pending clearAll");
+        PatternRoutingLog.debug("[NHAEUtilities][patternrouting][nbt] pending clearAll");
     }
 
     private static boolean isExpired(PendingTransfer transfer, long now) {
@@ -98,6 +125,7 @@ public final class PendingRecipeTransferContext {
 
     public static final class PendingTransfer {
 
+        public final String recipeCategory;
         public final String recipeId;
         public final String overlayIdentifier;
         public final String programmingCircuit;
@@ -106,10 +134,11 @@ public final class PendingRecipeTransferContext {
         public final String source;
         public final long timestamp;
 
-        private PendingTransfer(String recipeId, String overlayIdentifier, String programmingCircuit,
+        private PendingTransfer(String recipeId, String recipeCategory, String programmingCircuit,
             String nonConsumables, String recipeSnapshot, String source, long timestamp) {
+            this.recipeCategory = recipeCategory != null ? recipeCategory : "";
             this.recipeId = recipeId != null ? recipeId : "";
-            this.overlayIdentifier = overlayIdentifier != null ? overlayIdentifier : "";
+            this.overlayIdentifier = this.recipeCategory;
             this.programmingCircuit = programmingCircuit != null ? programmingCircuit : "";
             this.nonConsumables = nonConsumables != null ? nonConsumables : "[]";
             this.recipeSnapshot = recipeSnapshot != null ? recipeSnapshot : "{}";

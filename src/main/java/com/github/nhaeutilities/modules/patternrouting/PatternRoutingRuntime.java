@@ -3,7 +3,7 @@ package com.github.nhaeutilities.modules.patternrouting;
 public final class PatternRoutingRuntime {
 
     private static volatile boolean enabled = true;
-    private static volatile boolean debugLogEnabled = true;
+    private static volatile boolean debugLogEnabled = false;
 
     private PatternRoutingRuntime() {}
 

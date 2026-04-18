@@ -19,7 +19,11 @@ public final class RecipeTransferMetadataExtractor {
 
     private RecipeTransferMetadataExtractor() {}
 
-    public static Metadata extract(IRecipeHandler recipe, int recipeIndex, String recipeId, String overlayIdentifier) {
+    public static Metadata extract(IRecipeHandler recipe, int recipeIndex, String recipeCategory) {
+        return extract(recipe, recipeIndex, "", recipeCategory);
+    }
+
+    public static Metadata extract(IRecipeHandler recipe, int recipeIndex, String recipeId, String recipeCategory) {
         List<ItemStack> circuitStacks = new ArrayList<ItemStack>();
         List<ItemStack> nonConsumables = new ArrayList<ItemStack>();
         List<String> inputEntries = new ArrayList<String>();
@@ -33,11 +37,11 @@ public final class RecipeTransferMetadataExtractor {
         String programmingCircuit = circuitStacks.isEmpty() ? ""
             : PatternRoutingNbt.itemSignature(circuitStacks.get(0));
         String nonConsumablesJson = toJsonArray(nonConsumables);
-        String recipeSnapshot = buildSnapshot(recipeId, overlayIdentifier, inputEntries, otherEntries, outputEntries);
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] extracted recipe metadata recipeId=%s overlay=%s circuit=%s ncCount=%s inputs=%s others=%s outputs=%s snapshotSize=%s",
+        String recipeSnapshot = buildSnapshot(recipeId, recipeCategory, inputEntries, otherEntries, outputEntries);
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] extract metadata recipeCategory=%s recipeId=%s circuit=%s ncCount=%s inputs=%s others=%s outputs=%s snapshotSize=%s",
+            recipeCategory,
             recipeId,
-            overlayIdentifier,
             programmingCircuit,
             nonConsumables.size(),
             inputEntries.size(),
@@ -162,11 +166,11 @@ public final class RecipeTransferMetadataExtractor {
         return joinJsonArray(serialized);
     }
 
-    private static String buildSnapshot(String recipeId, String overlayIdentifier, List<String> inputs,
+    private static String buildSnapshot(String recipeId, String recipeCategory, List<String> inputs,
         List<String> others, List<String> outputs) {
         return "{\"recipeId\":\"" + escapeJson(recipeId)
-            + "\",\"overlayIdentifier\":\""
-            + escapeJson(overlayIdentifier)
+            + "\",\"recipeCategory\":\""
+            + escapeJson(recipeCategory)
             + "\",\"inputs\":"
             + joinJsonArray(inputs)
             + ",\"other\":"

@@ -18,28 +18,33 @@ public final class HatchAssignmentService {
 
     public static void refreshAssignments(Object controller) {
         if (controller == null) {
+            PatternRoutingLog
+                .debug("[NHAEUtilities][patternrouting][assignment] refresh skipped reason=null-controller");
             return;
         }
 
-        if (!(controller instanceof MTEMultiBlockBase)) {
-            return;
-        }
-
-        MTEMultiBlockBase multiBlock = (MTEMultiBlockBase) controller;
-
-        String recipeFamily = resolveRecipeFamily(multiBlock);
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] refresh assignments controller=%s recipeFamily=%s hatchCount=%s",
-            multiBlock.getClass()
+        List<IDualInputHatch> dualInputHatches = resolveDualInputHatches(controller);
+        String recipeCategory = resolveRecipeCategory(controller);
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][assignment] refresh start controller=%s recipeCategory=%s hatchCount=%s",
+            controller.getClass()
                 .getName(),
-            recipeFamily,
-            multiBlock.mDualInputHatches != null ? multiBlock.mDualInputHatches.size() : 0);
-        for (IDualInputHatch dualInputHatch : multiBlock.mDualInputHatches) {
+            recipeCategory,
+            dualInputHatches.size());
+        for (IDualInputHatch dualInputHatch : dualInputHatches) {
             if (!CraftingInputHatchAccess.isCraftingInputHatch(dualInputHatch)) {
+                PatternRoutingLog.debug(
+                    "[NHAEUtilities][patternrouting][assignment] refresh skip hatch reason=not-crafting-input hatch=%s",
+                    dualInputHatch != null ? dualInputHatch.getClass()
+                        .getName() : "null");
                 continue;
             }
 
             if (!(dualInputHatch instanceof HatchAssignmentHolder)) {
+                PatternRoutingLog.debug(
+                    "[NHAEUtilities][patternrouting][assignment] refresh skip hatch reason=missing-holder-interface hatch=%s",
+                    dualInputHatch.getClass()
+                        .getName());
                 continue;
             }
 
@@ -48,25 +53,33 @@ public final class HatchAssignmentService {
                 : null;
             ItemStack[] sharedItems = CraftingInputHatchAccess.getSharedItems(dualInputHatch);
             ItemStack[] manualItems = extractManualItems(sharedItems);
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][assignment] hatch introspection hatch=%s circuitSlot=%s sharedCount=%s manualCount=%s hasCircuit=%s",
+                dualInputHatch.getClass()
+                    .getName(),
+                circuitSlot,
+                sharedItems != null ? sharedItems.length : 0,
+                manualItems != null ? manualItems.length : 0,
+                circuit != null);
             String circuitKey = PatternRoutingNbt.circuitKey(circuit);
             String manualItemsKey = PatternRoutingNbt.manualItemsKey(manualItems);
-            String assignmentKey = PatternRoutingNbt.buildAssignmentKey(recipeFamily, "", circuitKey, manualItemsKey);
+            RoutingDescriptor descriptor = new RoutingDescriptor(recipeCategory, circuitKey, manualItemsKey);
+            String assignmentKey = PatternRoutingNbt
+                .buildAssignmentKey(descriptor.recipeCategory, descriptor.circuitKey, descriptor.manualItemsKey);
 
             HatchAssignmentData assignmentData = new HatchAssignmentData(
                 assignmentKey,
-                recipeFamily,
-                "",
-                circuitKey,
-                manualItemsKey);
+                descriptor.recipeCategory,
+                descriptor.circuitKey,
+                descriptor.manualItemsKey);
             ((HatchAssignmentHolder) dualInputHatch).nhaeutilities$setAssignmentData(assignmentData);
-            PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] assign hatch hatch=%s recipeFamily=%s recipeId=%s circuit=%s manual=%s assignment=%s",
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][assignment] write hatch assignment hatch=%s recipeCategory=%s circuit=%s manual=%s assignment=%s",
                 dualInputHatch.getClass()
                     .getName(),
-                recipeFamily,
-                assignmentData.recipeId,
-                circuitKey,
-                manualItemsKey,
+                descriptor.recipeCategory,
+                descriptor.circuitKey,
+                descriptor.manualItemsKey,
                 assignmentKey);
         }
     }
@@ -83,7 +96,7 @@ public final class HatchAssignmentService {
                 cleared++;
             }
         }
-        PatternRoutingLog.info("[NHAEUtilities][patternrouting] cleared hatch assignments count=%s", cleared);
+        PatternRoutingLog.debug("[NHAEUtilities][patternrouting][assignment] clear assignments count=%s", cleared);
     }
 
     private static ItemStack[] extractManualItems(ItemStack[] sharedItems) {
@@ -96,7 +109,7 @@ public final class HatchAssignmentService {
         return manualItems;
     }
 
-    private static String resolveRecipeFamily(MTEMultiBlockBase controller) {
+    private static String resolveRecipeCategory(Object controller) {
         RecipeMap<?> recipeMap = resolveRecipeMap(controller);
         if (recipeMap != null && recipeMap.getFrontend() != null
             && recipeMap.getFrontend()
@@ -104,16 +117,16 @@ public final class HatchAssignmentService {
             String transferId = recipeMap.getFrontend()
                 .getUIProperties().neiTransferRectId;
             if (transferId != null && !transferId.isEmpty()) {
-                PatternRoutingLog.info(
-                    "[NHAEUtilities][patternrouting] resolve recipeFamily via neiTransferRectId controller=%s recipeFamily=%s",
+                PatternRoutingLog.debug(
+                    "[NHAEUtilities][patternrouting][assignment] resolve recipeCategory source=neiTransferRectId controller=%s recipeCategory=%s",
                     controller.getClass()
                         .getName(),
                     transferId);
                 return transferId;
             }
             if (recipeMap.unlocalizedName != null && !recipeMap.unlocalizedName.isEmpty()) {
-                PatternRoutingLog.info(
-                    "[NHAEUtilities][patternrouting] resolve recipeFamily via recipeMap.unlocalizedName controller=%s recipeFamily=%s",
+                PatternRoutingLog.debug(
+                    "[NHAEUtilities][patternrouting][assignment] resolve recipeCategory source=recipeMap.unlocalizedName controller=%s recipeCategory=%s",
                     controller.getClass()
                         .getName(),
                     recipeMap.unlocalizedName);
@@ -122,15 +135,15 @@ public final class HatchAssignmentService {
         }
         String fallback = controller.getClass()
             .getName();
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] resolve recipeFamily via controller class controller=%s recipeFamily=%s",
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][assignment] resolve recipeCategory source=controller-class controller=%s recipeCategory=%s",
             controller.getClass()
                 .getName(),
             fallback);
         return fallback;
     }
 
-    private static RecipeMap<?> resolveRecipeMap(MTEMultiBlockBase controller) {
+    private static RecipeMap<?> resolveRecipeMap(Object controller) {
         if (controller instanceof RecipeMapWorkable) {
             return ((RecipeMapWorkable) controller).getRecipeMap();
         }
@@ -146,6 +159,29 @@ public final class HatchAssignmentService {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<IDualInputHatch> resolveDualInputHatches(Object controller) {
+        if (controller instanceof MTEMultiBlockBase) {
+            return ((MTEMultiBlockBase) controller).mDualInputHatches != null
+                ? ((MTEMultiBlockBase) controller).mDualInputHatches
+                : java.util.Collections.<IDualInputHatch>emptyList();
+        }
+
+        Class<?> current = controller.getClass();
+        while (current != null) {
+            try {
+                java.lang.reflect.Field field = current.getDeclaredField("mDualInputHatches");
+                field.setAccessible(true);
+                Object value = field.get(controller);
+                return value instanceof List<?> ? (List<IDualInputHatch>) value
+                    : java.util.Collections.<IDualInputHatch>emptyList();
+            } catch (Exception ignored) {
+                current = current.getSuperclass();
+            }
+        }
+        return java.util.Collections.<IDualInputHatch>emptyList();
     }
 
     private static Method findNoArgMethod(Class<?> type, String methodName) {
