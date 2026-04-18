@@ -16,27 +16,27 @@ public final class PatternRoutingNbt {
         NBTTagCompound stackTag = getOrCreateStackTag(pattern);
         NBTTagCompound routingTag = getOrCreateRoutingTag(stackTag);
         routingTag.setInteger(PatternRoutingKeys.VERSION_KEY, metadata.version);
+        setString(routingTag, PatternRoutingKeys.RECIPE_CATEGORY_KEY, metadata.recipeCategory);
         setString(routingTag, PatternRoutingKeys.RECIPE_ID_KEY, metadata.recipeId);
         setString(routingTag, PatternRoutingKeys.ASSIGNMENT_KEY, metadata.assignmentKey);
         setString(routingTag, PatternRoutingKeys.CIRCUIT_KEY, metadata.circuitKey);
         setString(routingTag, PatternRoutingKeys.MANUAL_ITEMS_KEY, metadata.manualItemsKey);
         setString(routingTag, PatternRoutingKeys.SOURCE_KEY, metadata.source);
         routingTag.setBoolean(PatternRoutingKeys.HAS_DIRECT_ROUTE_KEY, metadata.hasDirectRoute);
-        setString(routingTag, PatternRoutingKeys.OVERLAY_IDENTIFIER_KEY, metadata.overlayIdentifier);
         setString(routingTag, PatternRoutingKeys.PROGRAMMING_CIRCUIT_KEY, metadata.programmingCircuit);
         setString(routingTag, PatternRoutingKeys.NON_CONSUMABLES_KEY, metadata.nonConsumables);
         setString(routingTag, PatternRoutingKeys.RECIPE_SNAPSHOT_KEY, metadata.recipeSnapshot);
         pattern.setTagCompound(stackTag);
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] write routing nbt item=%s recipeId=%s assignment=%s circuit=%s manual=%s source=%s direct=%s overlay=%s nc=%s",
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] write routing nbt item=%s recipeCategory=%s recipeId=%s assignment=%s circuit=%s manual=%s source=%s direct=%s nc=%s",
             itemSignature(pattern),
+            metadata.recipeCategory,
             metadata.recipeId,
             metadata.assignmentKey,
             metadata.circuitKey,
             metadata.manualItemsKey,
             metadata.source,
             metadata.hasDirectRoute,
-            metadata.overlayIdentifier,
             metadata.nonConsumables);
     }
 
@@ -55,13 +55,13 @@ public final class PatternRoutingNbt {
         return new RoutingMetadata(
             routingTag.hasKey(PatternRoutingKeys.VERSION_KEY) ? routingTag.getInteger(PatternRoutingKeys.VERSION_KEY)
                 : PatternRoutingKeys.CURRENT_VERSION,
+            getString(routingTag, PatternRoutingKeys.RECIPE_CATEGORY_KEY),
             getString(routingTag, PatternRoutingKeys.RECIPE_ID_KEY),
             getString(routingTag, PatternRoutingKeys.ASSIGNMENT_KEY),
             getString(routingTag, PatternRoutingKeys.CIRCUIT_KEY),
             getString(routingTag, PatternRoutingKeys.MANUAL_ITEMS_KEY),
             getString(routingTag, PatternRoutingKeys.SOURCE_KEY),
             routingTag.getBoolean(PatternRoutingKeys.HAS_DIRECT_ROUTE_KEY),
-            getString(routingTag, PatternRoutingKeys.OVERLAY_IDENTIFIER_KEY),
             getString(routingTag, PatternRoutingKeys.PROGRAMMING_CIRCUIT_KEY),
             getString(routingTag, PatternRoutingKeys.NON_CONSUMABLES_KEY),
             getString(routingTag, PatternRoutingKeys.RECIPE_SNAPSHOT_KEY));
@@ -151,17 +151,13 @@ public final class PatternRoutingNbt {
         return key.toString();
     }
 
+    public static String buildAssignmentKey(String recipeCategory, String circuitKey, String manualItemsKey) {
+        return nullToEmpty(recipeCategory) + "|" + nullToEmpty(circuitKey) + "|" + nullToEmpty(manualItemsKey);
+    }
+
     public static String buildAssignmentKey(String recipeFamily, String controllerKey, String circuitKey,
         String manualItemsKey) {
-        StringBuilder builder = new StringBuilder();
-        builder.append(nullToEmpty(recipeFamily))
-            .append("|")
-            .append(nullToEmpty(controllerKey))
-            .append("|")
-            .append(nullToEmpty(circuitKey))
-            .append("|")
-            .append(nullToEmpty(manualItemsKey));
-        return builder.toString();
+        return buildAssignmentKey(recipeFamily, circuitKey, manualItemsKey);
     }
 
     public static String inferCircuitKeyFromEncodedPattern(ItemStack pattern) {
@@ -188,7 +184,7 @@ public final class PatternRoutingNbt {
         if (metadata == null) {
             return "||";
         }
-        return nullToEmpty(metadata.recipeId) + "|"
+        return nullToEmpty(metadata.recipeCategory) + "|"
             + nullToEmpty(metadata.circuitKey)
             + "|"
             + nullToEmpty(metadata.manualItemsKey);
@@ -237,51 +233,57 @@ public final class PatternRoutingNbt {
             "",
             "",
             "",
+            "",
             false,
             "",
-            "",
-            "",
-            "");
+            "[]",
+            "{}");
 
         public final int version;
+        public final String recipeCategory;
         public final String recipeId;
         public final String assignmentKey;
         public final String circuitKey;
         public final String manualItemsKey;
         public final String source;
         public final boolean hasDirectRoute;
-        public final String overlayIdentifier;
         public final String programmingCircuit;
         public final String nonConsumables;
         public final String recipeSnapshot;
+        public final String overlayIdentifier;
+
+        public static RoutingMetadata forDescriptor(RoutingDescriptor descriptor, String source,
+            String recipeSnapshot) {
+            return new RoutingMetadata(
+                PatternRoutingKeys.CURRENT_VERSION,
+                descriptor != null ? descriptor.recipeCategory : "",
+                "",
+                "",
+                descriptor != null ? descriptor.circuitKey : "",
+                descriptor != null ? descriptor.manualItemsKey : "",
+                source,
+                false,
+                descriptor != null ? descriptor.circuitKey : "",
+                "[]",
+                recipeSnapshot);
+        }
 
         public RoutingMetadata(int version, String recipeId, String assignmentKey, String circuitKey,
             String manualItemsKey, String source, boolean hasDirectRoute) {
-            this(
-                version,
-                recipeId,
-                assignmentKey,
-                circuitKey,
-                manualItemsKey,
-                source,
-                hasDirectRoute,
-                "",
-                "",
-                "[]",
-                "{}");
+            this(version, "", recipeId, assignmentKey, circuitKey, manualItemsKey, source, hasDirectRoute);
         }
 
         public RoutingMetadata(int version, String recipeId, String assignmentKey, String circuitKey,
             String manualItemsKey, String source, boolean hasDirectRoute, String overlayIdentifier) {
             this(
                 version,
+                overlayIdentifier,
                 recipeId,
                 assignmentKey,
                 circuitKey,
                 manualItemsKey,
                 source,
                 hasDirectRoute,
-                overlayIdentifier,
                 "",
                 "[]",
                 "{}");
@@ -290,25 +292,92 @@ public final class PatternRoutingNbt {
         public RoutingMetadata(int version, String recipeId, String assignmentKey, String circuitKey,
             String manualItemsKey, String source, boolean hasDirectRoute, String overlayIdentifier,
             String programmingCircuit, String nonConsumables, String recipeSnapshot) {
+            this(
+                version,
+                overlayIdentifier,
+                recipeId,
+                assignmentKey,
+                circuitKey,
+                manualItemsKey,
+                source,
+                hasDirectRoute,
+                programmingCircuit,
+                nonConsumables,
+                recipeSnapshot);
+        }
+
+        public RoutingMetadata(int version, String recipeCategory, String recipeId, String assignmentKey,
+            String circuitKey, String manualItemsKey, String source, boolean hasDirectRoute) {
+            this(
+                version,
+                recipeCategory,
+                recipeId,
+                assignmentKey,
+                circuitKey,
+                manualItemsKey,
+                source,
+                hasDirectRoute,
+                "",
+                "[]",
+                "{}");
+        }
+
+        public RoutingMetadata(int version, String recipeCategory, String recipeId, String assignmentKey,
+            String circuitKey, String manualItemsKey, String source, boolean hasDirectRoute, String programmingCircuit,
+            String nonConsumables, String recipeSnapshot) {
             this.version = version;
+            this.recipeCategory = nullToEmpty(recipeCategory);
             this.recipeId = nullToEmpty(recipeId);
             this.assignmentKey = nullToEmpty(assignmentKey);
             this.circuitKey = nullToEmpty(circuitKey);
             this.manualItemsKey = nullToEmpty(manualItemsKey);
             this.source = nullToEmpty(source);
             this.hasDirectRoute = hasDirectRoute;
-            this.overlayIdentifier = nullToEmpty(overlayIdentifier);
             this.programmingCircuit = nullToEmpty(programmingCircuit);
             this.nonConsumables = nullToEmpty(nonConsumables);
             this.recipeSnapshot = nullToEmpty(recipeSnapshot);
+            this.overlayIdentifier = this.recipeCategory;
+        }
+
+        public RoutingMetadata withAssignmentKey(String assignmentKey) {
+            return new RoutingMetadata(
+                version,
+                recipeCategory,
+                recipeId,
+                assignmentKey,
+                circuitKey,
+                manualItemsKey,
+                source,
+                hasDirectRoute,
+                programmingCircuit,
+                nonConsumables,
+                recipeSnapshot);
+        }
+
+        public RoutingMetadata withDirectRoute(boolean hasDirectRoute) {
+            return new RoutingMetadata(
+                version,
+                recipeCategory,
+                recipeId,
+                assignmentKey,
+                circuitKey,
+                manualItemsKey,
+                source,
+                hasDirectRoute,
+                programmingCircuit,
+                nonConsumables,
+                recipeSnapshot);
+        }
+
+        public RoutingDescriptor toDescriptor() {
+            return new RoutingDescriptor(recipeCategory, circuitKey, manualItemsKey);
         }
 
         public boolean isEmpty() {
-            return recipeId.isEmpty() && assignmentKey.isEmpty()
+            return recipeCategory.isEmpty() && assignmentKey.isEmpty()
                 && circuitKey.isEmpty()
                 && manualItemsKey.isEmpty()
                 && source.isEmpty()
-                && overlayIdentifier.isEmpty()
                 && programmingCircuit.isEmpty()
                 && (nonConsumables.isEmpty() || "[]".equals(nonConsumables))
                 && (recipeSnapshot.isEmpty() || "{}".equals(recipeSnapshot))

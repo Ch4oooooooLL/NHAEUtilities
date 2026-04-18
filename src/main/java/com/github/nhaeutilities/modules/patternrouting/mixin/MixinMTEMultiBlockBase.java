@@ -32,8 +32,8 @@ public abstract class MixinMTEMultiBlockBase {
         if (!PatternRoutingRuntime.isEnabled()) {
             return;
         }
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] clearHatches controller=%s dualInputCount=%s",
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][assignment] clearHatches trigger controller=%s dualInputCount=%s",
             this.getClass()
                 .getName(),
             this.mDualInputHatches != null ? this.mDualInputHatches.size() : 0);
@@ -49,22 +49,23 @@ public abstract class MixinMTEMultiBlockBase {
         if (!PatternRoutingRuntime.isEnabled()) {
             return;
         }
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] checkStructure result=%s mMachine=%s controller=%s dualInputCount=%s",
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][assignment] multiblock refresh trigger method=checkStructure result=%s forceReset=%s mMachine=%s controller=%s dualInputCount=%s",
             cir.getReturnValue(),
+            aForceReset,
             this.mMachine,
             this.getClass()
                 .getName(),
             this.mDualInputHatches != null ? this.mDualInputHatches.size() : 0);
         if (Boolean.TRUE.equals(cir.getReturnValue()) && this.mMachine) {
-            PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] checkStructure refreshing hatch assignments controller=%s",
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][assignment] controller refresh start controller=%s",
                 this.getClass()
                     .getName());
             HatchAssignmentService.refreshAssignments(this);
         } else {
-            PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] checkStructure clearing hatch assignments controller=%s",
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][assignment] controller refresh clear controller=%s",
                 this.getClass()
                     .getName());
             HatchAssignmentService.clearAssignments(this.mDualInputHatches);

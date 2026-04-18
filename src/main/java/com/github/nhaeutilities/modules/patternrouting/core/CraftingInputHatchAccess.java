@@ -6,6 +6,10 @@ import java.lang.reflect.Method;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 
+import com.github.nhaeutilities.accessor.patternrouting.HatchAssignmentHolder;
+
+import gregtech.common.tileentities.machines.IDualInputHatch;
+
 final class CraftingInputHatchAccess {
 
     private static final String HATCH_CLASS_NAME = "gregtech.common.tileentities.machines.MTEHatchCraftingInputME";
@@ -13,6 +17,9 @@ final class CraftingInputHatchAccess {
     private CraftingInputHatchAccess() {}
 
     static boolean isCraftingInputHatch(Object machine) {
+        if (machine instanceof IDualInputHatch && machine instanceof HatchAssignmentHolder) {
+            return true;
+        }
         Class<?> current = machine != null ? machine.getClass() : null;
         while (current != null) {
             if (HATCH_CLASS_NAME.equals(current.getName())) {
@@ -46,10 +53,16 @@ final class CraftingInputHatchAccess {
     static int getPatternSlotLimit(Object hatch, IInventory inventory, int fallback) {
         int reflected = readStaticIntField(hatch != null ? hatch.getClass() : null, "MAX_PATTERN_COUNT");
         int inventorySize = inventory != null ? inventory.getSizeInventory() : 0;
-        if (reflected > 0) {
-            return Math.min(reflected, inventorySize);
-        }
-        return Math.min(fallback, inventorySize);
+        int limit = reflected > 0 ? Math.min(reflected, inventorySize) : Math.min(fallback, inventorySize);
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][assignment] hatch introspection pattern slot limit hatch=%s reflected=%s fallback=%s inventorySize=%s limit=%s",
+            hatch != null ? hatch.getClass()
+                .getName() : "null",
+            reflected,
+            fallback,
+            inventorySize,
+            limit);
+        return limit;
     }
 
     private static Object invokeNoArg(Object target, String methodName) {
@@ -71,6 +84,11 @@ final class CraftingInputHatchAccess {
                 current = current.getSuperclass();
             }
         }
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][assignment] hatch introspection method-miss target=%s method=%s",
+            target.getClass()
+                .getName(),
+            methodName);
         return null;
     }
 
@@ -85,6 +103,10 @@ final class CraftingInputHatchAccess {
                 current = current.getSuperclass();
             }
         }
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][assignment] hatch introspection static-field-miss type=%s field=%s",
+            type != null ? type.getName() : "null",
+            fieldName);
         return -1;
     }
 }

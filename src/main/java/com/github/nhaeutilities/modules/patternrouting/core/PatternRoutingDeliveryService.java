@@ -17,8 +17,8 @@ public final class PatternRoutingDeliveryService {
         }
 
         PatternRoutingNbt.RoutingMetadata metadata = buildRoutingMetadata(pattern, transfer);
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] decorate route start item=%s node=%s recipeId=%s overlay=%s circuit=%s manual=%s source=%s nc=%s",
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] decorate start item=%s node=%s recipeId=%s overlay=%s circuit=%s manual=%s source=%s nc=%s",
             PatternRoutingNbt.itemSignature(pattern),
             node != null,
             metadata.recipeId,
@@ -29,8 +29,8 @@ public final class PatternRoutingDeliveryService {
             metadata.nonConsumables);
         PatternRoutingNbt.writeRoutingData(pattern, metadata);
         PatternRouterService.RouteResult result = PatternRouterService.tryRoute(pattern, node);
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] decorate route result status=%s target=%s item=%s",
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] decorate route status=%s target=%s item=%s",
             result.status,
             result.target != null ? result.target.getClass()
                 .getName() : "null",
@@ -44,10 +44,10 @@ public final class PatternRoutingDeliveryService {
         String circuitKey = usedTransferCircuit ? transfer.programmingCircuit
             : PatternRoutingNbt.inferCircuitKeyFromEncodedPattern(pattern);
         String manualItemsKey = PatternRoutingNbt.manualItemsKeyFromJson(transfer.nonConsumables);
-        PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] build routing metadata recipeId=%s overlay=%s circuitSource=%s manualSource=%s circuit=%s manual=%s snapshotSize=%s",
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] build metadata recipeCategory=%s recipeId=%s circuitSource=%s manualSource=%s circuit=%s manual=%s snapshotSize=%s",
+            transfer.recipeCategory,
             transfer.recipeId,
-            transfer.overlayIdentifier,
             usedTransferCircuit ? "transfer" : "encodedPatternFallback",
             transfer.nonConsumables != null && !transfer.nonConsumables.isEmpty()
                 && !"[]".equals(transfer.nonConsumables) ? "transferNc" : "empty",
@@ -56,13 +56,13 @@ public final class PatternRoutingDeliveryService {
             transfer.recipeSnapshot.length());
         return new PatternRoutingNbt.RoutingMetadata(
             PatternRoutingKeys.CURRENT_VERSION,
+            transfer.recipeCategory,
             transfer.recipeId,
             "",
             circuitKey,
             manualItemsKey,
             transfer.source,
             false,
-            transfer.overlayIdentifier,
             transfer.programmingCircuit,
             transfer.nonConsumables,
             transfer.recipeSnapshot);

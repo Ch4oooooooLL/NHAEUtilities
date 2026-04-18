@@ -16,7 +16,7 @@ public final class ForgeConfig {
     private static final String ENABLED_PROPERTY = "enabled";
     private static final String LANG_PREFIX = "nhaeutilities.config.";
 
-    private static volatile boolean debugModeEnabled = true;
+    private static volatile boolean debugModeEnabled = false;
 
     private ForgeConfig() {}
 
@@ -26,13 +26,15 @@ public final class ForgeConfig {
             Property enabledProperty = cfg.get(
                 CATEGORY_DEBUG,
                 ENABLED_PROPERTY,
-                true,
+                false,
                 "Enable detailed PatternRouting debug logging. May affect performance.");
             enabledProperty.setLanguageKey(LANG_PREFIX + CATEGORY_DEBUG + "." + ENABLED_PROPERTY);
-            debugModeEnabled = enabledProperty.getBoolean(true);
+            debugModeEnabled = enabledProperty.getBoolean(false);
             applyCategoryMetadata(cfg);
             PatternRoutingRuntime.setDebugLogEnabled(debugModeEnabled);
         } catch (RuntimeException e) {
+            debugModeEnabled = false;
+            PatternRoutingRuntime.setDebugLogEnabled(false);
             FMLLog.warning("[NHAEUtilities] Failed to load PatternRouting config: %s", e.getMessage());
         }
     }
