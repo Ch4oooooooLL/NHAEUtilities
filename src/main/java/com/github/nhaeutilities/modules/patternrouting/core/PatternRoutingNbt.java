@@ -120,6 +120,10 @@ public final class PatternRoutingNbt {
     }
 
     public static String manualItemsKeyFromJson(String nonConsumablesJson) {
+        return manualItemsKeyFromJson(nonConsumablesJson, "");
+    }
+
+    public static String manualItemsKeyFromJson(String nonConsumablesJson, String programmingCircuitKey) {
         if (nonConsumablesJson == null || nonConsumablesJson.trim()
             .isEmpty() || "[]".equals(nonConsumablesJson.trim())) {
             return "";
@@ -140,7 +144,7 @@ public final class PatternRoutingNbt {
             String signature = nonConsumablesJson.substring(index, end)
                 .replace("\\\"", "\"")
                 .replace("\\\\", "\\");
-            if (!signature.isEmpty()) {
+            if (!signature.isEmpty() && !signature.equals(programmingCircuitKey)) {
                 if (key.length() > 0) {
                     key.append("|");
                 }

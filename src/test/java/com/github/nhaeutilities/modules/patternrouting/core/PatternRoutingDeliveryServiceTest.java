@@ -34,15 +34,14 @@ public class PatternRoutingDeliveryServiceTest {
     }
 
     @Test
-    public void buildRoutingMetadataLeavesAssignmentKeyEmptyBeforeRouteResolution() {
+    public void buildRoutingMetadataUsesRecipeCategoryCircuitAndManualItems() {
         UUID playerId = UUID.randomUUID();
         PendingRecipeTransferContext.store(
             playerId,
-            "recipe-a",
-            "gt.recipe.assembler",
+            "gt.recipe.canner",
             "gt.integrated_circuit@5",
             "[{\"item\":\"minecraft:bucket@0\",\"count\":0,\"nc\":true}]",
-            "{\"recipeId\":\"recipe-a\"}",
+            "{\"recipeCategory\":\"gt.recipe.canner\"}",
             PatternRoutingKeys.SOURCE_NEI,
             1L);
 
@@ -50,14 +49,33 @@ public class PatternRoutingDeliveryServiceTest {
         PatternRoutingNbt.RoutingMetadata metadata = PatternRoutingDeliveryService
             .buildRoutingMetadata(new ItemStack(Items.paper, 1, 0), transfer);
 
-        assertEquals("recipe-a", metadata.recipeId);
+        assertEquals("gt.recipe.canner", metadata.recipeCategory);
         assertEquals("", metadata.assignmentKey);
-        assertEquals("gt.recipe.assembler", metadata.overlayIdentifier);
         assertEquals(PatternRoutingKeys.SOURCE_NEI, metadata.source);
         assertEquals("gt.integrated_circuit@5", metadata.circuitKey);
         assertEquals("minecraft:bucket@0", metadata.manualItemsKey);
         assertEquals("gt.integrated_circuit@5", metadata.programmingCircuit);
         assertEquals("[{\"item\":\"minecraft:bucket@0\",\"count\":0,\"nc\":true}]", metadata.nonConsumables);
+    }
+
+    @Test
+    public void buildRoutingMetadataDoesNotDuplicateProgrammingCircuitIntoManualItems() {
+        UUID playerId = UUID.randomUUID();
+        PendingRecipeTransferContext.store(
+            playerId,
+            "gt.recipe.metalbender",
+            "gregtech:gt.integrated_circuit@1",
+            "[{\"item\":\"gregtech:gt.integrated_circuit@1\",\"count\":0,\"nc\":true}]",
+            "{\"recipeCategory\":\"gt.recipe.metalbender\"}",
+            PatternRoutingKeys.SOURCE_NEI,
+            1L);
+
+        PendingRecipeTransferContext.PendingTransfer transfer = PendingRecipeTransferContext.consume(playerId, 2L);
+        PatternRoutingNbt.RoutingMetadata metadata = PatternRoutingDeliveryService
+            .buildRoutingMetadata(new ItemStack(Items.paper, 1, 0), transfer);
+
+        assertEquals("gregtech:gt.integrated_circuit@1", metadata.circuitKey);
+        assertEquals("", metadata.manualItemsKey);
     }
 
     @Test
@@ -69,6 +87,9 @@ public class PatternRoutingDeliveryServiceTest {
             "",
             PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.NO_MATCHING_HATCH));
         assertEquals("", PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.ROUTED));
+        assertEquals(
+            "",
+            PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.INSERTION_FAILED));
         assertEquals(
             "nhaeutilities.msg.pattern.route_target_full",
             PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.TARGET_FULL));

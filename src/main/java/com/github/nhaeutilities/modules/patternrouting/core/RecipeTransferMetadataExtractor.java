@@ -75,10 +75,11 @@ public final class RecipeTransferMetadataExtractor {
                 continue;
             }
             boolean nc = isNonConsumable(stack, selected);
-            if (isProgrammingCircuit(selected)) {
+            boolean programmingCircuit = isProgrammingCircuit(selected);
+            if (programmingCircuit) {
                 circuitStacks.add(selected.copy());
             }
-            if (nc) {
+            if (nc && !programmingCircuit) {
                 nonConsumables.add(selected.copy());
             }
             serializedStacks.add(serializeStack(selected, nc));

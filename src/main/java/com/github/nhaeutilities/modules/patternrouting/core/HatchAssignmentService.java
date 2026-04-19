@@ -49,17 +49,17 @@ public final class HatchAssignmentService {
             }
 
             int circuitSlot = CraftingInputHatchAccess.getCircuitSlot(dualInputHatch);
-            ItemStack circuit = circuitSlot >= 0 ? CraftingInputHatchAccess.getStackInSlot(dualInputHatch, circuitSlot)
-                : null;
-            ItemStack[] sharedItems = CraftingInputHatchAccess.getSharedItems(dualInputHatch);
-            ItemStack[] manualItems = extractManualItems(sharedItems);
+            CraftingInputHatchAccess.SharedItemDescriptor descriptorItems = CraftingInputHatchAccess
+                .getSharedItemDescriptor(dualInputHatch);
+            ItemStack circuit = descriptorItems.circuit;
+            ItemStack[] manualItems = descriptorItems.manualItems;
             PatternRoutingLog.debug(
                 "[NHAEUtilities][patternrouting][assignment] hatch introspection hatch=%s circuitSlot=%s sharedCount=%s manualCount=%s hasCircuit=%s",
                 dualInputHatch.getClass()
                     .getName(),
                 circuitSlot,
-                sharedItems != null ? sharedItems.length : 0,
-                manualItems != null ? manualItems.length : 0,
+                descriptorItems.sharedCount,
+                manualItems.length,
                 circuit != null);
             String circuitKey = PatternRoutingNbt.circuitKey(circuit);
             String manualItemsKey = PatternRoutingNbt.manualItemsKey(manualItems);
@@ -97,16 +97,6 @@ public final class HatchAssignmentService {
             }
         }
         PatternRoutingLog.debug("[NHAEUtilities][patternrouting][assignment] clear assignments count=%s", cleared);
-    }
-
-    private static ItemStack[] extractManualItems(ItemStack[] sharedItems) {
-        if (sharedItems == null || sharedItems.length <= 1) {
-            return new ItemStack[0];
-        }
-
-        ItemStack[] manualItems = new ItemStack[sharedItems.length - 1];
-        System.arraycopy(sharedItems, 1, manualItems, 0, manualItems.length);
-        return manualItems;
     }
 
     private static String resolveRecipeCategory(Object controller) {

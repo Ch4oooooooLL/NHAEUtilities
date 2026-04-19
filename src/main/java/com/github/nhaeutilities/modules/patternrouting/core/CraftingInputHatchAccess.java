@@ -45,6 +45,29 @@ final class CraftingInputHatchAccess {
         return value instanceof ItemStack[] ? (ItemStack[]) value : new ItemStack[0];
     }
 
+    static SharedItemDescriptor getSharedItemDescriptor(Object hatch) {
+        ItemStack[] sharedItems = getSharedItems(hatch);
+        ItemStack circuit = sharedItems.length > 0 ? sharedItems[0] : null;
+        ItemStack[] manualItems = new ItemStack[Math.max(0, sharedItems.length - 1)];
+        if (manualItems.length > 0) {
+            System.arraycopy(sharedItems, 1, manualItems, 0, manualItems.length);
+        }
+        return new SharedItemDescriptor(circuit, manualItems, sharedItems.length);
+    }
+
+    static final class SharedItemDescriptor {
+
+        final ItemStack circuit;
+        final ItemStack[] manualItems;
+        final int sharedCount;
+
+        SharedItemDescriptor(ItemStack circuit, ItemStack[] manualItems, int sharedCount) {
+            this.circuit = circuit;
+            this.manualItems = manualItems != null ? manualItems : new ItemStack[0];
+            this.sharedCount = sharedCount;
+        }
+    }
+
     static IInventory getPatterns(Object hatch) {
         Object value = invokeNoArg(hatch, "getPatterns");
         return value instanceof IInventory ? (IInventory) value : null;

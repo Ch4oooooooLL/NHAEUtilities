@@ -43,7 +43,8 @@ public final class PatternRoutingDeliveryService {
         boolean usedTransferCircuit = !transfer.programmingCircuit.isEmpty();
         String circuitKey = usedTransferCircuit ? transfer.programmingCircuit
             : PatternRoutingNbt.inferCircuitKeyFromEncodedPattern(pattern);
-        String manualItemsKey = PatternRoutingNbt.manualItemsKeyFromJson(transfer.nonConsumables);
+        String manualItemsKey = PatternRoutingNbt
+            .manualItemsKeyFromJson(transfer.nonConsumables, transfer.programmingCircuit);
         PatternRoutingLog.debug(
             "[NHAEUtilities][patternrouting][nbt] build metadata recipeCategory=%s recipeId=%s circuitSource=%s manualSource=%s circuit=%s manual=%s snapshotSize=%s",
             transfer.recipeCategory,
