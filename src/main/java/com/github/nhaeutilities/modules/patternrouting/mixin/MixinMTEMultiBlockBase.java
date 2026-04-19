@@ -33,7 +33,7 @@ public abstract class MixinMTEMultiBlockBase {
             return;
         }
         PatternRoutingLog.debug(
-            "[NHAEUtilities][patternrouting][assignment] clearHatches trigger controller=%s dualInputCount=%s",
+            "[NHAEUtilities][patternrouting][assignment] clearHatches trigger source=gt-checkStructure controller=%s dualInputCount=%s",
             this.getClass()
                 .getName(),
             this.mDualInputHatches != null ? this.mDualInputHatches.size() : 0);
@@ -50,7 +50,7 @@ public abstract class MixinMTEMultiBlockBase {
             return;
         }
         PatternRoutingLog.debug(
-            "[NHAEUtilities][patternrouting][assignment] multiblock refresh trigger method=checkStructure result=%s forceReset=%s mMachine=%s controller=%s dualInputCount=%s",
+            "[NHAEUtilities][patternrouting][assignment] multiblock refresh trigger source=gt-checkStructure method=checkStructure result=%s forceReset=%s mMachine=%s controller=%s dualInputCount=%s",
             cir.getReturnValue(),
             aForceReset,
             this.mMachine,
@@ -59,13 +59,13 @@ public abstract class MixinMTEMultiBlockBase {
             this.mDualInputHatches != null ? this.mDualInputHatches.size() : 0);
         if (Boolean.TRUE.equals(cir.getReturnValue()) && this.mMachine) {
             PatternRoutingLog.debug(
-                "[NHAEUtilities][patternrouting][assignment] controller refresh start controller=%s",
+                "[NHAEUtilities][patternrouting][assignment] controller refresh start source=gt-checkStructure controller=%s",
                 this.getClass()
                     .getName());
             HatchAssignmentService.refreshAssignments(this);
         } else {
             PatternRoutingLog.debug(
-                "[NHAEUtilities][patternrouting][assignment] controller refresh clear controller=%s",
+                "[NHAEUtilities][patternrouting][assignment] controller refresh clear source=gt-checkStructure controller=%s",
                 this.getClass()
                     .getName());
             HatchAssignmentService.clearAssignments(this.mDualInputHatches);

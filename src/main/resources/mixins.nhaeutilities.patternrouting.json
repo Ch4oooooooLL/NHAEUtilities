@@ -11,8 +11,10 @@
     "MixinCPacketTransferRecipeHandler",
     "MixinFCContainerEncodeTerminal",
     "MixinFluidPatternTerminalRecipeTransferHandler",
+    "MixinGTNLMultiMachineBaseAssignmentRefresh",
     "MixinMTEHatchCraftingInputME",
-    "MixinMTEMultiBlockBase"
+    "MixinMTEMultiBlockBase",
+    "MixinMTEMultiBlockBaseModeRefresh"
   ],
   "client": [],
   "server": []
