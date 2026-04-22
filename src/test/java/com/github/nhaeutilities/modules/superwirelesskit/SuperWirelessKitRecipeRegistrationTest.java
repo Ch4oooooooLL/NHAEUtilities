@@ -24,7 +24,7 @@ public class SuperWirelessKitRecipeRegistrationTest {
     @Test
     public void moduleInitRegistersSuperWirelessKitRecipeThroughProxy() {
         RecordingProxy proxy = new RecordingProxy();
-        SuperWirelessKitModule module = new SuperWirelessKitModule(new CoreConfig(true, true), proxy);
+        SuperWirelessKitModule module = new SuperWirelessKitModule(new CoreConfig(true, true, true), proxy);
 
         module.init(null, new Object());
 

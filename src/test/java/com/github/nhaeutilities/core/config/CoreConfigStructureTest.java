@@ -31,6 +31,7 @@ public class CoreConfigStructureTest {
 
         assertTrue(categoryNames.contains("modules.patternGenerator.basic"));
         assertTrue(categoryNames.contains("modules.superWirelessKit.basic"));
+        assertTrue(categoryNames.contains("modules.patternRouting.basic"));
 
         assertEquals(
             "nhaeutilities.config.modules.patternGenerator.basic.enabled",
@@ -40,6 +41,11 @@ public class CoreConfigStructureTest {
         assertEquals(
             "nhaeutilities.config.modules.superWirelessKit.basic.enabled",
             cfg.getCategory("modules.superWirelessKit.basic")
+                .get("enabled")
+                .getLanguageKey());
+        assertEquals(
+            "nhaeutilities.config.modules.patternRouting.basic.enabled",
+            cfg.getCategory("modules.patternRouting.basic")
                 .get("enabled")
                 .getLanguageKey());
     }
@@ -71,9 +77,10 @@ public class CoreConfigStructureTest {
         List<String> names = new ArrayList<String>(ConfigGuiLayout.getTopLevelModuleCategoryNames(cfg));
         Collections.sort(names);
 
-        assertEquals(2, names.size());
+        assertEquals(3, names.size());
         assertEquals("modules.patternGenerator", names.get(0));
-        assertEquals("modules.superWirelessKit", names.get(1));
+        assertEquals("modules.patternRouting", names.get(1));
+        assertEquals("modules.superWirelessKit", names.get(2));
     }
 
     private static Configuration loadConfiguration() throws IOException {

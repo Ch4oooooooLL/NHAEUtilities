@@ -2,71 +2,51 @@ package com.github.nhaeutilities.modules.patternrouting.mixin;
 
 import static org.junit.Assert.assertEquals;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 
 import org.junit.Test;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.github.nhaeutilities.accessor.patternrouting.HatchAssignmentHolder;
 import com.github.nhaeutilities.modules.patternrouting.core.HatchAssignmentData;
 
-import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.common.tileentities.machines.IDualInputHatch;
 
-public class MixinMTEMultiBlockBaseTest {
+public class MixinMTEMultiBlockBaseModeRefreshTest {
 
     @Test
-    public void refreshHatchAssignmentsClearsStaleMetadataWhenStructureCheckFails() throws Exception {
+    public void modeChangeHookRefreshesAssignmentsWhenMachineIsFormed() throws Exception {
         TestMixin mixin = new TestMixin();
         AssignmentTrackingHandler trackingHandler = new AssignmentTrackingHandler();
-        mixin.mDualInputHatches = new ArrayList<>();
+        mixin.mDualInputHatches = new ArrayList<IDualInputHatch>();
         mixin.mDualInputHatches.add(trackingHandler.createHatch());
         mixin.mMachine = true;
 
-        invokeRefreshHook(mixin, false);
+        invokeModeRefreshHook(mixin, 1);
 
-        assertEquals(1, trackingHandler.clearCount);
-        assertEquals(HatchAssignmentData.EMPTY.assignmentKey, trackingHandler.assignmentData.assignmentKey);
+        assertEquals(1, trackingHandler.setCount);
     }
 
-    @Test
-    public void refreshHatchAssignmentsClearsStaleMetadataWhenControllerIsNotMachineAfterCheck() throws Exception {
-        TestMixin mixin = new TestMixin();
-        AssignmentTrackingHandler trackingHandler = new AssignmentTrackingHandler();
-        mixin.mDualInputHatches = new ArrayList<>();
-        mixin.mDualInputHatches.add(trackingHandler.createHatch());
-        mixin.mMachine = false;
-
-        invokeRefreshHook(mixin, true);
-
-        assertEquals(1, trackingHandler.clearCount);
-        assertEquals(HatchAssignmentData.EMPTY.assignmentKey, trackingHandler.assignmentData.assignmentKey);
-    }
-
-    private static void invokeRefreshHook(TestMixin mixin, boolean structureValid) throws Exception {
-        Method method = MixinMTEMultiBlockBase.class.getDeclaredMethod(
-            "nhaeutilities$refreshHatchAssignments",
-            boolean.class,
-            IGregTechTileEntity.class,
-            CallbackInfoReturnable.class);
+    private static void invokeModeRefreshHook(TestMixin mixin, int mode) throws Exception {
+        Method method = MixinMTEMultiBlockBaseModeRefresh.class
+            .getDeclaredMethod("nhaeutilities$refreshAssignmentsAfterModeChange", int.class, CallbackInfo.class);
         method.setAccessible(true);
-        method.invoke(mixin, false, null, new CallbackInfoReturnable<Boolean>("checkStructure", false, structureValid));
+        method.invoke(mixin, mode, new CallbackInfo("setMachineMode", false));
     }
 
-    private static final class TestMixin extends MixinMTEMultiBlockBase {
+    private static final class TestMixin extends MixinMTEMultiBlockBaseModeRefresh {
     }
 
-    private static final class AssignmentTrackingHandler implements InvocationHandler {
+    private static final class AssignmentTrackingHandler implements java.lang.reflect.InvocationHandler {
 
-        private int clearCount;
+        private int setCount;
         private HatchAssignmentData assignmentData = HatchAssignmentData.EMPTY;
 
         private IDualInputHatch createHatch() {
             return (IDualInputHatch) Proxy.newProxyInstance(
-                MixinMTEMultiBlockBaseTest.class.getClassLoader(),
+                MixinMTEMultiBlockBaseModeRefreshTest.class.getClassLoader(),
                 new Class<?>[] { IDualInputHatch.class, HatchAssignmentHolder.class },
                 this);
         }
@@ -78,19 +58,16 @@ public class MixinMTEMultiBlockBaseTest {
                 return assignmentData;
             }
             if ("nhaeutilities$setAssignmentData".equals(methodName)) {
+                setCount++;
                 assignmentData = args[0] instanceof HatchAssignmentData ? (HatchAssignmentData) args[0]
                     : HatchAssignmentData.EMPTY;
                 return null;
             }
             if ("nhaeutilities$clearAssignmentData".equals(methodName)) {
-                clearCount++;
                 assignmentData = HatchAssignmentData.EMPTY;
                 return null;
             }
-            return defaultValue(method.getReturnType());
-        }
-
-        private static Object defaultValue(Class<?> returnType) {
+            Class<?> returnType = method.getReturnType();
             if (!returnType.isPrimitive()) {
                 return null;
             }

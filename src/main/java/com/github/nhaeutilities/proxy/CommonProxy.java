@@ -9,6 +9,7 @@ import com.github.nhaeutilities.core.module.ModuleRegistry;
 import com.github.nhaeutilities.modules.patterngenerator.PatternGeneratorModule;
 import com.github.nhaeutilities.modules.patterngenerator.gui.GuiHandler;
 import com.github.nhaeutilities.modules.patterngenerator.item.ModItems;
+import com.github.nhaeutilities.modules.patternrouting.PatternRoutingModule;
 import com.github.nhaeutilities.modules.superwirelesskit.SuperWirelessKitModule;
 
 import appeng.api.AEApi;
@@ -33,6 +34,7 @@ public class CommonProxy {
         Objects.requireNonNull(coreConfig, "coreConfig");
         Objects.requireNonNull(moduleRegistry, "moduleRegistry");
         moduleRegistry.register(new PatternGeneratorModule(coreConfig, this));
+        moduleRegistry.register(new PatternRoutingModule(coreConfig));
         moduleRegistry.register(new SuperWirelessKitModule(coreConfig, this));
     }
 

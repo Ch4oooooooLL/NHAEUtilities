@@ -19,7 +19,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
-import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingKeys;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingKeys;
 
 public class PatternEncoderTest {
 

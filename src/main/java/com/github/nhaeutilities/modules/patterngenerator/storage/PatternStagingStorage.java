@@ -18,7 +18,7 @@ import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.DimensionManager;
 
 import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
-import com.github.nhaeutilities.modules.patterngenerator.routing.PatternRoutingNbt;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingNbt;
 
 public final class PatternStagingStorage {
 

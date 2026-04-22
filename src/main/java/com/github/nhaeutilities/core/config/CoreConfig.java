@@ -12,18 +12,23 @@ public final class CoreConfig {
     private static final String PATTERN_GENERATOR_BASIC_CATEGORY = PATTERN_GENERATOR_CATEGORY + ".basic";
     private static final String SUPER_WIRELESS_KIT_CATEGORY = "modules.superWirelessKit";
     private static final String SUPER_WIRELESS_KIT_BASIC_CATEGORY = SUPER_WIRELESS_KIT_CATEGORY + ".basic";
+    private static final String PATTERN_ROUTING_CATEGORY = "modules.patternRouting";
+    private static final String PATTERN_ROUTING_BASIC_CATEGORY = PATTERN_ROUTING_CATEGORY + ".basic";
     private static final String ENABLED_PROPERTY = "enabled";
     private static final String PATTERN_GENERATOR_ENABLED_COMMENT = "Enable the pattern generator module. [Requires MC restart]";
     private static final String SUPER_WIRELESS_KIT_ENABLED_COMMENT = "Enable the super wireless kit module. [Requires MC restart]";
+    private static final String PATTERN_ROUTING_ENABLED_COMMENT = "Enable the pattern routing module. [Requires MC restart]";
 
     private static Configuration configuration;
 
     private boolean patternGeneratorEnabled;
     private boolean superWirelessKitEnabled;
+    private boolean patternRoutingEnabled;
 
-    public CoreConfig(boolean patternGeneratorEnabled, boolean superWirelessKitEnabled) {
+    public CoreConfig(boolean patternGeneratorEnabled, boolean superWirelessKitEnabled, boolean patternRoutingEnabled) {
         this.patternGeneratorEnabled = patternGeneratorEnabled;
         this.superWirelessKitEnabled = superWirelessKitEnabled;
+        this.patternRoutingEnabled = patternRoutingEnabled;
     }
 
     /**
@@ -42,9 +47,10 @@ public final class CoreConfig {
 
         boolean patternGeneratorEnabled = readPatternGeneratorEnabled(configuration);
         boolean superWirelessKitEnabled = readSuperWirelessKitEnabled(configuration);
+        boolean patternRoutingEnabled = readPatternRoutingEnabled(configuration);
         applyCategoryMetadata(configuration);
 
-        return new CoreConfig(patternGeneratorEnabled, superWirelessKitEnabled);
+        return new CoreConfig(patternGeneratorEnabled, superWirelessKitEnabled, patternRoutingEnabled);
     }
 
     /**
@@ -61,6 +67,7 @@ public final class CoreConfig {
         }
         patternGeneratorEnabled = readPatternGeneratorEnabled(configuration);
         superWirelessKitEnabled = readSuperWirelessKitEnabled(configuration);
+        patternRoutingEnabled = readPatternRoutingEnabled(configuration);
     }
 
     /**
@@ -88,6 +95,10 @@ public final class CoreConfig {
         return superWirelessKitEnabled;
     }
 
+    public boolean isPatternRoutingEnabled() {
+        return patternRoutingEnabled;
+    }
+
     private static boolean readPatternGeneratorEnabled(Configuration cfg) {
         Property property = cfg
             .get(PATTERN_GENERATOR_BASIC_CATEGORY, ENABLED_PROPERTY, true, PATTERN_GENERATOR_ENABLED_COMMENT);
@@ -101,6 +112,14 @@ public final class CoreConfig {
             .get(SUPER_WIRELESS_KIT_BASIC_CATEGORY, ENABLED_PROPERTY, true, SUPER_WIRELESS_KIT_ENABLED_COMMENT);
         property.setRequiresMcRestart(true);
         property.setLanguageKey("nhaeutilities.config." + SUPER_WIRELESS_KIT_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
+        return property.getBoolean();
+    }
+
+    private static boolean readPatternRoutingEnabled(Configuration cfg) {
+        Property property = cfg
+            .get(PATTERN_ROUTING_BASIC_CATEGORY, ENABLED_PROPERTY, true, PATTERN_ROUTING_ENABLED_COMMENT);
+        property.setRequiresMcRestart(true);
+        property.setLanguageKey("nhaeutilities.config." + PATTERN_ROUTING_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
         return property.getBoolean();
     }
 
@@ -120,6 +139,13 @@ public final class CoreConfig {
             .setRequiresMcRestart(true);
         cfg.getCategory(SUPER_WIRELESS_KIT_BASIC_CATEGORY)
             .setLanguageKey("nhaeutilities.config.modules.superWirelessKit.basic")
+            .setRequiresMcRestart(true);
+
+        cfg.getCategory(PATTERN_ROUTING_CATEGORY)
+            .setLanguageKey("nhaeutilities.config.modules.patternRouting")
+            .setRequiresMcRestart(true);
+        cfg.getCategory(PATTERN_ROUTING_BASIC_CATEGORY)
+            .setLanguageKey("nhaeutilities.config.modules.patternRouting.basic")
             .setRequiresMcRestart(true);
     }
 }

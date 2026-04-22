@@ -2,6 +2,8 @@ package com.github.nhaeutilities.core.config;
 
 import com.github.nhaeutilities.NHAEUtilities;
 import com.github.nhaeutilities.core.module.ModuleRegistry;
+import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
+import com.github.nhaeutilities.modules.patternrouting.config.ForgeConfig;
 
 import cpw.mods.fml.client.event.ConfigChangedEvent;
 import cpw.mods.fml.common.FMLLog;
@@ -33,7 +35,9 @@ public class ConfigChangeHandler {
 
         try {
             coreConfig.reload();
+            PatternRoutingRuntime.setEnabled(coreConfig.isPatternRoutingEnabled());
             moduleRegistry.loadAllConfigs(CoreConfig.getConfiguration());
+            PatternRoutingRuntime.setDebugLogEnabled(ForgeConfig.isDebugModeEnabled());
             CoreConfig.saveIfChanged();
         } catch (RuntimeException e) {
             FMLLog.warning("[NHAEUtilities] Failed to reload config from GUI: %s", e.getMessage());
