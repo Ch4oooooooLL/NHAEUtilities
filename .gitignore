@@ -1,7 +1,9 @@
 .gradle
 .settings
+/.claude/
 /.idea/
 /.vscode/
+/.worktrees/
 /run/
 /build/
 /buildServer/
