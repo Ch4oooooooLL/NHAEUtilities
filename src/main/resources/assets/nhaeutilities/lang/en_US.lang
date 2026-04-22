@@ -213,6 +213,7 @@ nhaeutilities.msg.item.exported=[NHAEUtilities] Exported %s pattern(s) to target
 nhaeutilities.msg.item.exported_with_remaining=[NHAEUtilities] Exported %s pattern(s) to target container (%s remaining).
 nhaeutilities.msg.pattern.route_success=[NHAEUtilities] Routed encoded pattern directly into a matching crafting input hatch.
 nhaeutilities.msg.pattern.route_target_full=[NHAEUtilities] Matching crafting input hatch was found, but it has no free pattern slot.
+nhaeutilities.msg.pattern.route_missing_manual_items=[NHAEUtilities] Missing required NC/manual items in the AE network. Pattern was not routed.
 nhaeutilities.msg.pattern.staged_unmatched=[NHAEUtilities] No direct hatch match. Pattern was staged to your player-bound index storage.
 nhaeutilities.msg.pattern.routed_fallback_inventory=[NHAEUtilities] No staging target available. Pattern was returned to your inventory.
 nhaeutilities.msg.pattern.routed_fallback_drop=[NHAEUtilities] Inventory full. Pattern was dropped near you.

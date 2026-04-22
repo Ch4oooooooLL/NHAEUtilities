@@ -50,6 +50,7 @@ public abstract class MixinCPacketFluidPatternTermBtnsHandler {
             "AE2FC button",
             player,
             ((IContainerCraftingPacket) openContainer).getNetworkNode(),
+            ((IContainerCraftingPacket) openContainer).getActionSource(),
             patternSlotOUT,
             PatternRoutingKeys.SOURCE_AE2FC,
             "",

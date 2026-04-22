@@ -14,19 +14,20 @@ import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingLog;
 import com.github.nhaeutilities.modules.patternrouting.core.PendingRecipeTransferContext;
 
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.BaseActionSource;
 
 public final class PatternRoutingFallbackService {
 
     private PatternRoutingFallbackService() {}
 
-    public static DeliveryResult decorateAndDeliver(EntityPlayer player, IGridNode node, ItemStack pattern,
-        PendingRecipeTransferContext.PendingTransfer transfer) {
+    public static DeliveryResult decorateAndDeliver(EntityPlayer player, IGridNode node, BaseActionSource actionSource,
+        ItemStack pattern, PendingRecipeTransferContext.PendingTransfer transfer) {
         if (player == null || pattern == null || transfer == null) {
             return DeliveryResult.NO_ACTION;
         }
 
         PatternRouterService.RouteResult routeResult = PatternRoutingDeliveryService
-            .decorateAndRoute(node, pattern, transfer);
+            .decorateAndRoute(node, actionSource, pattern, transfer);
         PatternRoutingLog.info(
             "[NHAEUtilities][patternrouting] fallback route status=%s player=%s recipeId=%s overlay=%s",
             routeResult.status,

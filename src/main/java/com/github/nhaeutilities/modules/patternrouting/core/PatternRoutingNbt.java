@@ -2,8 +2,11 @@ package com.github.nhaeutilities.modules.patternrouting.core;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.JsonToNBT;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
+
+import cpw.mods.fml.common.registry.GameRegistry;
 
 public final class PatternRoutingNbt {
 
@@ -192,6 +195,154 @@ public final class PatternRoutingNbt {
             + nullToEmpty(metadata.circuitKey)
             + "|"
             + nullToEmpty(metadata.manualItemsKey);
+    }
+
+    public static ItemStack itemStackFromSignature(String signature) {
+        if (signature == null || signature.isEmpty()) {
+            return null;
+        }
+
+        int firstSeparator = signature.indexOf('@');
+        if (firstSeparator <= 0 || firstSeparator >= signature.length() - 1) {
+            return null;
+        }
+
+        int secondSeparator = signature.indexOf('@', firstSeparator + 1);
+        String itemId = signature.substring(0, firstSeparator);
+        String damageToken = secondSeparator >= 0 ? signature.substring(firstSeparator + 1, secondSeparator)
+            : signature.substring(firstSeparator + 1);
+        Item item = resolveItem(itemId);
+        if (item == null) {
+            return null;
+        }
+
+        int damage;
+        try {
+            damage = Integer.parseInt(damageToken);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+
+        ItemStack stack = new ItemStack(item, 1, damage);
+        if (secondSeparator >= 0 && secondSeparator < signature.length() - 1) {
+            try {
+                stack
+                    .setTagCompound((NBTTagCompound) JsonToNBT.func_150315_a(signature.substring(secondSeparator + 1)));
+            } catch (Exception ignored) {
+                return null;
+            }
+        }
+        return stack;
+    }
+
+    public static ItemStack[] itemStacksFromManualItemsKey(String manualItemsKey) {
+        if (manualItemsKey == null || manualItemsKey.isEmpty()) {
+            return new ItemStack[0];
+        }
+
+        java.util.List<ItemStack> stacks = new java.util.ArrayList<ItemStack>();
+        for (String token : manualItemsKey.split("\\|")) {
+            ItemStack stack = itemStackFromSignature(token);
+            if (stack != null) {
+                stacks.add(stack);
+            }
+        }
+        return stacks.toArray(new ItemStack[stacks.size()]);
+    }
+
+    public static ItemStack[] itemStacksFromNonConsumablesJson(String nonConsumablesJson,
+        String programmingCircuitKey) {
+        String manualItemsKey = manualItemsKeyFromJson(nonConsumablesJson, programmingCircuitKey);
+        return itemStacksFromManualItemsKey(manualItemsKey);
+    }
+
+    public static ItemStack programmingCircuitStack(RoutingMetadata metadata) {
+        if (metadata == null) {
+            return null;
+        }
+        String signature = !metadata.programmingCircuit.isEmpty() ? metadata.programmingCircuit : metadata.circuitKey;
+        return itemStackFromSignature(signature);
+    }
+
+    public static ItemStack[] manualItemStacks(RoutingMetadata metadata) {
+        if (metadata == null) {
+            return new ItemStack[0];
+        }
+        if (!metadata.nonConsumables.isEmpty() && !"[]".equals(metadata.nonConsumables)) {
+            return itemStacksFromNonConsumablesJson(metadata.nonConsumables, metadata.programmingCircuit);
+        }
+        return itemStacksFromManualItemsKey(metadata.manualItemsKey);
+    }
+
+    public static HatchAssignmentData assignmentDataFor(RoutingMetadata metadata) {
+        if (metadata == null || metadata.recipeCategory.isEmpty()) {
+            return HatchAssignmentData.EMPTY;
+        }
+        String assignmentKey = buildAssignmentKey(
+            metadata.recipeCategory,
+            metadata.circuitKey,
+            metadata.manualItemsKey);
+        return new HatchAssignmentData(
+            assignmentKey,
+            metadata.recipeCategory,
+            metadata.circuitKey,
+            metadata.manualItemsKey);
+    }
+
+    public static RoutingMetadata withDerivedAssignment(RoutingMetadata metadata) {
+        if (metadata == null) {
+            return RoutingMetadata.EMPTY;
+        }
+        return metadata.withAssignmentKey(
+            buildAssignmentKey(metadata.recipeCategory, metadata.circuitKey, metadata.manualItemsKey));
+    }
+
+    public static RoutingMetadata withDerivedDescriptor(RoutingMetadata metadata) {
+        if (metadata == null) {
+            return RoutingMetadata.EMPTY;
+        }
+        String circuitKey = !metadata.circuitKey.isEmpty() ? metadata.circuitKey
+            : circuitKey(programmingCircuitStack(metadata));
+        String manualItemsKey = !metadata.manualItemsKey.isEmpty() ? metadata.manualItemsKey
+            : manualItemsKey(manualItemStacks(metadata));
+        return new RoutingMetadata(
+            metadata.version,
+            metadata.recipeCategory,
+            metadata.recipeId,
+            metadata.assignmentKey,
+            circuitKey,
+            manualItemsKey,
+            metadata.source,
+            metadata.hasDirectRoute,
+            metadata.programmingCircuit,
+            metadata.nonConsumables,
+            metadata.recipeSnapshot);
+    }
+
+    public static RoutingMetadata withConfiguredAssignment(RoutingMetadata metadata) {
+        return withDerivedAssignment(withDerivedDescriptor(metadata));
+    }
+
+    private static Item resolveItem(String itemId) {
+        if (itemId == null || itemId.isEmpty()) {
+            return null;
+        }
+        Object direct = Item.itemRegistry.getObject(itemId);
+        if (direct instanceof Item) {
+            return (Item) direct;
+        }
+        int separator = itemId.indexOf(':');
+        if (separator > 0 && separator < itemId.length() - 1) {
+            Item namespaced = GameRegistry.findItem(itemId.substring(0, separator), itemId.substring(separator + 1));
+            if (namespaced != null) {
+                return namespaced;
+            }
+        }
+        try {
+            return Item.getItemById(Integer.parseInt(itemId));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
     }
 
     private static NBTTagCompound getOrCreateStackTag(ItemStack stack) {

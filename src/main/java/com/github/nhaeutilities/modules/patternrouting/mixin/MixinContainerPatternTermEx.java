@@ -30,6 +30,7 @@ public abstract class MixinContainerPatternTermEx {
             "AE2Ex",
             player,
             ((IContainerCraftingPacket) (Object) this).getNetworkNode(),
+            ((IContainerCraftingPacket) (Object) this).getActionSource(),
             this.patternSlotOUT,
             PatternRoutingKeys.SOURCE_NEI,
             "",
