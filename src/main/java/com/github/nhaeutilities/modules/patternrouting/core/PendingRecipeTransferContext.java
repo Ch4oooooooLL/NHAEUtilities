@@ -39,7 +39,28 @@ public final class PendingRecipeTransferContext {
 
     public static void store(UUID playerId, String recipeId, String overlayIdentifier, String programmingCircuit,
         String nonConsumables, String recipeSnapshot, String source, long timestamp) {
-        store(playerId, overlayIdentifier, programmingCircuit, nonConsumables, recipeSnapshot, source, timestamp);
+        if (playerId == null || isBlank(overlayIdentifier)) {
+            return;
+        }
+        PendingTransfer previous = PENDING_TRANSFERS.put(
+            playerId,
+            createLegacyTransfer(
+                recipeId,
+                overlayIdentifier,
+                programmingCircuit,
+                nonConsumables,
+                recipeSnapshot,
+                source,
+                timestamp));
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] pending store player=%s recipeId=%s recipeCategory=%s circuit=%s nc=%s snapshotSize=%s replaced=%s",
+            playerId,
+            recipeId,
+            overlayIdentifier,
+            programmingCircuit,
+            nonConsumables,
+            recipeSnapshot != null ? recipeSnapshot.length() : 0,
+            previous != null);
     }
 
     private static PendingTransfer createLegacyTransfer(String recipeId, String recipeCategory,

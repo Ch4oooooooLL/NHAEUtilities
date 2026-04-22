@@ -7,11 +7,14 @@
   "mixins": [
     "MixinContainerPatternTerm",
     "MixinContainerPatternTermEx",
+    "MixinCPacketFluidPatternTermBtnsHandler",
     "MixinCPacketTransferRecipe",
     "MixinCPacketTransferRecipeHandler",
     "MixinFCContainerEncodeTerminal",
     "MixinFluidPatternTerminalRecipeTransferHandler",
     "MixinGTNLMultiMachineBaseAssignmentRefresh",
+    "MixinGTNLSuperCraftingInputHatchME",
+    "MixinGTNLSuperDualInputHatchME",
     "MixinMTEHatchCraftingInputME",
     "MixinMTEMultiBlockBase",
     "MixinMTEMultiBlockBaseModeRefresh"

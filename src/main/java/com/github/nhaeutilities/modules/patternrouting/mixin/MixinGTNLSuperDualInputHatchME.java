@@ -14,8 +14,8 @@ import com.github.nhaeutilities.modules.patternrouting.core.HatchAssignmentData;
 import com.github.nhaeutilities.modules.patternrouting.core.HatchAssignmentPersistenceSupport;
 
 @Pseudo
-@Mixin(targets = "gregtech.common.tileentities.machines.MTEHatchCraftingInputME", remap = false)
-public abstract class MixinMTEHatchCraftingInputME implements HatchAssignmentHolder {
+@Mixin(targets = "com.science.gtnl.common.machine.hatch.SuperDualInputHatchME", remap = false)
+public abstract class MixinGTNLSuperDualInputHatchME implements HatchAssignmentHolder {
 
     @Unique
     private HatchAssignmentData nhaeutilities$assignmentData = HatchAssignmentData.EMPTY;

@@ -17,17 +17,24 @@ final class CraftingInputHatchAccess {
     private CraftingInputHatchAccess() {}
 
     static boolean isCraftingInputHatch(Object machine) {
+        if (machine == null) {
+            return false;
+        }
         if (machine instanceof IDualInputHatch && machine instanceof HatchAssignmentHolder) {
             return true;
         }
-        Class<?> current = machine != null ? machine.getClass() : null;
+        Class<?> current = machine.getClass();
         while (current != null) {
             if (HATCH_CLASS_NAME.equals(current.getName())) {
                 return true;
             }
             current = current.getSuperclass();
         }
-        return false;
+        if (!(machine instanceof IDualInputHatch)) {
+            return false;
+        }
+        return hasNoArgMethod(machine, "getPatterns") && hasNoArgMethod(machine, "getCircuitSlot")
+            && hasNoArgMethod(machine, "getSharedItems");
     }
 
     static int getCircuitSlot(Object hatch) {
@@ -90,6 +97,22 @@ final class CraftingInputHatchAccess {
 
     private static Object invokeNoArg(Object target, String methodName) {
         return invoke(target, methodName, new Class<?>[0]);
+    }
+
+    private static boolean hasNoArgMethod(Object target, String methodName) {
+        if (target == null) {
+            return false;
+        }
+        Class<?> current = target.getClass();
+        while (current != null) {
+            try {
+                current.getDeclaredMethod(methodName, new Class<?>[0]);
+                return true;
+            } catch (Exception ignored) {
+                current = current.getSuperclass();
+            }
+        }
+        return false;
     }
 
     private static Object invoke(Object target, String methodName, Class<?>[] parameterTypes, Object... args) {

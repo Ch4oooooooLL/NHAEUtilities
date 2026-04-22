@@ -39,11 +39,11 @@ public abstract class MixinPacketNEIPatternRecipeHandler {
         }
 
         PacketRecipeTransferMetadataAccess accessor = (PacketRecipeTransferMetadataAccess) message;
-        if (accessor.nhaeutilities$getRecipeId()
+        if (accessor.nhaeutilities$getOverlayIdentifier()
             .isEmpty()) {
             PatternRoutingLog.info(
-                "[NHAEUtilities][patternrouting] NEE handler saw empty recipeId overlay=%s messageClass=%s",
-                accessor.nhaeutilities$getOverlayIdentifier(),
+                "[NHAEUtilities][patternrouting] NEE handler saw empty recipeCategory recipeId=%s messageClass=%s",
+                accessor.nhaeutilities$getRecipeId(),
                 message.getClass()
                     .getName());
             return;
@@ -60,7 +60,7 @@ public abstract class MixinPacketNEIPatternRecipeHandler {
             PatternRoutingKeys.SOURCE_NEI,
             System.currentTimeMillis());
         PatternRoutingLog.info(
-            "[NHAEUtilities][patternrouting] store pending transfer source=%s player=%s recipeId=%s overlay=%s circuit=%s nc=%s",
+            "[NHAEUtilities][patternrouting] store pending transfer source=%s player=%s recipeId=%s recipeCategory=%s circuit=%s nc=%s",
             PatternRoutingKeys.SOURCE_NEI,
             player.getCommandSenderName(),
             accessor.nhaeutilities$getRecipeId(),

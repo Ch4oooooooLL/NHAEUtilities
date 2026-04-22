@@ -45,6 +45,32 @@ public class PendingRecipeTransferContextTest {
     }
 
     @Test
+    public void consumePreservesRecipeIdAndOverlayIdentifierForExtendedStore() {
+        UUID playerId = UUID.randomUUID();
+
+        PendingRecipeTransferContext.store(
+            playerId,
+            "{\"id\":\"recipe-1\"}",
+            "gt.recipe.assembler",
+            "gt.integrated_circuit@24",
+            "[{\"item\":\"minecraft:bucket@0\",\"count\":0,\"nc\":true}]",
+            "{\"recipeCategory\":\"gt.recipe.assembler\",\"inputs\":[]}",
+            PatternRoutingKeys.SOURCE_AE2FC,
+            1_000L);
+
+        PendingRecipeTransferContext.PendingTransfer transfer = PendingRecipeTransferContext.consume(playerId, 2_000L);
+
+        assertNotNull(transfer);
+        assertEquals("{\"id\":\"recipe-1\"}", transfer.recipeId);
+        assertEquals("gt.recipe.assembler", transfer.recipeCategory);
+        assertEquals("gt.recipe.assembler", transfer.overlayIdentifier);
+        assertEquals(PatternRoutingKeys.SOURCE_AE2FC, transfer.source);
+        assertEquals("gt.integrated_circuit@24", transfer.programmingCircuit);
+        assertEquals("[{\"item\":\"minecraft:bucket@0\",\"count\":0,\"nc\":true}]", transfer.nonConsumables);
+        assertEquals("{\"recipeCategory\":\"gt.recipe.assembler\",\"inputs\":[]}", transfer.recipeSnapshot);
+    }
+
+    @Test
     public void consumeDropsStaleTransfers() {
         UUID playerId = UUID.randomUUID();
 

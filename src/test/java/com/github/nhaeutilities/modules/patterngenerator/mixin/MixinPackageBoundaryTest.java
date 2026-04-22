@@ -28,6 +28,32 @@ public class MixinPackageBoundaryTest {
     }
 
     @Test
+    public void directPatternRoutingHelpersStayOutsideOwnedPatternMixinPackage() {
+        String mixinPackage = MixinMTEHatchCraftingInputME.class.getPackage()
+            .getName();
+        String helperPackage = com.github.nhaeutilities.modules.patternrouting.core.HatchAssignmentPersistenceSupport.class
+            .getPackage()
+            .getName();
+
+        assertFalse(helperPackage.equals(mixinPackage));
+        assertFalse(helperPackage.startsWith(mixinPackage + "."));
+    }
+
+    @Test
+    public void directPatternRoutingTerminalReflectionHelpersStayOutsideOwnedPatternMixinPackage()
+        throws ClassNotFoundException {
+        String mixinPackage = MixinMTEHatchCraftingInputME.class.getPackage()
+            .getName();
+        String helperPackage = Class
+            .forName("com.github.nhaeutilities.modules.patternrouting.core.PatternTerminalReflectionSupport")
+            .getPackage()
+            .getName();
+
+        assertFalse(helperPackage.equals(mixinPackage));
+        assertFalse(helperPackage.startsWith(mixinPackage + "."));
+    }
+
+    @Test
     public void activeMixinConfigKeepsBothPatternRoutingAndSuperwirelessMixinsReachable() throws IOException {
         String activeConfig = readResource("/mixins.nhaeutilities.json");
         String patternRoutingConfig = readResource("/mixins.nhaeutilities.patternrouting.json");
@@ -39,6 +65,10 @@ public class MixinPackageBoundaryTest {
         assertTrue(
             patternRoutingConfig.contains("\"package\": \"com.github.nhaeutilities.modules.patternrouting.mixin\""));
         assertTrue(patternRoutingConfig.contains("\"MixinMTEMultiBlockBase\""));
+        assertTrue(patternRoutingConfig.contains("\"MixinMTEMultiBlockBaseModeRefresh\""));
+        assertTrue(patternRoutingConfig.contains("\"MixinGTNLSuperCraftingInputHatchME\""));
+        assertTrue(patternRoutingConfig.contains("\"MixinGTNLSuperDualInputHatchME\""));
+        assertTrue(patternRoutingConfig.contains("\"MixinCPacketFluidPatternTermBtnsHandler\""));
         assertTrue(
             superWirelessConfig.contains("\"package\": \"com.github.nhaeutilities.modules.superwirelesskit.mixin\""));
         assertTrue(superWirelessConfig.contains("\"MixinGridNode\""));

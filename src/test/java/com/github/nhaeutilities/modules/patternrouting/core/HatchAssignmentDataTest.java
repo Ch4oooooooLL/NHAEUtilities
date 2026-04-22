@@ -4,11 +4,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+
 import net.minecraft.init.Items;
+import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
 import org.junit.Test;
+
+import gregtech.common.tileentities.machines.IDualInputHatch;
 
 public class HatchAssignmentDataTest {
 
@@ -72,5 +79,91 @@ public class HatchAssignmentDataTest {
         assertEquals("gt.recipe.assembler", descriptor.recipeCategory);
         assertEquals("circuit-a", descriptor.circuitKey);
         assertEquals("manual-a", descriptor.manualItemsKey);
+    }
+
+    @Test
+    public void isCraftingInputHatchAcceptsDualInputHatchWithCraftingAccessors() {
+        Object hatch = Proxy.newProxyInstance(
+            HatchAssignmentDataTest.class.getClassLoader(),
+            new Class<?>[] { TestCraftingInputHatch.class },
+            new SuperCraftingInputLikeHandler());
+
+        assertTrue(CraftingInputHatchAccess.isCraftingInputHatch(hatch));
+    }
+
+    private interface TestCraftingInputHatch extends IDualInputHatch {
+
+        IInventory getPatterns();
+
+        int getCircuitSlot();
+
+        ItemStack[] getSharedItems();
+    }
+
+    private static final class SuperCraftingInputLikeHandler implements InvocationHandler {
+
+        private final ItemStack[] sharedItems = new ItemStack[] { new ItemStack(Items.paper, 1, 3),
+            new ItemStack(Items.paper, 1, 4) };
+        private final IInventory patterns = (IInventory) Proxy.newProxyInstance(
+            HatchAssignmentDataTest.class.getClassLoader(),
+            new Class<?>[] { IInventory.class },
+            new EmptyInventoryHandler());
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+            String methodName = method.getName();
+            if ("getCircuitSlot".equals(methodName)) {
+                return 0;
+            }
+            if ("getSharedItems".equals(methodName)) {
+                return sharedItems;
+            }
+            if ("getPatterns".equals(methodName)) {
+                return patterns;
+            }
+            return defaultValue(method.getReturnType());
+        }
+    }
+
+    private static final class EmptyInventoryHandler implements InvocationHandler {
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) {
+            if ("getSizeInventory".equals(method.getName())) {
+                return 0;
+            }
+            return defaultValue(method.getReturnType());
+        }
+    }
+
+    private static Object defaultValue(Class<?> returnType) {
+        if (!returnType.isPrimitive()) {
+            return null;
+        }
+        if (returnType == boolean.class) {
+            return false;
+        }
+        if (returnType == byte.class) {
+            return (byte) 0;
+        }
+        if (returnType == short.class) {
+            return (short) 0;
+        }
+        if (returnType == int.class) {
+            return 0;
+        }
+        if (returnType == long.class) {
+            return 0L;
+        }
+        if (returnType == float.class) {
+            return 0F;
+        }
+        if (returnType == double.class) {
+            return 0D;
+        }
+        if (returnType == char.class) {
+            return '\0';
+        }
+        return null;
     }
 }

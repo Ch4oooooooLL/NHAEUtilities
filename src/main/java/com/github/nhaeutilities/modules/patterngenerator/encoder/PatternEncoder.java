@@ -90,6 +90,7 @@ public class PatternEncoder {
             patternStack,
             new PatternRoutingNbt.RoutingMetadata(
                 PatternRoutingKeys.CURRENT_VERSION,
+                "",
                 recipe.recipeId,
                 "",
                 "",

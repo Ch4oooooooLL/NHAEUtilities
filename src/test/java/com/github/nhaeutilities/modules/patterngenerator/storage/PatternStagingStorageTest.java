@@ -42,7 +42,7 @@ public class PatternStagingStorageTest {
     }
 
     @Test
-    public void appendCreatesGroupsByRecipeAndKeys() throws Exception {
+    public void appendCreatesGroupsByRecipeCategoryAndKeys() throws Exception {
         File tempRoot = Files.createTempDirectory("pattern-staging-test")
             .toFile();
         PatternStagingStorage.setStorageRootForTests(tempRoot);
@@ -50,27 +50,27 @@ public class PatternStagingStorageTest {
 
         assertTrue(
             PatternStagingStorage
-                .append(playerId, stagedPattern("recipe-a", "circuit-a", "manual-a", "Output A"), 10L));
+                .append(playerId, stagedPattern("gt.recipe.assembler", "circuit-a", "manual-a", "Output A"), 10L));
         assertTrue(
             PatternStagingStorage
-                .append(playerId, stagedPattern("recipe-a", "circuit-a", "manual-a", "Output B"), 20L));
-        assertTrue(PatternStagingStorage.append(playerId, stagedPattern("recipe-b", "", "", "Output C"), 30L));
+                .append(playerId, stagedPattern("gt.recipe.assembler", "circuit-a", "manual-a", "Output B"), 20L));
+        assertTrue(PatternStagingStorage.append(playerId, stagedPattern("gt.recipe.cutter", "", "", "Output C"), 30L));
 
         List<PatternStagingGroup> groups = PatternStagingStorage.loadGroups(playerId);
 
         assertEquals(2, groups.size());
-        assertEquals("recipe-a|circuit-a|manual-a", groups.get(0).groupKey);
+        assertEquals("gt.recipe.assembler|circuit-a|manual-a", groups.get(0).groupKey);
         assertEquals(2, groups.get(0).patterns.size());
-        assertEquals("recipe-b||", groups.get(1).groupKey);
+        assertEquals("gt.recipe.cutter||", groups.get(1).groupKey);
         assertEquals(1, groups.get(1).patterns.size());
         PatternStagingStorage.StorageSummary summary = PatternStagingStorage.getSummary(playerId);
         assertFalse(summary.isEmpty());
         assertEquals(2, summary.groups.size());
-        assertEquals("recipe-a|circuit-a|manual-a", summary.groups.get(0).groupKey);
+        assertEquals("gt.recipe.assembler|circuit-a|manual-a", summary.groups.get(0).groupKey);
         assertEquals(2, summary.groups.get(0).patternCount);
         assertEquals(20L, summary.groups.get(0).updatedAt);
         assertEquals("Output B", summary.groups.get(0).preview);
-        assertEquals("recipe-b||", summary.groups.get(1).groupKey);
+        assertEquals("gt.recipe.cutter||", summary.groups.get(1).groupKey);
         assertEquals(1, summary.groups.get(1).patternCount);
         assertEquals("Output C", summary.groups.get(1).preview);
     }
@@ -86,7 +86,8 @@ public class PatternStagingStorageTest {
                 .isEmpty());
     }
 
-    private static ItemStack stagedPattern(String recipeId, String circuitKey, String manualItemsKey, String label) {
+    private static ItemStack stagedPattern(String recipeCategory, String circuitKey, String manualItemsKey,
+        String label) {
         ItemStack stack = new ItemStack(TestItemRegistry.getOrCreatePatternItem(), 1, 0);
         NBTTagCompound display = new NBTTagCompound();
         display.setString("Name", label);
@@ -97,7 +98,8 @@ public class PatternStagingStorageTest {
             stack,
             new PatternRoutingNbt.RoutingMetadata(
                 1,
-                recipeId,
+                recipeCategory,
+                "",
                 "",
                 circuitKey,
                 manualItemsKey,
