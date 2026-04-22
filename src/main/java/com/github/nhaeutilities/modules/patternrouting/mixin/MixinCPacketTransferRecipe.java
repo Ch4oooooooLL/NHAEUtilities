@@ -54,7 +54,7 @@ public abstract class MixinCPacketTransferRecipe implements PacketRecipeTransfer
         if (!nhaeutilities$recipeSnapshot.isEmpty()) {
             ByteBufUtils.writeUTF8String(buf, nhaeutilities$recipeSnapshot);
         }
-        PatternRoutingLog.info(
+        PatternRoutingLog.debug(
             "[NHAEUtilities][patternrouting] AE2FC packet toBytes recipeId=%s overlay=%s circuit=%s nc=%s snapshotSize=%s",
             nhaeutilities$recipeId,
             nhaeutilities$overlayIdentifier,
@@ -75,7 +75,7 @@ public abstract class MixinCPacketTransferRecipe implements PacketRecipeTransfer
             nhaeutilities$recipeId = ByteBufUtils.readUTF8String(buf);
         }
         if (buf.readableBytes() <= 0) {
-            PatternRoutingLog.info(
+            PatternRoutingLog.debug(
                 "[NHAEUtilities][patternrouting] AE2FC packet fromBytes recipeId=%s overlay=%s remaining=0",
                 nhaeutilities$recipeId,
                 nhaeutilities$overlayIdentifier);
@@ -93,7 +93,7 @@ public abstract class MixinCPacketTransferRecipe implements PacketRecipeTransfer
         if (buf.readableBytes() > 0 && buf.readBoolean()) {
             nhaeutilities$recipeSnapshot = ByteBufUtils.readUTF8String(buf);
         }
-        PatternRoutingLog.info(
+        PatternRoutingLog.debug(
             "[NHAEUtilities][patternrouting] AE2FC packet fromBytes recipeId=%s overlay=%s circuit=%s nc=%s remaining=%s",
             nhaeutilities$recipeId,
             nhaeutilities$overlayIdentifier,

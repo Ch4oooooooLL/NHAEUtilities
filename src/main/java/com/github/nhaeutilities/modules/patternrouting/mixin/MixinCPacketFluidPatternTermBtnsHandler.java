@@ -10,6 +10,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingKeys;
 import com.github.nhaeutilities.modules.patternrouting.core.PatternTerminalReflectionSupport;
 import com.github.nhaeutilities.modules.patternrouting.core.PatternTerminalRoutingSupport;
 
@@ -50,6 +51,9 @@ public abstract class MixinCPacketFluidPatternTermBtnsHandler {
             player,
             ((IContainerCraftingPacket) openContainer).getNetworkNode(),
             patternSlotOUT,
+            PatternRoutingKeys.SOURCE_AE2FC,
+            "",
+            "",
             new Runnable() {
 
                 @Override

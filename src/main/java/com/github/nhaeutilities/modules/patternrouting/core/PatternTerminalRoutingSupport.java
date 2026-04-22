@@ -14,7 +14,8 @@ public final class PatternTerminalRoutingSupport {
     private PatternTerminalRoutingSupport() {}
 
     public static PatternRoutingFallbackService.DeliveryResult handleEncode(String terminalKind, EntityPlayer player,
-        IGridNode node, SlotRestrictedInput patternSlotOUT, Runnable syncAction) {
+        IGridNode node, SlotRestrictedInput patternSlotOUT, String source, String recipeId, String overlayIdentifier,
+        Runnable syncAction) {
         if (!PatternRoutingRuntime.isEnabled() || player == null
             || player.worldObj == null
             || player.worldObj.isRemote
@@ -45,7 +46,7 @@ public final class PatternTerminalRoutingSupport {
             return PatternRoutingFallbackService.DeliveryResult.NO_ACTION;
         }
 
-        transfer = PendingRecipeTransferContext.consume(player.getUniqueID(), now);
+        transfer = PendingRecipeTransferContext.consume(player.getUniqueID(), source, recipeId, overlayIdentifier, now);
         if (transfer == null) {
             PatternRoutingLog.info(
                 "[NHAEUtilities][patternrouting] %s encode lost pending before consume player=%s output=%s",

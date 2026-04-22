@@ -1,14 +1,16 @@
 package com.github.nhaeutilities.modules.patternrouting.core;
 
+import java.util.Deque;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public final class PendingRecipeTransferContext {
 
     public static final long DEFAULT_EXPIRY_MS = 300_000L;
 
-    private static final Map<UUID, PendingTransfer> PENDING_TRANSFERS = new ConcurrentHashMap<UUID, PendingTransfer>();
+    private static final Map<UUID, Deque<PendingTransfer>> PENDING_TRANSFERS = new ConcurrentHashMap<UUID, Deque<PendingTransfer>>();
 
     private PendingRecipeTransferContext() {}
 
@@ -17,8 +19,8 @@ public final class PendingRecipeTransferContext {
         if (playerId == null || isBlank(recipeCategory)) {
             return;
         }
-        PendingTransfer previous = PENDING_TRANSFERS.put(
-            playerId,
+        Deque<PendingTransfer> transfers = queueFor(playerId);
+        transfers.addLast(
             createLegacyTransfer(
                 "",
                 recipeCategory,
@@ -28,13 +30,13 @@ public final class PendingRecipeTransferContext {
                 source,
                 timestamp));
         PatternRoutingLog.debug(
-            "[NHAEUtilities][patternrouting][nbt] pending store player=%s recipeCategory=%s circuit=%s nc=%s snapshotSize=%s replaced=%s",
+            "[NHAEUtilities][patternrouting][nbt] pending store player=%s recipeCategory=%s circuit=%s nc=%s snapshotSize=%s queued=%s",
             playerId,
             recipeCategory,
             programmingCircuit,
             nonConsumables,
             recipeSnapshot != null ? recipeSnapshot.length() : 0,
-            previous != null);
+            transfers.size());
     }
 
     public static void store(UUID playerId, String recipeId, String overlayIdentifier, String programmingCircuit,
@@ -42,8 +44,8 @@ public final class PendingRecipeTransferContext {
         if (playerId == null || isBlank(overlayIdentifier)) {
             return;
         }
-        PendingTransfer previous = PENDING_TRANSFERS.put(
-            playerId,
+        Deque<PendingTransfer> transfers = queueFor(playerId);
+        transfers.addLast(
             createLegacyTransfer(
                 recipeId,
                 overlayIdentifier,
@@ -53,14 +55,14 @@ public final class PendingRecipeTransferContext {
                 source,
                 timestamp));
         PatternRoutingLog.debug(
-            "[NHAEUtilities][patternrouting][nbt] pending store player=%s recipeId=%s recipeCategory=%s circuit=%s nc=%s snapshotSize=%s replaced=%s",
+            "[NHAEUtilities][patternrouting][nbt] pending store player=%s recipeId=%s recipeCategory=%s circuit=%s nc=%s snapshotSize=%s queued=%s",
             playerId,
             recipeId,
             overlayIdentifier,
             programmingCircuit,
             nonConsumables,
             recipeSnapshot != null ? recipeSnapshot.length() : 0,
-            previous != null);
+            transfers.size());
     }
 
     private static PendingTransfer createLegacyTransfer(String recipeId, String recipeCategory,
@@ -79,38 +81,78 @@ public final class PendingRecipeTransferContext {
         if (playerId == null) {
             return null;
         }
-        PendingTransfer transfer = PENDING_TRANSFERS.get(playerId);
-        if (transfer == null) {
+        Deque<PendingTransfer> transfers = PENDING_TRANSFERS.get(playerId);
+        if (transfers == null) {
             return null;
         }
-        if (isExpired(transfer, now)) {
+        pruneExpired(playerId, transfers, now);
+        PendingTransfer transfer = transfers.peekLast();
+        if (transfer == null) {
             PENDING_TRANSFERS.remove(playerId);
-            PatternRoutingLog.debug(
-                "[NHAEUtilities][patternrouting][nbt] pending expire player=%s recipeId=%s overlay=%s",
-                playerId,
-                transfer.recipeId,
-                transfer.overlayIdentifier);
             return null;
         }
         return transfer;
+    }
+
+    public static PendingTransfer consume(UUID playerId, String source, String recipeId, String overlayIdentifier,
+        long now) {
+        Deque<PendingTransfer> transfers = PENDING_TRANSFERS.get(playerId);
+        if (transfers == null) {
+            return null;
+        }
+        pruneExpired(playerId, transfers, now);
+        PendingTransfer fallbackCandidate = transfers.peekLast();
+        if (fallbackCandidate == null) {
+            PENDING_TRANSFERS.remove(playerId);
+            return null;
+        }
+
+        for (PendingTransfer transfer : transfers) {
+            if (!matches(transfer, source, recipeId, overlayIdentifier)) {
+                continue;
+            }
+            if (transfers.remove(transfer)) {
+                clearIfEmpty(playerId, transfers);
+                PatternRoutingLog.debug(
+                    "[NHAEUtilities][patternrouting][nbt] pending consume exact player=%s recipeId=%s overlay=%s source=%s circuit=%s nc=%s snapshotSize=%s",
+                    playerId,
+                    transfer.recipeId,
+                    transfer.overlayIdentifier,
+                    transfer.source,
+                    transfer.programmingCircuit,
+                    transfer.nonConsumables,
+                    transfer.recipeSnapshot.length());
+                return transfer;
+            }
+        }
+
+        PatternRoutingLog.debug(
+            "[NHAEUtilities][patternrouting][nbt] pending fallback player=%s requestedSource=%s requestedRecipeId=%s requestedOverlay=%s actualSource=%s actualRecipeId=%s actualOverlay=%s",
+            playerId,
+            source,
+            recipeId,
+            overlayIdentifier,
+            fallbackCandidate.source,
+            fallbackCandidate.recipeId,
+            fallbackCandidate.overlayIdentifier);
+        return consume(playerId, now);
     }
 
     public static PendingTransfer consume(UUID playerId, long now) {
         if (playerId == null) {
             return null;
         }
-        PendingTransfer transfer = PENDING_TRANSFERS.remove(playerId);
+        Deque<PendingTransfer> transfers = PENDING_TRANSFERS.get(playerId);
+        if (transfers == null) {
+            return null;
+        }
+        pruneExpired(playerId, transfers, now);
+        PendingTransfer transfer = transfers.pollLast();
         if (transfer == null) {
+            PENDING_TRANSFERS.remove(playerId);
             return null;
         }
-        if (isExpired(transfer, now)) {
-            PatternRoutingLog.debug(
-                "[NHAEUtilities][patternrouting][nbt] pending expire player=%s recipeId=%s overlay=%s",
-                playerId,
-                transfer.recipeId,
-                transfer.overlayIdentifier);
-            return null;
-        }
+        clearIfEmpty(playerId, transfers);
         PatternRoutingLog.debug(
             "[NHAEUtilities][patternrouting][nbt] pending consume player=%s recipeId=%s overlay=%s circuit=%s nc=%s snapshotSize=%s",
             playerId,
@@ -122,10 +164,52 @@ public final class PendingRecipeTransferContext {
         return transfer;
     }
 
+    private static boolean matches(PendingTransfer transfer, String source, String recipeId, String overlayIdentifier) {
+        if (transfer == null) {
+            return false;
+        }
+        if (!isBlank(source) && !source.equals(transfer.source)) {
+            return false;
+        }
+        if (!isBlank(recipeId) && !recipeId.equals(transfer.recipeId)) {
+            return false;
+        }
+        if (!isBlank(overlayIdentifier) && !overlayIdentifier.equals(transfer.overlayIdentifier)) {
+            return false;
+        }
+        return true;
+    }
+
     public static void clear(UUID playerId) {
         if (playerId != null) {
             PENDING_TRANSFERS.remove(playerId);
             PatternRoutingLog.debug("[NHAEUtilities][patternrouting][nbt] pending clear player=%s", playerId);
+        }
+    }
+
+    private static Deque<PendingTransfer> queueFor(UUID playerId) {
+        return PENDING_TRANSFERS.computeIfAbsent(playerId, ignored -> new ConcurrentLinkedDeque<PendingTransfer>());
+    }
+
+    private static void pruneExpired(UUID playerId, Deque<PendingTransfer> transfers, long now) {
+        for (PendingTransfer transfer : transfers) {
+            if (!isExpired(transfer, now)) {
+                continue;
+            }
+            if (transfers.remove(transfer)) {
+                PatternRoutingLog.debug(
+                    "[NHAEUtilities][patternrouting][nbt] pending expire player=%s recipeId=%s overlay=%s",
+                    playerId,
+                    transfer.recipeId,
+                    transfer.overlayIdentifier);
+            }
+        }
+        clearIfEmpty(playerId, transfers);
+    }
+
+    private static void clearIfEmpty(UUID playerId, Deque<PendingTransfer> transfers) {
+        if (transfers != null && transfers.isEmpty()) {
+            PENDING_TRANSFERS.remove(playerId);
         }
     }
 

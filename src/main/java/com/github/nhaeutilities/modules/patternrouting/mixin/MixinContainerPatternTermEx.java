@@ -9,6 +9,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.github.nhaeutilities.modules.patternrouting.core.PatternRoutingKeys;
 import com.github.nhaeutilities.modules.patternrouting.core.PatternTerminalRoutingSupport;
 
 import appeng.container.implementations.ContainerPatternTermEx;
@@ -30,6 +31,9 @@ public abstract class MixinContainerPatternTermEx {
             player,
             ((IContainerCraftingPacket) (Object) this).getNetworkNode(),
             this.patternSlotOUT,
+            PatternRoutingKeys.SOURCE_NEI,
+            "",
+            "",
             new Runnable() {
 
                 @Override
