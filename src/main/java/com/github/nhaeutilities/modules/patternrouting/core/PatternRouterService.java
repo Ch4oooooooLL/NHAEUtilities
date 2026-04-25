@@ -20,6 +20,16 @@ import appeng.api.storage.data.IAEItemStack;
 public final class PatternRouterService {
 
     private static final int FALLBACK_PATTERN_SLOT_LIMIT = 36;
+    private static final AeItemStackFactory DEFAULT_AE_ITEM_STACK_FACTORY = new AeItemStackFactory() {
+
+        @Override
+        public IAEItemStack create(ItemStack stack) {
+            return AEApi.instance()
+                .storage()
+                .createItemStack(stack);
+        }
+    };
+    private static AeItemStackFactory aeItemStackFactory = DEFAULT_AE_ITEM_STACK_FACTORY;
 
     private PatternRouterService() {}
 
@@ -120,7 +130,8 @@ public final class PatternRouterService {
                     RouteStatus.TARGET_FULL);
                 return RouteResult.targetFull();
             }
-            if (tryInsertIntoHatch(selected.hatch, pattern, selected.assignment)) {
+            InsertionResult insertion = tryInsertIntoHatch(selected.hatch, pattern, selected.assignment);
+            if (insertion.inserted) {
                 PatternRoutingLog.debug(
                     "[NHAEUtilities][patternrouting][match] route result status=%s target=%s assignment=%s",
                     RouteStatus.ROUTED,
@@ -153,6 +164,7 @@ public final class PatternRouterService {
         }
 
         PatternRoutingNbt.RoutingMetadata configuredMetadata = PatternRoutingNbt.withConfiguredAssignment(metadata);
+        HatchAssignmentData configuredAssignment = PatternRoutingNbt.assignmentDataFor(configuredMetadata);
         ExtractedItems extractedItems = extractManualItemsFromAe(node, actionSource, configuredMetadata);
         if (extractedItems == null) {
             PatternRoutingLog.debug(
@@ -169,9 +181,17 @@ public final class PatternRouterService {
             return RouteResult.noMatchingHatch();
         }
 
-        HatchAssignmentData configuredAssignment = PatternRoutingNbt.assignmentDataFor(configuredMetadata);
         syncAssignment(blankCandidate.hatch, configuredAssignment);
-        if (tryInsertIntoHatch(blankCandidate.hatch, pattern, configuredAssignment)) {
+        HatchControllerRecheckService.RecheckResult recheck = HatchControllerRecheckService.recheckAndVerify(
+            blankCandidate.hatch,
+            configuredAssignment);
+        if (!recheck.success) {
+            rollbackBlankFamilyRoute(blankCandidate.hatch, node, actionSource, extractedItems.manualItems, -1);
+            return RouteResult.noMatchingHatch();
+        }
+
+        InsertionResult insertion = tryInsertIntoHatch(blankCandidate.hatch, pattern, configuredAssignment);
+        if (insertion.inserted) {
             PatternRoutingLog.debug(
                 "[NHAEUtilities][patternrouting][match] route result status=%s target=%s assignment=%s fallback=%s",
                 RouteStatus.ROUTED,
@@ -181,7 +201,7 @@ public final class PatternRouterService {
                 true);
             return RouteResult.routed(blankCandidate.hatch);
         }
-        restoreManualItems(node, actionSource, extractedItems.manualItems);
+        rollbackBlankFamilyRoute(blankCandidate.hatch, node, actionSource, extractedItems.manualItems, insertion.slot);
         PatternRoutingLog.debug(
             "[NHAEUtilities][patternrouting][match] insertion failed hatch=%s assignment=%s fallback=%s",
             blankCandidate.hatch != null ? blankCandidate.hatch.getClass()
@@ -201,6 +221,14 @@ public final class PatternRouterService {
             }
         }
         return null;
+    }
+
+    private static void rollbackBlankFamilyRoute(Object hatch, IGridNode node, BaseActionSource actionSource,
+        ItemStack[] manualItems, int insertedPatternSlot) {
+        rollbackInsertedPattern(hatch, insertedPatternSlot);
+        syncAssignment(hatch, HatchAssignmentData.EMPTY);
+        CraftingInputHatchAccess.clearRoutingConfiguration(hatch);
+        restoreManualItems(node, actionSource, manualItems);
     }
 
     private static ExtractedItems extractManualItemsFromAe(IGridNode node, BaseActionSource actionSource,
@@ -223,9 +251,7 @@ public final class PatternRouterService {
             if (manualItem == null) {
                 continue;
             }
-            IAEItemStack request = AEApi.instance()
-                .storage()
-                .createItemStack(manualItem.copy());
+            IAEItemStack request = createAeItemStack(manualItem.copy());
             if (request == null) {
                 restoreManualItems(node, actionSource, extracted.toArray(new ItemStack[extracted.size()]));
                 return null;
@@ -250,6 +276,18 @@ public final class PatternRouterService {
         return new ExtractedItems(extracted.toArray(new ItemStack[extracted.size()]));
     }
 
+    private static IAEItemStack createAeItemStack(ItemStack stack) {
+        return stack != null ? aeItemStackFactory.create(stack) : null;
+    }
+
+    static void setAeItemStackFactoryForTest(AeItemStackFactory factory) {
+        aeItemStackFactory = factory != null ? factory : DEFAULT_AE_ITEM_STACK_FACTORY;
+    }
+
+    static void resetAeItemStackFactoryForTest() {
+        aeItemStackFactory = DEFAULT_AE_ITEM_STACK_FACTORY;
+    }
+
     private static void restoreManualItems(IGridNode node, BaseActionSource actionSource, ItemStack[] manualItems) {
         if (manualItems == null || manualItems.length == 0
             || node == null
@@ -267,9 +305,7 @@ public final class PatternRouterService {
             if (manualItem == null) {
                 continue;
             }
-            IAEItemStack aeStack = AEApi.instance()
-                .storage()
-                .createItemStack(manualItem.copy());
+            IAEItemStack aeStack = createAeItemStack(manualItem.copy());
             if (aeStack != null) {
                 aeStack.setStackSize(Math.max(1, manualItem.stackSize));
                 inventory.injectItems(aeStack, Actionable.MODULATE, actionSource);
@@ -297,13 +333,21 @@ public final class PatternRouterService {
     }
 
     private static void syncAssignment(Object hatch, HatchAssignmentData assignment) {
-        if (!(hatch instanceof HatchAssignmentHolder) || assignment == null || !assignment.isAssigned()) {
+        if (!(hatch instanceof HatchAssignmentHolder) || assignment == null) {
             return;
         }
-        ((HatchAssignmentHolder) hatch).nhaeutilities$setAssignmentData(assignment);
+        if (assignment.isAssigned()) {
+            ((HatchAssignmentHolder) hatch).nhaeutilities$setAssignmentData(assignment);
+        } else {
+            ((HatchAssignmentHolder) hatch).nhaeutilities$clearAssignmentData();
+        }
         Object writable = CraftingInputHatchAccess.resolveWritableHatch(hatch);
         if (writable instanceof HatchAssignmentHolder && writable != hatch) {
-            ((HatchAssignmentHolder) writable).nhaeutilities$setAssignmentData(assignment);
+            if (assignment.isAssigned()) {
+                ((HatchAssignmentHolder) writable).nhaeutilities$setAssignmentData(assignment);
+            } else {
+                ((HatchAssignmentHolder) writable).nhaeutilities$clearAssignmentData();
+            }
         }
     }
 
@@ -389,7 +433,7 @@ public final class PatternRouterService {
         return firstEmpty;
     }
 
-    private static boolean tryInsertIntoHatch(Object hatch, ItemStack pattern, HatchAssignmentData assignment) {
+    private static InsertionResult tryInsertIntoHatch(Object hatch, ItemStack pattern, HatchAssignmentData assignment) {
         IInventory inventory = CraftingInputHatchAccess.getPatterns(hatch);
         if (inventory == null || pattern == null || assignment == null || assignment.assignmentKey.isEmpty()) {
             PatternRoutingLog.debug(
@@ -399,7 +443,7 @@ public final class PatternRouterService {
                 inventory == null ? "null-inventory"
                     : pattern == null ? "null-pattern"
                         : assignment == null ? "null-assignment" : "empty-assignment-key");
-            return false;
+            return InsertionResult.notInserted();
         }
 
         int limit = resolvePatternSlotLimit(hatch, inventory);
@@ -443,7 +487,7 @@ public final class PatternRouterService {
                 assignment.assignmentKey,
                 insertedOk);
             if (insertedOk) {
-                return true;
+                return InsertionResult.inserted(slot);
             }
         }
         PatternRoutingLog.debug(
@@ -451,7 +495,17 @@ public final class PatternRouterService {
             hatch != null ? hatch.getClass()
                 .getName() : "null",
             assignment.assignmentKey);
-        return false;
+        return InsertionResult.notInserted();
+    }
+
+    private static void rollbackInsertedPattern(Object hatch, int slot) {
+        if (slot < 0) {
+            return;
+        }
+        IInventory inventory = CraftingInputHatchAccess.getPatterns(hatch);
+        if (inventory != null) {
+            inventory.setInventorySlotContents(slot, null);
+        }
     }
 
     private static boolean hasResolvableRouting(PatternRoutingNbt.RoutingMetadata metadata) {
@@ -559,6 +613,11 @@ public final class PatternRouterService {
         MISSING_MANUAL_ITEMS
     }
 
+    interface AeItemStackFactory {
+
+        IAEItemStack create(ItemStack stack);
+    }
+
     private static final class ExtractedItems {
 
         static final ExtractedItems EMPTY = new ExtractedItems(new ItemStack[0]);
@@ -567,6 +626,25 @@ public final class PatternRouterService {
 
         private ExtractedItems(ItemStack[] manualItems) {
             this.manualItems = manualItems != null ? manualItems : new ItemStack[0];
+        }
+    }
+
+    private static final class InsertionResult {
+
+        final boolean inserted;
+        final int slot;
+
+        private InsertionResult(boolean inserted, int slot) {
+            this.inserted = inserted;
+            this.slot = slot;
+        }
+
+        static InsertionResult inserted(int slot) {
+            return new InsertionResult(true, slot);
+        }
+
+        static InsertionResult notInserted() {
+            return new InsertionResult(false, -1);
         }
     }
 }

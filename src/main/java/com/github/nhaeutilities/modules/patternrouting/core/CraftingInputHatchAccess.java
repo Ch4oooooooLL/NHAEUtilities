@@ -170,6 +170,21 @@ final class CraftingInputHatchAccess {
         }
     }
 
+    static void clearRoutingConfiguration(Object hatch) {
+        Object writable = resolveWritableHatch(hatch);
+        if (writable == null) {
+            return;
+        }
+        int circuitSlot = getCircuitSlot(writable);
+        SlotRange manualSlots = resolveManualSlots(writable, circuitSlot);
+        if (circuitSlot >= 0) {
+            writeSlot(writable, circuitSlot, null);
+        }
+        for (int index = 0; index < manualSlots.size; index++) {
+            writeSlot(writable, manualSlots.start + index, null);
+        }
+    }
+
     static IInventory getPatterns(Object hatch) {
         Object value = invokeNoArg(hatch, "getPatterns");
         return value instanceof IInventory ? (IInventory) value : null;
