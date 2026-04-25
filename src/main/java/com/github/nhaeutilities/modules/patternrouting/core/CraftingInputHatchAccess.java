@@ -63,7 +63,11 @@ final class CraftingInputHatchAccess {
 
     static ItemStack getStackInSlot(Object hatch, int slot) {
         Object writable = resolveWritableHatch(hatch);
-        Object value = invoke(writable, "getStackInSlot", new Class<?>[] { Integer.TYPE }, Integer.valueOf(slot));
+        Object value = invokeAny(
+            writable,
+            new String[] { "getStackInSlot", "func_70301_a" },
+            new Class<?>[] { Integer.TYPE },
+            Integer.valueOf(slot));
         return value instanceof ItemStack ? (ItemStack) value : null;
     }
 
@@ -191,9 +195,9 @@ final class CraftingInputHatchAccess {
             return false;
         }
         ItemStack copy = stack != null ? stack.copy() : null;
-        Object result = invoke(
+        Object result = invokeAny(
             hatch,
-            "setInventorySlotContents",
+            new String[] { "setInventorySlotContents", "func_70299_a" },
             new Class<?>[] { Integer.TYPE, ItemStack.class },
             Integer.valueOf(slot),
             copy);
@@ -237,14 +241,31 @@ final class CraftingInputHatchAccess {
         return invoke(target, methodName, new Class<?>[0]);
     }
 
+    private static Object invokeAny(Object target, String[] methodNames, Class<?>[] parameterTypes, Object... args) {
+        if (methodNames == null) {
+            return null;
+        }
+        for (String methodName : methodNames) {
+            Object value = invoke(target, methodName, parameterTypes, args);
+            if (value != null || hasMethod(target, methodName, parameterTypes)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
     private static boolean hasNoArgMethod(Object target, String methodName) {
+        return hasMethod(target, methodName, new Class<?>[0]);
+    }
+
+    private static boolean hasMethod(Object target, String methodName, Class<?>[] parameterTypes) {
         if (target == null) {
             return false;
         }
         Class<?> current = target.getClass();
         while (current != null) {
             try {
-                current.getDeclaredMethod(methodName, new Class<?>[0]);
+                current.getDeclaredMethod(methodName, parameterTypes);
                 return true;
             } catch (Exception ignored) {
                 current = current.getSuperclass();

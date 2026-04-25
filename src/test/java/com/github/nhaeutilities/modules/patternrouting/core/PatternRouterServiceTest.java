@@ -276,6 +276,28 @@ public class PatternRouterServiceTest {
         assertEquals(assignment.assignmentKey, masterHandler.assignment.assignmentKey);
     }
 
+    @Test
+    public void autoConfigurationWritesCircuitThroughSrgInventoryMethods() {
+        String circuitKey = PatternRoutingNbt.circuitKey(new ItemStack(Items.paper, 1, 2));
+        PatternRoutingNbt.RoutingMetadata metadata = new PatternRoutingNbt.RoutingMetadata(
+            1,
+            "gt.recipe.canner",
+            "",
+            PatternRoutingNbt.buildAssignmentKey("gt.recipe.canner", circuitKey, ""),
+            circuitKey,
+            "",
+            PatternRoutingKeys.SOURCE_NEI,
+            true,
+            circuitKey,
+            "[]",
+            "{}");
+        TestHatchHandler handler = new TestHatchHandler(HatchAssignmentData.EMPTY);
+        TestSrgCraftingInputHatch hatch = handler.createSrgProxy();
+
+        assertTrue(CraftingInputHatchAccess.tryApplyRoutingConfiguration(hatch, metadata, new ItemStack[0]));
+        assertEquals(circuitKey, PatternRoutingNbt.circuitKey(handler.slots[0]));
+    }
+
     private interface TestCraftingInputHatch extends IDualInputHatch, HatchAssignmentHolder {
 
         IInventory getPatterns();
@@ -287,6 +309,21 @@ public class PatternRouterServiceTest {
         ItemStack getStackInSlot(int slot);
 
         void setInventorySlotContents(int slot, ItemStack stack);
+
+        Object getMaster();
+    }
+
+    private interface TestSrgCraftingInputHatch extends IDualInputHatch, HatchAssignmentHolder {
+
+        IInventory getPatterns();
+
+        int getCircuitSlot();
+
+        ItemStack[] getSharedItems();
+
+        ItemStack func_70301_a(int slot);
+
+        void func_70299_a(int slot, ItemStack stack);
 
         Object getMaster();
     }
@@ -310,6 +347,13 @@ public class PatternRouterServiceTest {
                 this);
         }
 
+        private TestSrgCraftingInputHatch createSrgProxy() {
+            return (TestSrgCraftingInputHatch) Proxy.newProxyInstance(
+                PatternRouterServiceTest.class.getClassLoader(),
+                new Class<?>[] { TestSrgCraftingInputHatch.class },
+                this);
+        }
+
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) {
             String methodName = method.getName();
@@ -322,10 +366,10 @@ public class PatternRouterServiceTest {
             if ("getSharedItems".equals(methodName)) {
                 return sharedItems;
             }
-            if ("getStackInSlot".equals(methodName)) {
+            if ("getStackInSlot".equals(methodName) || "func_70301_a".equals(methodName)) {
                 return slots[((Integer) args[0]).intValue()];
             }
-            if ("setInventorySlotContents".equals(methodName)) {
+            if ("setInventorySlotContents".equals(methodName) || "func_70299_a".equals(methodName)) {
                 int slot = ((Integer) args[0]).intValue();
                 slots[slot] = (ItemStack) args[1];
                 sharedItems = rebuildSharedItems();
