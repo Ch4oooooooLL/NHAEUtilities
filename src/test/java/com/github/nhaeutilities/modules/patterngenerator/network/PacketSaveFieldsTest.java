@@ -21,7 +21,7 @@ public class PacketSaveFieldsTest {
 
         boolean written = PacketSaveFields.writeFieldsIfPatternGenerator(
             held,
-            new PacketSaveFields("map", "out", "in", "nc", "bin", "bout", "rep", 2));
+            new PacketSaveFields("map", "out", "in", "nc", "bin", "bout", "rep", "1,2", 2));
 
         assertFalse(written);
         assertNull(held.getTagCompound());
@@ -34,7 +34,7 @@ public class PacketSaveFieldsTest {
 
         boolean written = PacketSaveFields.writeFieldsIfPatternGenerator(
             held,
-            new PacketSaveFields("map", "out", "in", "nc", "bin", "bout", "rep", 2));
+            new PacketSaveFields("map", "out", "in", "nc", "bin", "bout", "rep", "1,2", 2));
 
         assertTrue(written);
         NBTTagCompound tag = held.getTagCompound();
@@ -46,6 +46,7 @@ public class PacketSaveFieldsTest {
         assertEquals("bin", tag.getString(PacketSaveFields.NBT_BLACKLIST_INPUT));
         assertEquals("bout", tag.getString(PacketSaveFields.NBT_BLACKLIST_OUTPUT));
         assertEquals("rep", tag.getString(PacketSaveFields.NBT_REPLACEMENTS));
+        assertEquals("1,2", tag.getString(PacketSaveFields.NBT_OUTPUT_SLOTS));
         assertEquals(2, tag.getInteger(PacketSaveFields.NBT_TARGET_TIER));
     }
 }

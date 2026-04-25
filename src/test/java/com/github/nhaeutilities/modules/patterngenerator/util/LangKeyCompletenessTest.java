@@ -32,6 +32,7 @@ public class LangKeyCompletenessTest {
         "nhaeutilities.gui.recipe_picker.title",
         "nhaeutilities.msg.storage.empty_extract",
         "nhaeutilities.msg.generate.no_matching_map",
+        "nhaeutilities.msg.generate.output_slots_invalid",
         "nhaeutilities.msg.cache.missing_or_invalid",
         "nhaeutilities.msg.pattern.generated_and_consumed",
         "nhaeutilities.msg.conflict.cancelled",

@@ -40,12 +40,13 @@ public class PacketGeneratePatterns implements IMessage {
     private String blacklistInput;
     private String blacklistOutput;
     private String replacements;
+    private String outputSlots;
     private int targetTier;
 
     public PacketGeneratePatterns() {}
 
     public PacketGeneratePatterns(String recipeMapId, String outputOreDict, String inputOreDict, String ncItem,
-        String blacklistInput, String blacklistOutput, String replacements, int targetTier) {
+        String blacklistInput, String blacklistOutput, String replacements, String outputSlots, int targetTier) {
         this.recipeMapId = recipeMapId;
         this.outputOreDict = outputOreDict;
         this.inputOreDict = inputOreDict;
@@ -53,6 +54,7 @@ public class PacketGeneratePatterns implements IMessage {
         this.blacklistInput = blacklistInput;
         this.blacklistOutput = blacklistOutput;
         this.replacements = replacements;
+        this.outputSlots = outputSlots;
         this.targetTier = targetTier;
     }
 
@@ -65,6 +67,7 @@ public class PacketGeneratePatterns implements IMessage {
         blacklistInput = ByteBufUtils.readUTF8String(buf);
         blacklistOutput = ByteBufUtils.readUTF8String(buf);
         replacements = ByteBufUtils.readUTF8String(buf);
+        outputSlots = ByteBufUtils.readUTF8String(buf);
         targetTier = buf.readInt();
     }
 
@@ -77,6 +80,7 @@ public class PacketGeneratePatterns implements IMessage {
         ByteBufUtils.writeUTF8String(buf, blacklistInput != null ? blacklistInput : "");
         ByteBufUtils.writeUTF8String(buf, blacklistOutput != null ? blacklistOutput : "");
         ByteBufUtils.writeUTF8String(buf, replacements != null ? replacements : "");
+        ByteBufUtils.writeUTF8String(buf, outputSlots != null ? outputSlots : "");
         buf.writeInt(targetTier);
     }
 
@@ -95,6 +99,7 @@ public class PacketGeneratePatterns implements IMessage {
                     message.blacklistInput,
                     message.blacklistOutput,
                     message.replacements,
+                    message.outputSlots,
                     message.targetTier);
                 if (!PatternGenerationRequestGate.shouldProcess(uuid, requestFingerprint, System.currentTimeMillis())) {
                     return null;
@@ -153,6 +158,25 @@ public class PacketGeneratePatterns implements IMessage {
                     send(player, EnumChatFormatting.YELLOW, "nhaeutilities.msg.generate.no_match_after_filter");
                     return null;
                 }
+
+                OutputSlotSelection outputSlotSelection;
+                try {
+                    outputSlotSelection = OutputSlotSelection.parse(message.outputSlots);
+                } catch (OutputSlotSelection.OutputSlotSelectionException e) {
+                    send(player, EnumChatFormatting.RED, e.getTranslationKey());
+                    return null;
+                }
+
+                List<RecipeEntry> outputFiltered = new ArrayList<RecipeEntry>(filtered.size());
+                try {
+                    for (RecipeEntry recipe : filtered) {
+                        outputFiltered.add(outputSlotSelection.apply(recipe));
+                    }
+                } catch (OutputSlotSelection.OutputSlotSelectionException e) {
+                    send(player, EnumChatFormatting.RED, e.getTranslationKey());
+                    return null;
+                }
+                filtered = outputFiltered;
 
                 OreDictReplacer replacer = new OreDictReplacer(ReplacementConfig.getRulesString());
                 if (replacer.hasRules()) {

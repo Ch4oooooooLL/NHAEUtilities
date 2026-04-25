@@ -120,6 +120,11 @@ public class GuiPatternGen {
         labelTier.setPos(6, refY + 68 + 3);
         scrollable.widget(labelTier);
 
+        TextWidget labelOutputSlots = new TextWidget(
+            t("nhaeutilities.gui.pattern_gen.label.output_slots", "Output slots"));
+        labelOutputSlots.setPos(6, refY + 86 + 3);
+        scrollable.widget(labelOutputSlots);
+
         final List<String> tiers = Arrays.asList(
             "Any",
             "ULV",
@@ -159,7 +164,22 @@ public class GuiPatternGen {
         scrollable.widget(btnTier);
         scrollable.widget(btnTierText);
 
-        refY += 84;
+        FilterTextFieldWidget tfOutputSlots = new FilterTextFieldWidget(itemStack -> "");
+        tfOutputSlots.setText(getSavedField(held, PacketSaveFields.NBT_OUTPUT_SLOTS));
+        tfOutputSlots.setPos(inputX, refY + 86);
+        tfOutputSlots.setSize(fieldW, 14);
+        tfOutputSlots.setTextColor(0xFFFFFF);
+        tfOutputSlots.setBackground(new Rectangle().setColor(0xFF1E1E30));
+        tfOutputSlots.setTextAlignment(Alignment.CenterLeft);
+        scrollable.widget(tfOutputSlots);
+
+        TextWidget outputSlotsHint = new TextWidget(
+            EnumChatFormatting.DARK_GRAY
+                + t("nhaeutilities.gui.pattern_gen.hint.output_slots", "Comma-separated 1-based output slots; blank keeps all outputs."));
+        outputSlotsHint.setPos(6, refY + 104 + 3);
+        scrollable.widget(outputSlotsHint);
+
+        refY += 120;
 
         TextWidget labelBL = new TextWidget(
             EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.blacklist", "Blacklist"));
@@ -274,6 +294,7 @@ public class GuiPatternGen {
                 tfBlacklistIn.getText(),
                 tfBlacklistOut.getText(),
                 "",
+                tfOutputSlots.getText(),
                 currentTierIndex[0] - 1));
 
         ButtonWidget btnCache = new ButtonWidget();
@@ -304,7 +325,6 @@ public class GuiPatternGen {
                 GuiPatternGenStatusBridge.setStatus("Recipe map is required.");
                 return;
             }
-            saveFunction.run();
             NetworkHandler.INSTANCE.sendToServer(
                 new PacketPreviewRecipeCount(
                     tfRecipeMap.getText(),
@@ -343,6 +363,7 @@ public class GuiPatternGen {
                     tfBlacklistIn.getText(),
                     tfBlacklistOut.getText(),
                     "",
+                    tfOutputSlots.getText(),
                     currentTierIndex[0] - 1));
             GuiPatternGenStatusBridge.setStatus("Generation requested");
         });

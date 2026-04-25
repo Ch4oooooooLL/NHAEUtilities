@@ -21,7 +21,7 @@ public class PatternGenerationRequestGateTest {
     public void blocksDuplicateRequestsWithinGuardWindow() {
         UUID playerUUID = UUID.randomUUID();
         String fingerprint = PatternGenerationRequestGate
-            .fingerprint("gt.recipe.assembler", "(dustCopper)", "", "", "", "", "", 3);
+            .fingerprint("gt.recipe.assembler", "(dustCopper)", "", "", "", "", "", "1,2", 3);
         long windowMs = ForgeConfig.getDuplicateWindowMs();
 
         assertTrue(PatternGenerationRequestGate.shouldProcess(playerUUID, fingerprint, 1_000L));
@@ -34,12 +34,22 @@ public class PatternGenerationRequestGateTest {
         UUID firstPlayer = UUID.randomUUID();
         UUID secondPlayer = UUID.randomUUID();
         String baseFingerprint = PatternGenerationRequestGate
-            .fingerprint("gt.recipe.assembler", "(dustCopper)", "", "", "", "", "", 3);
+            .fingerprint("gt.recipe.assembler", "(dustCopper)", "", "", "", "", "", "1,2", 3);
         String changedFingerprint = PatternGenerationRequestGate
-            .fingerprint("gt.recipe.assembler", "(dustTin)", "", "", "", "", "", 3);
+            .fingerprint("gt.recipe.assembler", "(dustTin)", "", "", "", "", "", "1,2", 3);
 
         assertTrue(PatternGenerationRequestGate.shouldProcess(firstPlayer, baseFingerprint, 2_000L));
         assertTrue(PatternGenerationRequestGate.shouldProcess(firstPlayer, changedFingerprint, 2_100L));
         assertTrue(PatternGenerationRequestGate.shouldProcess(secondPlayer, baseFingerprint, 2_100L));
+    }
+
+    @Test
+    public void fingerprintChangesWhenOutputSlotsChange() {
+        String firstFingerprint = PatternGenerationRequestGate
+            .fingerprint("gt.recipe.assembler", "(dustCopper)", "", "", "", "", "", "1,2", 3);
+        String secondFingerprint = PatternGenerationRequestGate
+            .fingerprint("gt.recipe.assembler", "(dustCopper)", "", "", "", "", "", "2", 3);
+
+        assertFalse(firstFingerprint.equals(secondFingerprint));
     }
 }
