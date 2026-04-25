@@ -8,17 +8,34 @@ import net.minecraft.item.ItemStack;
 
 import com.github.nhaeutilities.accessor.patternrouting.HatchAssignmentHolder;
 
+import appeng.api.AEApi;
+import appeng.api.config.Actionable;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.BaseActionSource;
+import appeng.api.networking.storage.IStorageGrid;
+import appeng.api.storage.IMEMonitor;
+import appeng.api.storage.data.IAEItemStack;
 
 public final class PatternRouterService {
 
     private static final int FALLBACK_PATTERN_SLOT_LIMIT = 36;
+    private static final AeItemStackFactory DEFAULT_AE_ITEM_STACK_FACTORY = new AeItemStackFactory() {
+
+        @Override
+        public IAEItemStack create(ItemStack stack) {
+            return AEApi.instance()
+                .storage()
+                .createItemStack(stack);
+        }
+    };
+    private static AeItemStackFactory aeItemStackFactory = DEFAULT_AE_ITEM_STACK_FACTORY;
 
     private PatternRouterService() {}
 
-    public static RouteResult tryRoute(ItemStack pattern, IGridNode node) {
-        PatternRoutingNbt.RoutingMetadata metadata = PatternRoutingNbt.readRoutingData(pattern);
+    public static RouteResult tryRoute(ItemStack pattern, IGridNode node, BaseActionSource actionSource) {
+        PatternRoutingNbt.RoutingMetadata metadata = PatternRoutingNbt
+            .withDerivedDescriptor(PatternRoutingNbt.readRoutingData(pattern));
         PatternRoutingLog.debug(
             "[NHAEUtilities][patternrouting][match] route start item=%s node=%s assignment=%s overlay=%s recipeId=%s circuit=%s manual=%s",
             PatternRoutingNbt.itemSignature(pattern),
@@ -50,7 +67,8 @@ public final class PatternRouterService {
             return RouteResult.noMatchingHatch();
         }
 
-        List<HatchRoutingCandidate> candidates = new ArrayList<HatchRoutingCandidate>();
+        List<HatchRoutingCandidate> exactCandidates = new ArrayList<HatchRoutingCandidate>();
+        List<HatchRoutingCandidate> blankFamilyCandidates = new ArrayList<HatchRoutingCandidate>();
         int scannedNodes = 0;
         int hatchCandidates = 0;
         int matchingCount = 0;
@@ -69,6 +87,13 @@ public final class PatternRouterService {
                 continue;
             }
             HatchAssignmentData assignment = ((HatchAssignmentHolder) machine).nhaeutilities$getAssignmentData();
+            IInventory inventory = CraftingInputHatchAccess.getPatterns(machine);
+            int limit = resolvePatternSlotLimit(machine, inventory);
+            HatchRoutingCandidate candidate = new HatchRoutingCandidate(
+                machine,
+                assignment,
+                hasPatterns(inventory, limit),
+                isFull(inventory, limit));
             boolean matched = matchesAssignment(metadata, assignment);
             PatternRoutingLog.debug(
                 "[NHAEUtilities][patternrouting][match] candidate evaluate hatch=%s assignment=%s matched=%s recipeCategory=%s recipeId=%s",
@@ -78,57 +103,260 @@ public final class PatternRouterService {
                 matched,
                 assignment != null ? assignment.recipeCategory : "",
                 assignment != null ? assignment.recipeId : "");
-            if (!matched) {
+            if (matched) {
+                matchingCount++;
+                exactCandidates.add(candidate);
                 continue;
             }
-            matchingCount++;
-            IInventory inventory = CraftingInputHatchAccess.getPatterns(machine);
-            int limit = resolvePatternSlotLimit(machine, inventory);
-            candidates.add(
-                new HatchRoutingCandidate(
-                    machine,
-                    assignment,
-                    hasPatterns(inventory, limit),
-                    isFull(inventory, limit)));
+            if (isBlankFamilyCandidate(metadata, candidate)) {
+                blankFamilyCandidates.add(candidate);
+            }
         }
 
         PatternRoutingLog.debug(
-            "[NHAEUtilities][patternrouting][match] candidate summary scanned=%s hatchCandidates=%s matched=%s",
+            "[NHAEUtilities][patternrouting][match] candidate summary scanned=%s hatchCandidates=%s matched=%s blankFamily=%s",
             scannedNodes,
             hatchCandidates,
-            matchingCount);
-        if (matchingCount == 0) {
+            matchingCount,
+            blankFamilyCandidates.size());
+        if (matchingCount > 0) {
+            HatchRoutingCandidate selected = selectCandidate(metadata, exactCandidates);
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][match] selection resolved assignment=%s",
+                selected != null ? selected.assignment.assignmentKey : "null");
+            if (selected == null) {
+                PatternRoutingLog.debug(
+                    "[NHAEUtilities][patternrouting][match] route result status=%s reason=assignment-unresolved",
+                    RouteStatus.TARGET_FULL);
+                return RouteResult.targetFull();
+            }
+            InsertionResult insertion = tryInsertIntoHatch(selected.hatch, pattern, selected.assignment);
+            if (insertion.inserted) {
+                PatternRoutingLog.debug(
+                    "[NHAEUtilities][patternrouting][match] route result status=%s target=%s assignment=%s",
+                    RouteStatus.ROUTED,
+                    selected.hatch != null ? selected.hatch.getClass()
+                        .getName() : "null",
+                    selected.assignment.assignmentKey);
+                return RouteResult.routed(selected.hatch);
+            }
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][match] insertion failed hatch=%s assignment=%s",
+                selected.hatch != null ? selected.hatch.getClass()
+                    .getName() : "null",
+                selected.assignment.assignmentKey);
+            return RouteResult.insertionFailed();
+        }
+
+        if (!metadata.assignmentKey.isEmpty()) {
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][match] route result status=%s reason=explicit-assignment-miss",
+                RouteStatus.NO_MATCHING_HATCH);
+            return RouteResult.noMatchingHatch();
+        }
+
+        HatchRoutingCandidate blankCandidate = selectBlankFamilyCandidate(blankFamilyCandidates);
+        if (blankCandidate == null) {
             PatternRoutingLog.debug(
                 "[NHAEUtilities][patternrouting][match] route result status=%s reason=no-candidate-match",
                 RouteStatus.NO_MATCHING_HATCH);
             return RouteResult.noMatchingHatch();
         }
 
-        HatchRoutingCandidate selected = selectCandidate(metadata, candidates);
-        PatternRoutingLog.debug(
-            "[NHAEUtilities][patternrouting][match] selection resolved assignment=%s",
-            selected != null ? selected.assignment.assignmentKey : "null");
-        if (selected == null) {
+        PatternRoutingNbt.RoutingMetadata configuredMetadata = PatternRoutingNbt.withConfiguredAssignment(metadata);
+        HatchAssignmentData configuredAssignment = PatternRoutingNbt.assignmentDataFor(configuredMetadata);
+        ExtractedItems extractedItems = extractManualItemsFromAe(node, actionSource, configuredMetadata);
+        if (extractedItems == null) {
             PatternRoutingLog.debug(
-                "[NHAEUtilities][patternrouting][match] route result status=%s reason=assignment-unresolved",
-                RouteStatus.TARGET_FULL);
-            return RouteResult.targetFull();
+                "[NHAEUtilities][patternrouting][match] route result status=%s reason=missing-manual-items",
+                RouteStatus.MISSING_MANUAL_ITEMS);
+            return RouteResult.missingManualItems();
         }
-        if (tryInsertIntoHatch(selected.hatch, pattern, selected.assignment)) {
+        if (!CraftingInputHatchAccess
+            .tryApplyRoutingConfiguration(blankCandidate.hatch, configuredMetadata, extractedItems.manualItems)) {
+            restoreManualItems(node, actionSource, extractedItems.manualItems);
             PatternRoutingLog.debug(
-                "[NHAEUtilities][patternrouting][match] route result status=%s target=%s assignment=%s",
+                "[NHAEUtilities][patternrouting][match] route result status=%s reason=auto-config-failed",
+                RouteStatus.NO_MATCHING_HATCH);
+            return RouteResult.noMatchingHatch();
+        }
+
+        syncAssignment(blankCandidate.hatch, configuredAssignment);
+        HatchControllerRecheckService.RecheckResult recheck = HatchControllerRecheckService
+            .recheckAndVerify(blankCandidate.hatch, configuredAssignment);
+        if (!recheck.success) {
+            rollbackBlankFamilyRoute(blankCandidate.hatch, node, actionSource, extractedItems.manualItems, -1);
+            return RouteResult.noMatchingHatch();
+        }
+
+        InsertionResult insertion = tryInsertIntoHatch(blankCandidate.hatch, pattern, configuredAssignment);
+        if (insertion.inserted) {
+            PatternRoutingLog.debug(
+                "[NHAEUtilities][patternrouting][match] route result status=%s target=%s assignment=%s fallback=%s",
                 RouteStatus.ROUTED,
-                selected.hatch != null ? selected.hatch.getClass()
+                blankCandidate.hatch != null ? blankCandidate.hatch.getClass()
                     .getName() : "null",
-                selected.assignment.assignmentKey);
-            return RouteResult.routed(selected.hatch);
+                configuredAssignment.assignmentKey,
+                true);
+            return RouteResult.routed(blankCandidate.hatch);
         }
+        rollbackBlankFamilyRoute(blankCandidate.hatch, node, actionSource, extractedItems.manualItems, insertion.slot);
         PatternRoutingLog.debug(
-            "[NHAEUtilities][patternrouting][match] insertion failed hatch=%s assignment=%s",
-            selected.hatch != null ? selected.hatch.getClass()
+            "[NHAEUtilities][patternrouting][match] insertion failed hatch=%s assignment=%s fallback=%s",
+            blankCandidate.hatch != null ? blankCandidate.hatch.getClass()
                 .getName() : "null",
-            selected.assignment.assignmentKey);
+            configuredAssignment.assignmentKey,
+            true);
         return RouteResult.insertionFailed();
+    }
+
+    static HatchRoutingCandidate selectBlankFamilyCandidate(List<HatchRoutingCandidate> candidates) {
+        if (candidates == null || candidates.isEmpty()) {
+            return null;
+        }
+        for (HatchRoutingCandidate candidate : candidates) {
+            if (candidate != null && !candidate.full) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private static void rollbackBlankFamilyRoute(Object hatch, IGridNode node, BaseActionSource actionSource,
+        ItemStack[] manualItems, int insertedPatternSlot) {
+        rollbackInsertedPattern(hatch, insertedPatternSlot);
+        syncAssignment(hatch, HatchAssignmentData.EMPTY);
+        CraftingInputHatchAccess.clearRoutingConfiguration(hatch);
+        restoreManualItems(node, actionSource, manualItems);
+    }
+
+    private static ExtractedItems extractManualItemsFromAe(IGridNode node, BaseActionSource actionSource,
+        PatternRoutingNbt.RoutingMetadata metadata) {
+        ItemStack[] manualItems = PatternRoutingNbt.manualItemStacks(metadata);
+        if (manualItems.length == 0) {
+            return ExtractedItems.EMPTY;
+        }
+        if (node == null || node.getGrid() == null || actionSource == null) {
+            return null;
+        }
+        IStorageGrid storageGrid = node.getGrid()
+            .getCache(IStorageGrid.class);
+        if (storageGrid == null || storageGrid.getItemInventory() == null) {
+            return null;
+        }
+        IMEMonitor<IAEItemStack> inventory = storageGrid.getItemInventory();
+        List<ItemStack> extracted = new ArrayList<ItemStack>();
+        for (ItemStack manualItem : manualItems) {
+            if (manualItem == null) {
+                continue;
+            }
+            IAEItemStack request = createAeItemStack(manualItem.copy());
+            if (request == null) {
+                restoreManualItems(node, actionSource, extracted.toArray(new ItemStack[extracted.size()]));
+                return null;
+            }
+            request.setStackSize(Math.max(1, manualItem.stackSize));
+            IAEItemStack simulated = inventory
+                .extractItems((IAEItemStack) request.copy(), Actionable.SIMULATE, actionSource);
+            if (simulated == null || simulated.getStackSize() < request.getStackSize()) {
+                restoreManualItems(node, actionSource, extracted.toArray(new ItemStack[extracted.size()]));
+                return null;
+            }
+            IAEItemStack extractedStack = inventory.extractItems(request, Actionable.MODULATE, actionSource);
+            if (extractedStack == null || extractedStack.getItemStack() == null
+                || extractedStack.getStackSize() < request.getStackSize()) {
+                restoreManualItems(node, actionSource, extracted.toArray(new ItemStack[extracted.size()]));
+                return null;
+            }
+            ItemStack extractedItem = extractedStack.getItemStack();
+            extractedItem.stackSize = (int) extractedStack.getStackSize();
+            extracted.add(extractedItem);
+        }
+        return new ExtractedItems(extracted.toArray(new ItemStack[extracted.size()]));
+    }
+
+    private static IAEItemStack createAeItemStack(ItemStack stack) {
+        return stack != null ? aeItemStackFactory.create(stack) : null;
+    }
+
+    static void setAeItemStackFactoryForTest(AeItemStackFactory factory) {
+        aeItemStackFactory = factory != null ? factory : DEFAULT_AE_ITEM_STACK_FACTORY;
+    }
+
+    static void resetAeItemStackFactoryForTest() {
+        aeItemStackFactory = DEFAULT_AE_ITEM_STACK_FACTORY;
+    }
+
+    private static void restoreManualItems(IGridNode node, BaseActionSource actionSource, ItemStack[] manualItems) {
+        if (manualItems == null || manualItems.length == 0
+            || node == null
+            || node.getGrid() == null
+            || actionSource == null) {
+            return;
+        }
+        IStorageGrid storageGrid = node.getGrid()
+            .getCache(IStorageGrid.class);
+        if (storageGrid == null || storageGrid.getItemInventory() == null) {
+            return;
+        }
+        IMEMonitor<IAEItemStack> inventory = storageGrid.getItemInventory();
+        for (ItemStack manualItem : manualItems) {
+            if (manualItem == null) {
+                continue;
+            }
+            IAEItemStack aeStack = createAeItemStack(manualItem.copy());
+            if (aeStack != null) {
+                aeStack.setStackSize(Math.max(1, manualItem.stackSize));
+                inventory.injectItems(aeStack, Actionable.MODULATE, actionSource);
+            }
+        }
+    }
+
+    private static boolean isBlankFamilyCandidate(PatternRoutingNbt.RoutingMetadata metadata,
+        HatchRoutingCandidate candidate) {
+        if (!hasResolvableRouting(metadata) || candidate == null
+            || candidate.assignment == null
+            || candidate.hatch == null) {
+            return false;
+        }
+        if (!metadata.assignmentKey.isEmpty()) {
+            return false;
+        }
+        if (!metadata.recipeCategory.equals(candidate.assignment.recipeCategory)) {
+            return false;
+        }
+        if (!candidate.assignment.circuitKey.isEmpty() || !candidate.assignment.manualItemsKey.isEmpty()) {
+            return false;
+        }
+        return CraftingInputHatchAccess.hasBlankSharedConfiguration(candidate.hatch);
+    }
+
+    private static void syncAssignment(Object hatch, HatchAssignmentData assignment) {
+        if (!(hatch instanceof HatchAssignmentHolder) || assignment == null) {
+            return;
+        }
+        if (assignment.isAssigned()) {
+            ((HatchAssignmentHolder) hatch).nhaeutilities$setAssignmentData(assignment);
+        } else {
+            ((HatchAssignmentHolder) hatch).nhaeutilities$clearAssignmentData();
+        }
+        Object writable = CraftingInputHatchAccess.resolveWritableHatch(hatch);
+        if (writable instanceof HatchAssignmentHolder && writable != hatch) {
+            if (assignment.isAssigned()) {
+                ((HatchAssignmentHolder) writable).nhaeutilities$setAssignmentData(assignment);
+            } else {
+                ((HatchAssignmentHolder) writable).nhaeutilities$clearAssignmentData();
+            }
+        }
+    }
+
+    static boolean isBlankFamilyCandidateForTest(PatternRoutingNbt.RoutingMetadata metadata,
+        HatchRoutingCandidate candidate) {
+        return isBlankFamilyCandidate(metadata, candidate);
+    }
+
+    static void syncAssignmentForTest(Object hatch, HatchAssignmentData assignment) {
+        syncAssignment(hatch, assignment);
     }
 
     static HatchAssignmentData resolveAssignment(PatternRoutingNbt.RoutingMetadata metadata,
@@ -204,7 +432,7 @@ public final class PatternRouterService {
         return firstEmpty;
     }
 
-    private static boolean tryInsertIntoHatch(Object hatch, ItemStack pattern, HatchAssignmentData assignment) {
+    private static InsertionResult tryInsertIntoHatch(Object hatch, ItemStack pattern, HatchAssignmentData assignment) {
         IInventory inventory = CraftingInputHatchAccess.getPatterns(hatch);
         if (inventory == null || pattern == null || assignment == null || assignment.assignmentKey.isEmpty()) {
             PatternRoutingLog.debug(
@@ -214,7 +442,7 @@ public final class PatternRouterService {
                 inventory == null ? "null-inventory"
                     : pattern == null ? "null-pattern"
                         : assignment == null ? "null-assignment" : "empty-assignment-key");
-            return false;
+            return InsertionResult.notInserted();
         }
 
         int limit = resolvePatternSlotLimit(hatch, inventory);
@@ -258,7 +486,7 @@ public final class PatternRouterService {
                 assignment.assignmentKey,
                 insertedOk);
             if (insertedOk) {
-                return true;
+                return InsertionResult.inserted(slot);
             }
         }
         PatternRoutingLog.debug(
@@ -266,7 +494,17 @@ public final class PatternRouterService {
             hatch != null ? hatch.getClass()
                 .getName() : "null",
             assignment.assignmentKey);
-        return false;
+        return InsertionResult.notInserted();
+    }
+
+    private static void rollbackInsertedPattern(Object hatch, int slot) {
+        if (slot < 0) {
+            return;
+        }
+        IInventory inventory = CraftingInputHatchAccess.getPatterns(hatch);
+        if (inventory != null) {
+            inventory.setInventorySlotContents(slot, null);
+        }
     }
 
     private static boolean hasResolvableRouting(PatternRoutingNbt.RoutingMetadata metadata) {
@@ -359,6 +597,10 @@ public final class PatternRouterService {
         public static RouteResult insertionFailed() {
             return new RouteResult(RouteStatus.INSERTION_FAILED, null);
         }
+
+        public static RouteResult missingManualItems() {
+            return new RouteResult(RouteStatus.MISSING_MANUAL_ITEMS, null);
+        }
     }
 
     public enum RouteStatus {
@@ -366,6 +608,42 @@ public final class PatternRouterService {
         NO_METADATA,
         NO_MATCHING_HATCH,
         TARGET_FULL,
-        INSERTION_FAILED
+        INSERTION_FAILED,
+        MISSING_MANUAL_ITEMS
+    }
+
+    interface AeItemStackFactory {
+
+        IAEItemStack create(ItemStack stack);
+    }
+
+    private static final class ExtractedItems {
+
+        static final ExtractedItems EMPTY = new ExtractedItems(new ItemStack[0]);
+
+        final ItemStack[] manualItems;
+
+        private ExtractedItems(ItemStack[] manualItems) {
+            this.manualItems = manualItems != null ? manualItems : new ItemStack[0];
+        }
+    }
+
+    private static final class InsertionResult {
+
+        final boolean inserted;
+        final int slot;
+
+        private InsertionResult(boolean inserted, int slot) {
+            this.inserted = inserted;
+            this.slot = slot;
+        }
+
+        static InsertionResult inserted(int slot) {
+            return new InsertionResult(true, slot);
+        }
+
+        static InsertionResult notInserted() {
+            return new InsertionResult(false, -1);
+        }
     }
 }

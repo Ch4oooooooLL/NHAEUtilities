@@ -79,7 +79,7 @@ public class PatternRoutingDeliveryServiceTest {
     }
 
     @Test
-    public void warningMessageKeyOnlyExistsForTargetFullRouteResult() {
+    public void warningMessageKeyExistsForTargetFullAndMissingManualItems() {
         assertEquals(
             "",
             PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.NO_METADATA));
@@ -93,5 +93,8 @@ public class PatternRoutingDeliveryServiceTest {
         assertEquals(
             "nhaeutilities.msg.pattern.route_target_full",
             PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.TARGET_FULL));
+        assertEquals(
+            "nhaeutilities.msg.pattern.route_missing_manual_items",
+            PatternRoutingDeliveryService.warningMessageKeyFor(PatternRouterService.RouteStatus.MISSING_MANUAL_ITEMS));
     }
 }

@@ -159,6 +159,16 @@ public final class HatchAssignmentService {
                 : java.util.Collections.<IDualInputHatch>emptyList();
         }
 
+        Method getter = findNoArgMethod(controller.getClass(), "getDualInputHatches");
+        if (getter != null) {
+            try {
+                Object value = getter.invoke(controller);
+                if (value instanceof List<?>) {
+                    return (List<IDualInputHatch>) value;
+                }
+            } catch (Exception ignored) {}
+        }
+
         Class<?> current = controller.getClass();
         while (current != null) {
             try {

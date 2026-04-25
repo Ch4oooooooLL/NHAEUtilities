@@ -5,13 +5,14 @@ import net.minecraft.item.ItemStack;
 import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
 
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.BaseActionSource;
 
 public final class PatternRoutingDeliveryService {
 
     private PatternRoutingDeliveryService() {}
 
-    public static PatternRouterService.RouteResult decorateAndRoute(IGridNode node, ItemStack pattern,
-        PendingRecipeTransferContext.PendingTransfer transfer) {
+    public static PatternRouterService.RouteResult decorateAndRoute(IGridNode node, BaseActionSource actionSource,
+        ItemStack pattern, PendingRecipeTransferContext.PendingTransfer transfer) {
         if (!PatternRoutingRuntime.isEnabled() || pattern == null || transfer == null) {
             return PatternRouterService.RouteResult.noMetadata();
         }
@@ -28,7 +29,7 @@ public final class PatternRoutingDeliveryService {
             metadata.source,
             metadata.nonConsumables);
         PatternRoutingNbt.writeRoutingData(pattern, metadata);
-        PatternRouterService.RouteResult result = PatternRouterService.tryRoute(pattern, node);
+        PatternRouterService.RouteResult result = PatternRouterService.tryRoute(pattern, node, actionSource);
         PatternRoutingLog.debug(
             "[NHAEUtilities][patternrouting][nbt] decorate route status=%s target=%s item=%s",
             result.status,
@@ -71,7 +72,9 @@ public final class PatternRoutingDeliveryService {
 
     public static String warningMessageKeyFor(PatternRouterService.RouteStatus status) {
         return status == PatternRouterService.RouteStatus.TARGET_FULL ? "nhaeutilities.msg.pattern.route_target_full"
-            : "";
+            : status == PatternRouterService.RouteStatus.MISSING_MANUAL_ITEMS
+                ? "nhaeutilities.msg.pattern.route_missing_manual_items"
+                : "";
     }
 
 }

@@ -7,6 +7,7 @@ import com.github.nhaeutilities.modules.patterngenerator.PatternRoutingFallbackS
 import com.github.nhaeutilities.modules.patternrouting.PatternRoutingRuntime;
 
 import appeng.api.networking.IGridNode;
+import appeng.api.networking.security.BaseActionSource;
 import appeng.container.slot.SlotRestrictedInput;
 
 public final class PatternTerminalRoutingSupport {
@@ -14,8 +15,8 @@ public final class PatternTerminalRoutingSupport {
     private PatternTerminalRoutingSupport() {}
 
     public static PatternRoutingFallbackService.DeliveryResult handleEncode(String terminalKind, EntityPlayer player,
-        IGridNode node, SlotRestrictedInput patternSlotOUT, String source, String recipeId, String overlayIdentifier,
-        Runnable syncAction) {
+        IGridNode node, BaseActionSource actionSource, SlotRestrictedInput patternSlotOUT, String source,
+        String recipeId, String overlayIdentifier, Runnable syncAction) {
         if (!PatternRoutingRuntime.isEnabled() || player == null
             || player.worldObj == null
             || player.worldObj.isRemote
@@ -69,7 +70,7 @@ public final class PatternTerminalRoutingSupport {
             output);
 
         PatternRoutingFallbackService.DeliveryResult result = PatternRoutingFallbackService
-            .decorateAndDeliver(player, node, output, transfer);
+            .decorateAndDeliver(player, node, actionSource, output, transfer);
         if (result != PatternRoutingFallbackService.DeliveryResult.NO_ACTION) {
             patternSlotOUT.putStack(null);
             if (syncAction != null) {

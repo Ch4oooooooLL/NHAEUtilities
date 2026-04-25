@@ -19,6 +19,13 @@ nhaeutilities.command.map_not_found=未找到匹配的配方映射：%s
 nhaeutilities.command.matched_maps=匹配到的配方映射：%s
 nhaeutilities.command.filter_result=原始配方：%s，过滤后：%s
 nhaeutilities.command.count.result=匹配到 %s 个配方
+nhaeutilities.command.nau.help.title==== NHAE Utilities ===
+nhaeutilities.command.nau.help.repairrouting=/nau repairrouting - 修复当前维度已加载多方块中缺失的空白路由元数据
+nhaeutilities.command.nau.repairrouting.disabled=样板路由功能当前未启用。
+nhaeutilities.command.nau.repairrouting.no_targets=当前维度的已加载多方块中，没有需要修复空白路由元数据的控制器。
+nhaeutilities.command.nau.repairrouting.summary.scanned=已扫描 %s 个已加载多方块控制器（维度 %s）。
+nhaeutilities.command.nau.repairrouting.summary.matched=命中 %s 个控制器：已修复 %s 个，失败 %s 个。
+nhaeutilities.command.nau.repairrouting.summary.hatches=输入总成已修复 %s 个，仍无效 %s 个，已重检 %s 个。
 
 nhaeutilities.msg.storage.empty_extract=[NHAEUtilities] 存储为空，没有可提取的样板。
 nhaeutilities.msg.storage.inventory_full=[NHAEUtilities] 背包已满，无法提取样板。
@@ -234,6 +241,7 @@ nhaeutilities.config.modules.patternRouting.debug.enabled=启用
 nhaeutilities.msg.pattern.routed_fallback_inventory=[NHAEUtilities] 当前无可用的暂存目标。样板已返还到你的背包。
 nhaeutilities.msg.pattern.route_success=[NHAEUtilities] 已将编码样板直接写入匹配的合成输入仓。
 nhaeutilities.msg.pattern.route_target_full=[NHAEUtilities] 已找到匹配的合成输入仓，但其中没有空闲样板位。
+nhaeutilities.msg.pattern.route_missing_manual_items=[NHAEUtilities] AE 网络中缺少所需的 NC/手动物品，未执行样板路由。
 nhaeutilities.msg.pattern.routed_fallback_drop=[NHAEUtilities] 背包已满。样板已掉落在你附近。
 nhaeutilities.msg.pattern.staged_unmatched=[NHAEUtilities] 未找到直接匹配的合成输入仓。样板已暂存到你绑定的索引仓库。
 nhaeutilities.tooltip.pattern_index.enable_staging=携带此物品可暂存未匹配的 NEI 编码样板。

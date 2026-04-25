@@ -19,6 +19,13 @@ nhaeutilities.command.map_not_found=No matching recipe map found: %s
 nhaeutilities.command.matched_maps=Matched recipe maps: %s
 nhaeutilities.command.filter_result=Raw recipes: %s, after filter: %s
 nhaeutilities.command.count.result=Matched %s recipe(s)
+nhaeutilities.command.nau.help.title==== NHAE Utilities ===
+nhaeutilities.command.nau.help.repairrouting=/nau repairrouting - Repair missing blank-routing metadata in loaded multiblock controllers
+nhaeutilities.command.nau.repairrouting.disabled=Pattern routing is disabled.
+nhaeutilities.command.nau.repairrouting.no_targets=No loaded multiblock controller in this dimension needs blank-routing metadata repair.
+nhaeutilities.command.nau.repairrouting.summary.scanned=Scanned %s loaded multiblock controller(s) in dimension %s.
+nhaeutilities.command.nau.repairrouting.summary.matched=Matched %s controller(s): repaired %s, failed %s.
+nhaeutilities.command.nau.repairrouting.summary.hatches=Hatches repaired %s, still invalid %s, rechecked %s.
 
 nhaeutilities.msg.storage.empty_extract=[NHAEUtilities] Storage is empty. Nothing to extract.
 nhaeutilities.msg.storage.inventory_full=[NHAEUtilities] Inventory is full. Cannot extract patterns.
@@ -213,6 +220,7 @@ nhaeutilities.msg.item.exported=[NHAEUtilities] Exported %s pattern(s) to target
 nhaeutilities.msg.item.exported_with_remaining=[NHAEUtilities] Exported %s pattern(s) to target container (%s remaining).
 nhaeutilities.msg.pattern.route_success=[NHAEUtilities] Routed encoded pattern directly into a matching crafting input hatch.
 nhaeutilities.msg.pattern.route_target_full=[NHAEUtilities] Matching crafting input hatch was found, but it has no free pattern slot.
+nhaeutilities.msg.pattern.route_missing_manual_items=[NHAEUtilities] Missing required NC/manual items in the AE network. Pattern was not routed.
 nhaeutilities.msg.pattern.staged_unmatched=[NHAEUtilities] No direct hatch match. Pattern was staged to your player-bound index storage.
 nhaeutilities.msg.pattern.routed_fallback_inventory=[NHAEUtilities] No staging target available. Pattern was returned to your inventory.
 nhaeutilities.msg.pattern.routed_fallback_drop=[NHAEUtilities] Inventory full. Pattern was dropped near you.

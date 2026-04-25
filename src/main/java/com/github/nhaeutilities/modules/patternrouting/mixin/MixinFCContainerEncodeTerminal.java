@@ -32,6 +32,7 @@ public abstract class MixinFCContainerEncodeTerminal {
             "AE2FC",
             player,
             ((IContainerCraftingPacket) (Object) this).getNetworkNode(),
+            ((IContainerCraftingPacket) (Object) this).getActionSource(),
             this.patternSlotOUT,
             PatternRoutingKeys.SOURCE_AE2FC,
             "",
