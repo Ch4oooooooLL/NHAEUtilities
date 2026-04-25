@@ -12,18 +12,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Iterator;
 import java.util.Map;
-
-import appeng.api.util.IReadOnlyCollection;
 
 import net.minecraft.init.Items;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.item.ItemStack;
 
+import org.junit.After;
+import org.junit.Test;
+
+import com.github.nhaeutilities.accessor.patternrouting.HatchAssignmentHolder;
+
 import appeng.api.config.AccessRestriction;
 import appeng.api.config.Actionable;
-import appeng.api.config.FuzzyMode;
 import appeng.api.networking.IGrid;
 import appeng.api.networking.IGridHost;
 import appeng.api.networking.IGridNode;
@@ -32,14 +33,8 @@ import appeng.api.networking.security.BaseActionSource;
 import appeng.api.networking.storage.IStorageGrid;
 import appeng.api.storage.IMEMonitor;
 import appeng.api.storage.data.IAEItemStack;
-
-import org.junit.After;
-import org.junit.Test;
-
-import com.github.nhaeutilities.accessor.patternrouting.HatchAssignmentHolder;
-
+import appeng.api.util.IReadOnlyCollection;
 import cpw.mods.fml.common.registry.GameData;
-
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.common.tileentities.machines.IDualInputHatch;
 
@@ -61,7 +56,8 @@ public class PatternRouterServiceTest {
             "source",
             false,
             blankFamilyCircuitKey(),
-            "[{\"item\":\"" + PatternRoutingNbt.itemSignature(blankFamilyManualStack()) + "\",\"count\":0,\"nc\":true}]",
+            "[{\"item\":\"" + PatternRoutingNbt.itemSignature(blankFamilyManualStack())
+                + "\",\"count\":0,\"nc\":true}]",
             "snapshot");
     }
 
@@ -81,19 +77,37 @@ public class PatternRouterServiceTest {
         return PatternRoutingNbt.manualItemsKey(new ItemStack[] { blankFamilyManualStack() });
     }
 
+    private static PatternRoutingNbt.RoutingMetadata blankFamilyManualOnlyMetadata() {
+        return new PatternRoutingNbt.RoutingMetadata(
+            1,
+            "gt.recipe",
+            "recipe-id",
+            "",
+            "",
+            blankFamilyManualItemsKey(),
+            "source",
+            false,
+            "",
+            "[{\"item\":\"" + PatternRoutingNbt.itemSignature(blankFamilyManualStack())
+                + "\",\"count\":0,\"nc\":true}]",
+            "snapshot");
+    }
+
     private static String blankFamilyManualItemId() {
         Object name = net.minecraft.item.Item.itemRegistry.getNameForObject(blankFamilyManualStack().getItem());
         return String.valueOf(name);
     }
 
     private static net.minecraft.item.Item getOrCreateTestItem(int id, String name) {
-        net.minecraft.item.Item existing = (net.minecraft.item.Item) GameData.getItemRegistry().getObject(name);
+        net.minecraft.item.Item existing = (net.minecraft.item.Item) GameData.getItemRegistry()
+            .getObject(name);
         if (existing != null) {
             return existing;
         }
         net.minecraft.item.Item created = new net.minecraft.item.Item();
         try {
-            Method addObjectRaw = GameData.getItemRegistry().getClass()
+            Method addObjectRaw = GameData.getItemRegistry()
+                .getClass()
                 .getDeclaredMethod("addObjectRaw", int.class, String.class, Object.class);
             addObjectRaw.setAccessible(true);
             addObjectRaw.invoke(GameData.getItemRegistry(), id, name, created);
@@ -339,7 +353,7 @@ public class PatternRouterServiceTest {
 
         assertTrue(PatternRouterService.isBlankFamilyCandidateForTest(metadata, blankCandidate));
 
-        blankHandler.sharedItems = new ItemStack[] { new ItemStack(Items.paper, 1, 7) };
+        blankHandler.slots[0] = new ItemStack(Items.paper, 1, 7);
         assertFalse(PatternRouterService.isBlankFamilyCandidateForTest(metadata, blankCandidate));
     }
 
@@ -385,17 +399,65 @@ public class PatternRouterServiceTest {
     }
 
     @Test
+    public void autoConfigurationKeepsManualOnlySharedItemOutOfCircuitDescriptor() {
+        PatternRoutingNbt.RoutingMetadata metadata = blankFamilyManualOnlyMetadata();
+        PatternRoutingNbt.RoutingMetadata configured = PatternRoutingNbt.withConfiguredAssignment(metadata);
+        TestHatchHandler handler = new TestHatchHandler(HatchAssignmentData.EMPTY);
+        TestCraftingInputHatch hatch = handler.createProxy();
+
+        assertTrue(
+            CraftingInputHatchAccess.tryApplyRoutingConfiguration(
+                hatch,
+                configured,
+                PatternRoutingNbt.manualItemStacks(configured)));
+        CraftingInputHatchAccess.SharedItemDescriptor descriptor = CraftingInputHatchAccess.getSharedItemDescriptor(hatch);
+
+        assertNull(descriptor.circuit);
+        assertEquals(blankFamilyManualItemsKey(), PatternRoutingNbt.manualItemsKey(descriptor.manualItems));
+        assertEquals(
+            PatternRoutingNbt.itemSignature(blankFamilyManualStack()),
+            PatternRoutingNbt.itemSignature(handler.slots[1]));
+    }
+
+    @Test
+    public void refreshAssignmentsTreatsManualOnlySharedItemAsManual() {
+        PatternRoutingNbt.RoutingMetadata metadata = blankFamilyManualOnlyMetadata();
+        PatternRoutingNbt.RoutingMetadata configured = PatternRoutingNbt.withConfiguredAssignment(metadata);
+        TestControllerHandler controllerHandler = new TestControllerHandler(HatchAssignmentData.EMPTY, true, true);
+        Object controller = controllerHandler.createController();
+        IGregTechTileEntity baseTile = (IGregTechTileEntity) controllerHandler.createBaseTile(controller);
+        TestHatchHandler hatchHandler = new TestHatchHandler(HatchAssignmentData.EMPTY);
+        hatchHandler.baseTile = baseTile;
+        TestCraftingInputHatch hatch = hatchHandler.createProxy();
+        controllerHandler.register(hatch);
+
+        assertTrue(
+            CraftingInputHatchAccess.tryApplyRoutingConfiguration(
+                hatch,
+                configured,
+                PatternRoutingNbt.manualItemStacks(configured)));
+
+        HatchAssignmentService.refreshAssignments(controller);
+
+        assertEquals("", hatchHandler.assignment.circuitKey);
+        assertEquals(blankFamilyManualItemsKey(), hatchHandler.assignment.manualItemsKey);
+    }
+
+    @Test
     public void blankFamilyFixtureUsesCheckStructureForDirectRecheck() {
         PatternRoutingNbt.RoutingMetadata metadata = blankFamilyMetadata();
         TestRouteFixture fixture = TestRouteFixture.blankFamily(metadata);
         PatternRoutingNbt.RoutingMetadata configured = PatternRoutingNbt.withConfiguredAssignment(metadata);
 
-        assertTrue(CraftingInputHatchAccess.tryApplyRoutingConfiguration(fixture.hatch, configured, PatternRoutingNbt.manualItemStacks(configured)));
+        assertTrue(
+            CraftingInputHatchAccess.tryApplyRoutingConfiguration(
+                fixture.hatch,
+                configured,
+                PatternRoutingNbt.manualItemStacks(configured)));
         PatternRouterService.syncAssignmentForTest(fixture.hatch, fixture.expectedAssignment);
 
-        HatchControllerRecheckService.RecheckResult result = HatchControllerRecheckService.recheckAndVerify(
-            fixture.hatch,
-            fixture.expectedAssignment);
+        HatchControllerRecheckService.RecheckResult result = HatchControllerRecheckService
+            .recheckAndVerify(fixture.hatch, fixture.expectedAssignment);
 
         assertTrue(result.success);
         assertEquals("checkStructure", result.path);
@@ -412,10 +474,8 @@ public class PatternRouterServiceTest {
         assertEquals(blankFamilyCircuitKey(), derived.circuitKey);
         assertEquals(blankFamilyManualItemsKey(), derived.manualItemsKey);
 
-        PatternRouterService.RouteResult result = PatternRouterService.tryRoute(
-            fixture.pattern,
-            fixture.node,
-            fixture.actionSource);
+        PatternRouterService.RouteResult result = PatternRouterService
+            .tryRoute(fixture.pattern, fixture.node, fixture.actionSource);
 
         assertTrue(result.isRouted());
         assertEquals(1, fixture.controllerHandler.checkStructureCalls);
@@ -424,9 +484,15 @@ public class PatternRouterServiceTest {
             PatternRoutingNbt.withConfiguredAssignment(metadata).assignmentKey,
             fixture.controllerHandler.assignmentSeenDuringCheck.get(0));
         assertEquals(blankFamilyCircuitKey(), PatternRoutingNbt.circuitKey(fixture.hatchHandler.slots[0]));
-        assertEquals(PatternRoutingNbt.itemSignature(blankFamilyManualStack()), PatternRoutingNbt.itemSignature(fixture.hatchHandler.slots[1]));
-        assertEquals(PatternRoutingNbt.withConfiguredAssignment(metadata).assignmentKey, fixture.hatchHandler.assignment.assignmentKey);
-        assertEquals(PatternRoutingNbt.withConfiguredAssignment(metadata).assignmentKey, fixture.insertedPatternAssignmentKey());
+        assertEquals(
+            PatternRoutingNbt.itemSignature(blankFamilyManualStack()),
+            PatternRoutingNbt.itemSignature(fixture.hatchHandler.slots[1]));
+        assertEquals(
+            PatternRoutingNbt.withConfiguredAssignment(metadata).assignmentKey,
+            fixture.hatchHandler.assignment.assignmentKey);
+        assertEquals(
+            PatternRoutingNbt.withConfiguredAssignment(metadata).assignmentKey,
+            fixture.insertedPatternAssignmentKey());
     }
 
     @Test
@@ -438,15 +504,15 @@ public class PatternRouterServiceTest {
         assertEquals(blankFamilyCircuitKey(), derived.circuitKey);
         assertEquals(blankFamilyManualItemsKey(), derived.manualItemsKey);
 
-        PatternRouterService.RouteResult result = PatternRouterService.tryRoute(
-            fixture.pattern,
-            fixture.node,
-            fixture.actionSource);
+        PatternRouterService.RouteResult result = PatternRouterService
+            .tryRoute(fixture.pattern, fixture.node, fixture.actionSource);
 
         assertEquals(PatternRouterService.RouteStatus.NO_MATCHING_HATCH, result.status);
         assertEquals(1, fixture.controllerHandler.checkStructureCalls);
         assertEquals(1, fixture.controllerHandler.assignmentSeenDuringCheck.size());
-        assertEquals(fixture.expectedAssignment.assignmentKey, fixture.controllerHandler.assignmentSeenDuringCheck.get(0));
+        assertEquals(
+            fixture.expectedAssignment.assignmentKey,
+            fixture.controllerHandler.assignmentSeenDuringCheck.get(0));
         assertEquals(0, fixture.patternCountInTarget());
         assertNull(fixture.hatchHandler.slots[0]);
         assertNull(fixture.hatchHandler.slots[1]);
@@ -468,9 +534,9 @@ public class PatternRouterServiceTest {
         private final TestAeInventory aeInventory;
         private final HatchAssignmentData expectedAssignment;
 
-        private TestRouteFixture(ItemStack pattern, IGridNode node, BaseActionSource actionSource, TestCraftingInputHatch hatch,
-            TestHatchHandler hatchHandler, TestControllerHandler controllerHandler, TestAeInventory aeInventory,
-            HatchAssignmentData expectedAssignment) {
+        private TestRouteFixture(ItemStack pattern, IGridNode node, BaseActionSource actionSource,
+            TestCraftingInputHatch hatch, TestHatchHandler hatchHandler, TestControllerHandler controllerHandler,
+            TestAeInventory aeInventory, HatchAssignmentData expectedAssignment) {
             this.pattern = pattern;
             this.node = node;
             this.actionSource = actionSource;
@@ -489,8 +555,8 @@ public class PatternRouterServiceTest {
             return blankFamily(blankFamilyMetadata(), false, true);
         }
 
-        private static TestRouteFixture blankFamily(PatternRoutingNbt.RoutingMetadata metadata, boolean checkStructureResult,
-            boolean checkStructureAvailable) {
+        private static TestRouteFixture blankFamily(PatternRoutingNbt.RoutingMetadata metadata,
+            boolean checkStructureResult, boolean checkStructureAvailable) {
             HatchAssignmentData expectedAssignment = PatternRoutingNbt
                 .assignmentDataFor(PatternRoutingNbt.withConfiguredAssignment(metadata));
             TestControllerHandler controllerHandler = new TestControllerHandler(
@@ -574,7 +640,9 @@ public class PatternRouterServiceTest {
                         if ("getNodes".equals(name)) {
                             return createReadOnlyCollection(nodes);
                         }
-                        if ("getCache".equals(name) && args != null && args.length == 1 && args[0] == IStorageGrid.class) {
+                        if ("getCache".equals(name) && args != null
+                            && args.length == 1
+                            && args[0] == IStorageGrid.class) {
                             return storageGrid;
                         }
                         return defaultValue(method.getReturnType());
@@ -667,10 +735,16 @@ public class PatternRouterServiceTest {
                         public Object invoke(Object p, Method method, Object[] args) {
                             String name = method.getName();
                             if ("extractItems".equals(name)) {
-                                return extractItems((IAEItemStack) args[0], (Actionable) args[1], (BaseActionSource) args[2]);
+                                return extractItems(
+                                    (IAEItemStack) args[0],
+                                    (Actionable) args[1],
+                                    (BaseActionSource) args[2]);
                             }
                             if ("injectItems".equals(name)) {
-                                return injectItems((IAEItemStack) args[0], (Actionable) args[1], (BaseActionSource) args[2]);
+                                return injectItems(
+                                    (IAEItemStack) args[0],
+                                    (Actionable) args[1],
+                                    (BaseActionSource) args[2]);
                             }
                             if ("getStorageList".equals(name) || "getPartitionList".equals(name)) {
                                 return null;
@@ -687,7 +761,8 @@ public class PatternRouterServiceTest {
                             if ("getAccess".equals(name)) {
                                 return AccessRestriction.READ_WRITE;
                             }
-                            if ("removeListener".equals(name) || "addListener".equals(name) || "setPartitionList".equals(name)
+                            if ("removeListener".equals(name) || "addListener".equals(name)
+                                || "setPartitionList".equals(name)
                                 || "setChannel".equals(name)) {
                                 return null;
                             }
@@ -786,15 +861,17 @@ public class PatternRouterServiceTest {
                         Object other = args != null && args.length > 0 ? args[0] : null;
                         ItemStack otherStack = other instanceof IAEItemStack ? ((IAEItemStack) other).getItemStack()
                             : other instanceof ItemStack ? (ItemStack) other : null;
-                        return stack != null && otherStack != null && PatternRoutingNbt.itemSignature(stack)
-                            .equals(PatternRoutingNbt.itemSignature(otherStack));
+                        return stack != null && otherStack != null
+                            && PatternRoutingNbt.itemSignature(stack)
+                                .equals(PatternRoutingNbt.itemSignature(otherStack));
                     }
                     if ("sameOre".equals(name)) {
                         Object other = args != null && args.length > 0 ? args[0] : null;
                         ItemStack otherStack = other instanceof IAEItemStack ? ((IAEItemStack) other).getItemStack()
                             : other instanceof ItemStack ? (ItemStack) other : null;
-                        return stack != null && otherStack != null && PatternRoutingNbt.itemSignature(stack)
-                            .equals(PatternRoutingNbt.itemSignature(otherStack));
+                        return stack != null && otherStack != null
+                            && PatternRoutingNbt.itemSignature(stack)
+                                .equals(PatternRoutingNbt.itemSignature(otherStack));
                     }
                     if ("getItemDamage".equals(name)) {
                         return stack != null ? stack.getItemDamage() : 0;
@@ -832,7 +909,8 @@ public class PatternRouterServiceTest {
             });
     }
 
-    private static final class TestActionSource extends BaseActionSource {}
+    private static final class TestActionSource extends BaseActionSource {
+    }
 
     @SuppressWarnings("unchecked")
     private static <T> IReadOnlyCollection<T> createReadOnlyCollection(final List<T> values) {
@@ -957,9 +1035,11 @@ public class PatternRouterServiceTest {
                             checkStructureCalls++;
                             for (IDualInputHatch hatch : dualInputHatches) {
                                 if (hatch instanceof HatchAssignmentHolder) {
-                                    HatchAssignmentData assignment = ((HatchAssignmentHolder) hatch).nhaeutilities$getAssignmentData();
+                                    HatchAssignmentData assignment = ((HatchAssignmentHolder) hatch)
+                                        .nhaeutilities$getAssignmentData();
                                     assignmentSeenDuringCheck.add(assignment != null ? assignment.assignmentKey : "");
-                                    ((HatchAssignmentHolder) hatch).nhaeutilities$setAssignmentData(assignmentAfterCheck);
+                                    ((HatchAssignmentHolder) hatch)
+                                        .nhaeutilities$setAssignmentData(assignmentAfterCheck);
                                 }
                             }
                             return Boolean.valueOf(checkStructureResult);

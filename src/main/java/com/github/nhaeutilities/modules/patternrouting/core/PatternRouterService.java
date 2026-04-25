@@ -182,9 +182,8 @@ public final class PatternRouterService {
         }
 
         syncAssignment(blankCandidate.hatch, configuredAssignment);
-        HatchControllerRecheckService.RecheckResult recheck = HatchControllerRecheckService.recheckAndVerify(
-            blankCandidate.hatch,
-            configuredAssignment);
+        HatchControllerRecheckService.RecheckResult recheck = HatchControllerRecheckService
+            .recheckAndVerify(blankCandidate.hatch, configuredAssignment);
         if (!recheck.success) {
             rollbackBlankFamilyRoute(blankCandidate.hatch, node, actionSource, extractedItems.manualItems, -1);
             return RouteResult.noMatchingHatch();

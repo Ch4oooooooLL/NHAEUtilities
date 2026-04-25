@@ -29,9 +29,8 @@ public class HatchControllerRecheckServiceTest {
         Object hatch = hatchHandler.createHatch(controller, baseTile);
         controllerHandler.addHatch((IDualInputHatch) hatch);
 
-        HatchControllerRecheckService.RecheckResult result = HatchControllerRecheckService.recheckAndVerify(
-            hatch,
-            expected);
+        HatchControllerRecheckService.RecheckResult result = HatchControllerRecheckService
+            .recheckAndVerify(hatch, expected);
 
         assertTrue(result.success);
         assertEquals("checkStructure", result.path);
@@ -44,8 +43,10 @@ public class HatchControllerRecheckServiceTest {
         TestControllerHandler controllerHandler = new TestControllerHandler(HatchAssignmentData.EMPTY, false, false);
         Object controller = controllerHandler.createController();
         HatchAssignmentData expected = new HatchAssignmentData(
-            controller.getClass().getName() + "||",
-            controller.getClass().getName(),
+            controller.getClass()
+                .getName() + "||",
+            controller.getClass()
+                .getName(),
             "",
             "");
         Object baseTile = controllerHandler.createBaseTile(controller);
@@ -53,9 +54,8 @@ public class HatchControllerRecheckServiceTest {
         Object hatch = hatchHandler.createHatch(controller, baseTile);
         controllerHandler.addHatch((IDualInputHatch) hatch);
 
-        HatchControllerRecheckService.RecheckResult result = HatchControllerRecheckService.recheckAndVerify(
-            hatch,
-            expected);
+        HatchControllerRecheckService.RecheckResult result = HatchControllerRecheckService
+            .recheckAndVerify(hatch, expected);
 
         assertTrue(result.success);
         assertEquals("refreshAssignments", result.path);
@@ -73,9 +73,8 @@ public class HatchControllerRecheckServiceTest {
         Object hatch = hatchHandler.createHatch(controller, baseTile);
         controllerHandler.addHatch((IDualInputHatch) hatch);
 
-        HatchControllerRecheckService.RecheckResult result = HatchControllerRecheckService.recheckAndVerify(
-            hatch,
-            expected);
+        HatchControllerRecheckService.RecheckResult result = HatchControllerRecheckService
+            .recheckAndVerify(hatch, expected);
 
         assertFalse(result.success);
         assertEquals("assignment-mismatch", result.failureReason);
@@ -145,7 +144,8 @@ public class HatchControllerRecheckServiceTest {
         private Object createController() {
             return Proxy.newProxyInstance(
                 HatchControllerRecheckServiceTest.class.getClassLoader(),
-                new Class<?>[] { checkStructureAvailable ? TestController.class : TestControllerWithoutCheckStructure.class },
+                new Class<?>[] {
+                    checkStructureAvailable ? TestController.class : TestControllerWithoutCheckStructure.class },
                 this);
         }
 

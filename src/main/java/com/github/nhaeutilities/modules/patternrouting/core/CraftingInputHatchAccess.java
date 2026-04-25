@@ -78,7 +78,24 @@ final class CraftingInputHatchAccess {
     }
 
     static SharedItemDescriptor getSharedItemDescriptor(Object hatch) {
-        ItemStack[] sharedItems = getSharedItems(hatch);
+        Object writable = resolveWritableHatch(hatch);
+        int circuitSlot = getCircuitSlot(writable);
+        SlotRange manualSlots = resolveManualSlots(writable, circuitSlot);
+        if (circuitSlot >= 0 || manualSlots.start >= 0) {
+            ItemStack circuit = circuitSlot >= 0 ? getStackInSlot(writable, circuitSlot) : null;
+            ItemStack[] manualItems = new ItemStack[manualSlots.size];
+            int sharedCount = circuit != null ? 1 : 0;
+            for (int index = 0; index < manualSlots.size; index++) {
+                ItemStack manualItem = getStackInSlot(writable, manualSlots.start + index);
+                manualItems[index] = manualItem;
+                if (manualItem != null) {
+                    sharedCount++;
+                }
+            }
+            return new SharedItemDescriptor(circuit, manualItems, sharedCount);
+        }
+
+        ItemStack[] sharedItems = getSharedItems(writable);
         ItemStack circuit = sharedItems.length > 0 ? sharedItems[0] : null;
         ItemStack[] manualItems = new ItemStack[Math.max(0, sharedItems.length - 1)];
         if (manualItems.length > 0) {

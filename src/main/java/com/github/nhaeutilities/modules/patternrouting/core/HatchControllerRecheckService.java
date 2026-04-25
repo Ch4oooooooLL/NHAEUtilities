@@ -91,10 +91,16 @@ final class HatchControllerRecheckService {
     private static RecheckResult invokeCheckStructure(Object controller, IGregTechTileEntity baseTile) {
         Method method = findMethod(controller.getClass(), "checkStructure", new Class<?>[] { boolean.class });
         if (method == null) {
-            method = findMethod(controller.getClass(), "checkStructure", new Class<?>[] { boolean.class, IGregTechTileEntity.class });
+            method = findMethod(
+                controller.getClass(),
+                "checkStructure",
+                new Class<?>[] { boolean.class, IGregTechTileEntity.class });
         }
         if (method == null) {
-            method = findMethod(controller.getClass(), "checkMachine", new Class<?>[] { IGregTechTileEntity.class, net.minecraft.item.ItemStack.class });
+            method = findMethod(
+                controller.getClass(),
+                "checkMachine",
+                new Class<?>[] { IGregTechTileEntity.class, net.minecraft.item.ItemStack.class });
         }
         if (method == null) {
             return RecheckResult.failure("checkStructure-unavailable");
