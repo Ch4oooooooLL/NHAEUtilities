@@ -12,6 +12,7 @@ import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
  */
 final class PatternGenerationRequestGate {
 
+    private static final char FINGERPRINT_SEPARATOR = 0x1F;
     private static final Map<UUID, RecentRequest> RECENT_REQUESTS = new HashMap<UUID, RecentRequest>();
 
     private PatternGenerationRequestGate() {}
@@ -31,20 +32,22 @@ final class PatternGenerationRequestGate {
     }
 
     static String fingerprint(String recipeMapId, String outputOreDict, String inputOreDict, String ncItem,
-        String blacklistInput, String blacklistOutput, String replacements, int targetTier) {
-        return normalize(recipeMapId) + '\u001F'
+        String blacklistInput, String blacklistOutput, String replacements, String outputSlots, int targetTier) {
+        return normalize(recipeMapId) + FINGERPRINT_SEPARATOR
             + normalize(outputOreDict)
-            + '\u001F'
+            + FINGERPRINT_SEPARATOR
             + normalize(inputOreDict)
-            + '\u001F'
+            + FINGERPRINT_SEPARATOR
             + normalize(ncItem)
-            + '\u001F'
+            + FINGERPRINT_SEPARATOR
             + normalize(blacklistInput)
-            + '\u001F'
+            + FINGERPRINT_SEPARATOR
             + normalize(blacklistOutput)
-            + '\u001F'
+            + FINGERPRINT_SEPARATOR
             + normalize(replacements)
-            + '\u001F'
+            + FINGERPRINT_SEPARATOR
+            + normalize(outputSlots)
+            + FINGERPRINT_SEPARATOR
             + targetTier;
     }
 

@@ -28,6 +28,11 @@ public class Task5LanguageResourcesTest {
         assertContains(keys, "nhaeutilities.msg.pattern.generated_and_consumed");
         assertContains(keys, "nhaeutilities.msg.storage.deleted");
         assertContains(keys, "nhaeutilities.gui.pattern_gen.status.filter_result");
+        assertContains(keys, "nhaeutilities.gui.pattern_gen.label.output_slots");
+        assertContains(keys, "nhaeutilities.gui.pattern_gen.hint.output_slots");
+        assertContains(keys, "nhaeutilities.msg.generate.output_slots_invalid");
+        assertContains(keys, "nhaeutilities.msg.generate.output_slots_duplicate");
+        assertContains(keys, "nhaeutilities.msg.generate.output_slots_missing");
     }
 
     private static Set<String> loadKeys(String path) throws IOException {

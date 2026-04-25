@@ -22,6 +22,7 @@ public class PacketSaveFields implements IMessage {
     public static final String NBT_BLACKLIST_INPUT = "blacklistInput";
     public static final String NBT_BLACKLIST_OUTPUT = "blacklistOutput";
     public static final String NBT_REPLACEMENTS = "replacements";
+    public static final String NBT_OUTPUT_SLOTS = "outputSlots";
     public static final String NBT_TARGET_TIER = "targetTier";
 
     private String recipeMap;
@@ -31,12 +32,13 @@ public class PacketSaveFields implements IMessage {
     private String blacklistInput;
     private String blacklistOutput;
     private String replacements;
+    private String outputSlots;
     private int targetTier;
 
     public PacketSaveFields() {}
 
     public PacketSaveFields(String recipeMap, String outputOre, String inputOre, String ncItem, String blacklistInput,
-        String blacklistOutput, String replacements, int targetTier) {
+        String blacklistOutput, String replacements, String outputSlots, int targetTier) {
         this.recipeMap = recipeMap;
         this.outputOre = outputOre;
         this.inputOre = inputOre;
@@ -44,6 +46,7 @@ public class PacketSaveFields implements IMessage {
         this.blacklistInput = blacklistInput;
         this.blacklistOutput = blacklistOutput;
         this.replacements = replacements;
+        this.outputSlots = outputSlots;
         this.targetTier = targetTier;
     }
 
@@ -56,6 +59,7 @@ public class PacketSaveFields implements IMessage {
         blacklistInput = ByteBufUtils.readUTF8String(buf);
         blacklistOutput = ByteBufUtils.readUTF8String(buf);
         replacements = ByteBufUtils.readUTF8String(buf);
+        outputSlots = ByteBufUtils.readUTF8String(buf);
         targetTier = buf.readInt();
     }
 
@@ -68,6 +72,7 @@ public class PacketSaveFields implements IMessage {
         ByteBufUtils.writeUTF8String(buf, blacklistInput != null ? blacklistInput : "");
         ByteBufUtils.writeUTF8String(buf, blacklistOutput != null ? blacklistOutput : "");
         ByteBufUtils.writeUTF8String(buf, replacements != null ? replacements : "");
+        ByteBufUtils.writeUTF8String(buf, outputSlots != null ? outputSlots : "");
         buf.writeInt(targetTier);
     }
 
@@ -104,6 +109,7 @@ public class PacketSaveFields implements IMessage {
         tag.setString(NBT_BLACKLIST_INPUT, message.blacklistInput != null ? message.blacklistInput : "");
         tag.setString(NBT_BLACKLIST_OUTPUT, message.blacklistOutput != null ? message.blacklistOutput : "");
         tag.setString(NBT_REPLACEMENTS, message.replacements != null ? message.replacements : "");
+        tag.setString(NBT_OUTPUT_SLOTS, message.outputSlots != null ? message.outputSlots : "");
         tag.setInteger(NBT_TARGET_TIER, message.targetTier);
         return true;
     }
