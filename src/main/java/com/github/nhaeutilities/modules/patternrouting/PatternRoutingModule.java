@@ -6,6 +6,7 @@ import net.minecraftforge.common.config.Configuration;
 
 import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleDefinition;
+import com.github.nhaeutilities.modules.patternrouting.command.CommandNau;
 import com.github.nhaeutilities.modules.patternrouting.config.ForgeConfig;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -49,5 +50,7 @@ public class PatternRoutingModule implements ModuleDefinition {
     public void postInit(FMLPostInitializationEvent event) {}
 
     @Override
-    public void serverStarting(FMLServerStartingEvent event) {}
+    public void serverStarting(FMLServerStartingEvent event) {
+        event.registerServerCommand(new CommandNau());
+    }
 }

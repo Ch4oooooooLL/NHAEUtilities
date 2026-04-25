@@ -406,11 +406,10 @@ public class PatternRouterServiceTest {
         TestCraftingInputHatch hatch = handler.createProxy();
 
         assertTrue(
-            CraftingInputHatchAccess.tryApplyRoutingConfiguration(
-                hatch,
-                configured,
-                PatternRoutingNbt.manualItemStacks(configured)));
-        CraftingInputHatchAccess.SharedItemDescriptor descriptor = CraftingInputHatchAccess.getSharedItemDescriptor(hatch);
+            CraftingInputHatchAccess
+                .tryApplyRoutingConfiguration(hatch, configured, PatternRoutingNbt.manualItemStacks(configured)));
+        CraftingInputHatchAccess.SharedItemDescriptor descriptor = CraftingInputHatchAccess
+            .getSharedItemDescriptor(hatch);
 
         assertNull(descriptor.circuit);
         assertEquals(blankFamilyManualItemsKey(), PatternRoutingNbt.manualItemsKey(descriptor.manualItems));
@@ -432,10 +431,8 @@ public class PatternRouterServiceTest {
         controllerHandler.register(hatch);
 
         assertTrue(
-            CraftingInputHatchAccess.tryApplyRoutingConfiguration(
-                hatch,
-                configured,
-                PatternRoutingNbt.manualItemStacks(configured)));
+            CraftingInputHatchAccess
+                .tryApplyRoutingConfiguration(hatch, configured, PatternRoutingNbt.manualItemStacks(configured)));
 
         HatchAssignmentService.refreshAssignments(controller);
 
