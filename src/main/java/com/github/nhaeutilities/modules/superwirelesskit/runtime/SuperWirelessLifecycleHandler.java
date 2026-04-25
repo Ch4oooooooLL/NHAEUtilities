@@ -23,6 +23,12 @@ public class SuperWirelessLifecycleHandler {
         if (event.world == null || event.world.isRemote) {
             return;
         }
+        SuperWirelessDebugLog.log(
+            "LIFECYCLE_CHUNK_LOAD",
+            "chunk=%d:%d,%d",
+            Integer.valueOf(event.world.provider.dimensionId),
+            Integer.valueOf(event.getChunk().xPosition),
+            Integer.valueOf(event.getChunk().zPosition));
         runtimeManager.refreshChunk(event.getChunk());
     }
 
@@ -32,6 +38,10 @@ public class SuperWirelessLifecycleHandler {
         if (world == null || world.isRemote) {
             return;
         }
+        SuperWirelessDebugLog.log(
+            "LIFECYCLE_WORLD_UNLOAD",
+            "world=%d",
+            Integer.valueOf(world.provider.dimensionId));
         runtimeManager.onWorldUnload(world);
     }
 
@@ -42,10 +52,16 @@ public class SuperWirelessLifecycleHandler {
             return;
         }
 
-        if (world.getTotalWorldTime() % DEFERRED_REFRESH_INTERVAL_TICKS != 0L) {
+        long totalWorldTime = world.getTotalWorldTime();
+        if (totalWorldTime % DEFERRED_REFRESH_INTERVAL_TICKS != 0L) {
             return;
         }
 
+        SuperWirelessDebugLog.log(
+            "LIFECYCLE_WORLD_TICK_REFRESH",
+            "world=%d time=%d",
+            Integer.valueOf(world.provider.dimensionId),
+            Long.valueOf(totalWorldTime));
         runtimeManager.refreshDeferredBindings(world);
     }
 
@@ -55,6 +71,13 @@ public class SuperWirelessLifecycleHandler {
             return;
         }
 
+        SuperWirelessDebugLog.log(
+            "LIFECYCLE_BLOCK_BREAK",
+            "block=%d:%d,%d,%d",
+            Integer.valueOf(event.world.provider.dimensionId),
+            Integer.valueOf(event.x),
+            Integer.valueOf(event.y),
+            Integer.valueOf(event.z));
         runtimeManager.onBlockBroken(event.world, event.x, event.y, event.z);
     }
 }

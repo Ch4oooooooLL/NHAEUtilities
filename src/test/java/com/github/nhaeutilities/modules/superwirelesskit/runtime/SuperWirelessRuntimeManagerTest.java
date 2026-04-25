@@ -1,5 +1,6 @@
 package com.github.nhaeutilities.modules.superwirelesskit.runtime;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -66,7 +67,7 @@ public class SuperWirelessRuntimeManagerTest {
         BindingBlockRef controllerBlock = BindingBlockRef.of(record.getController());
         SuperWirelessRuntimeManager manager = new SuperWirelessRuntimeManager(
             dataStore,
-            new TestBindingNodeResolver(controllerBlock));
+            new MissingHostBindingNodeResolver(controllerBlock, false, false));
 
         GridNode controllerNode = new GridNode(new TestGridBlock(world, controllerBlock));
         GridNode targetNode = new GridNode(new TestGridBlock(world, BindingBlockRef.of(record.getTarget())));
@@ -76,6 +77,33 @@ public class SuperWirelessRuntimeManagerTest {
         manager.onNodeDestroyed(controllerNode);
 
         assertNotNull(registry.findByTarget(record.getTarget()));
+        assertTrue(activeConnectionMap(manager).isEmpty());
+        assertTrue(connection.destroyed);
+    }
+
+    @Test
+    public void onNodeDestroyedRemovesPersistedBindingWhenControllerHostIsGone() throws Exception {
+        World world = allocateWorld(0);
+        BindingRecord record = createRecord();
+        BindingRegistry registry = new BindingRegistry(new SuperWirelessSavedData("test"));
+        assertTrue(registry.add(record));
+
+        BindingDataStore dataStore = new BindingDataStore();
+        registryMap(dataStore).put(world, registry);
+
+        BindingBlockRef controllerBlock = BindingBlockRef.of(record.getController());
+        SuperWirelessRuntimeManager manager = new SuperWirelessRuntimeManager(
+            dataStore,
+            new MissingHostBindingNodeResolver(controllerBlock, true, false));
+
+        GridNode controllerNode = new GridNode(new TestGridBlock(world, controllerBlock));
+        GridNode targetNode = new GridNode(new TestGridBlock(world, BindingBlockRef.of(record.getTarget())));
+        TestGridConnection connection = new TestGridConnection(controllerNode, targetNode);
+        activeConnectionMap(manager).put(record.getBindingId(), connection);
+
+        manager.onNodeDestroyed(controllerNode);
+
+        assertNull(registry.findByTarget(record.getTarget()));
         assertTrue(activeConnectionMap(manager).isEmpty());
         assertTrue(connection.destroyed);
     }
@@ -280,6 +308,34 @@ public class SuperWirelessRuntimeManagerTest {
         @Override
         public BindingBlockRef getNodeBlockRef(GridNode node) {
             return blockRef;
+        }
+    }
+
+    private static final class MissingHostBindingNodeResolver extends BindingNodeResolver {
+
+        private final BindingBlockRef blockRef;
+        private final boolean controllerMissing;
+        private final boolean targetMissing;
+
+        private MissingHostBindingNodeResolver(BindingBlockRef blockRef, boolean controllerMissing, boolean targetMissing) {
+            this.blockRef = blockRef;
+            this.controllerMissing = controllerMissing;
+            this.targetMissing = targetMissing;
+        }
+
+        @Override
+        public BindingBlockRef getNodeBlockRef(GridNode node) {
+            return blockRef;
+        }
+
+        @Override
+        public boolean hasControllerHost(World world, ControllerEndpointRef controllerRef) {
+            return !controllerMissing;
+        }
+
+        @Override
+        public boolean hasCompatibleTargetHost(World world, BindingTargetRef targetRef) {
+            return !targetMissing;
         }
     }
 

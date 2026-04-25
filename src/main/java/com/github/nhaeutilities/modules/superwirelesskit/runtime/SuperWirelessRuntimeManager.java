@@ -100,7 +100,10 @@ public class SuperWirelessRuntimeManager {
             return;
         }
 
+        World world = node.getWorld();
+        BindingRegistry registry = world == null || world.isRemote ? null : getRegistry(world);
         int removedCount = 0;
+        int removedBindings = 0;
         for (Map.Entry<UUID, IGridConnection> entry : new HashMap<UUID, IGridConnection>(activeConnections)
             .entrySet()) {
             IGridConnection connection = entry.getValue();
@@ -109,16 +112,47 @@ public class SuperWirelessRuntimeManager {
                 continue;
             }
 
-            if (connection.a() == node || connection.b() == node) {
-                destroyActive(entry.getKey());
-                removedCount++;
+            if (connection.a() != node && connection.b() != node) {
+                continue;
             }
+
+            UUID bindingId = entry.getKey();
+            destroyActive(bindingId);
+            removedCount++;
+
+            if (registry == null) {
+                continue;
+            }
+
+            BindingRecord record = registry.findById(bindingId);
+            if (record == null) {
+                continue;
+            }
+
+            boolean controllerHostPresent = resolver.hasControllerHost(world, record.getController());
+            boolean targetHostPresent = resolver.hasCompatibleTargetHost(world, record.getTarget());
+            if (controllerHostPresent && targetHostPresent) {
+                continue;
+            }
+
+            clearDeferred(world, bindingId);
+            registry.remove(bindingId);
+            removedBindings++;
+            SuperWirelessDebugLog.log(
+                "NODE_DESTROYED_REMOVE_BINDING",
+                "bindingId=%s controllerPresent=%s targetPresent=%s controller=%s target=%s",
+                bindingId,
+                Boolean.valueOf(controllerHostPresent),
+                Boolean.valueOf(targetHostPresent),
+                formatController(record),
+                formatTarget(record));
         }
         SuperWirelessDebugLog.log(
             "NODE_DESTROYED",
-            "node=%d removedRuntimeConnections=%d",
+            "node=%d removedRuntimeConnections=%d removedBindings=%d",
             Integer.valueOf(System.identityHashCode(node)),
-            Integer.valueOf(removedCount));
+            Integer.valueOf(removedCount),
+            Integer.valueOf(removedBindings));
     }
 
     public void refreshDeferredBindings(World world) {
