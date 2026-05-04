@@ -4,7 +4,11 @@
 [![Forge](https://img.shields.io/badge/Forge-10.13.4.1614-red)](https://files.minecraftforge.net/)
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/NHAEUtilities/NHAEUtilities)
 
-A GTNH (GregTech: New Horizons) utility mod providing three functional modules: Pattern Generator, Pattern Routing, and Super Wireless Kit.
+A utility mod designed for Minecraft 1.7.10 GregTech: New Horizons, providing three functional modules:
+
+- **Pattern Generator** — Batch-export GregTech machine recipes as standard AE2 encoded patterns with configurable filtering and balancing
+- **Pattern Routing** — Automatically route AE2 encoded patterns to matching GregTech multiblock Crafting Input Hatches with automatic slot configuration
+- **Super Wireless Kit** — Wirelessly connect arbitrary AE2 channel devices to an ME controller — no cables or quantum bridges needed
 
 [中文](README.md)
 
@@ -53,12 +57,14 @@ Batch-encode GregTech machine recipes into AE2 processing patterns, with advance
 
 #### Usage
 
-| Action | Effect |
-|--------|--------|
-| Right-click air | Open the generator GUI |
-| Shift + right-click air | Open the virtual storage GUI |
-| Shift + right-click block | Inspect block / export patterns to container |
-| Bind to security terminal | Bind to an ME network for auto-consumption of blank patterns |
+| Interaction | Effect |
+|-------------|--------|
+| **Right-click** (air) | Open the **main configuration terminal** — fill in machine ID, filter rules, voltage tier, and submit the generation request |
+| **Shift + right-click** (air) | Open the **storage manager** — browse and manage patterns stored in the virtual storage |
+| **Shift + right-click** (block) | **Block inspection / conditional export** — inspect the target GT machine's recipe info; if the target is a writable container, export virtual patterns to it |
+| **Shift + right-click** (security terminal) | Bind to an ME network to auto-consume blank patterns from the network during generation |
+
+> After the first launch, a restart, or a mod/config change, click **Cache** in the main interface first, then use preview or generate once caching is complete.
 
 #### Commands
 
@@ -86,10 +92,10 @@ Automatically route AE2 encoded patterns into matching GregTech multiblock craft
 
 #### Usage
 
-| Action | Effect |
-|--------|--------|
-| Right-click air | Open the recipe analysis GUI |
-| Shift + right-click GT machine | Detect and save the recipe map |
+| Interaction | Effect |
+|-------------|--------|
+| **Right-click** (air) | Open the **recipe analysis GUI** — analyze recipe maps, view duplicate inputs and minimum pattern assembly count |
+| **Shift + right-click** (GT machine) | Detect and save the machine's recipe map for subsequent analysis and routing |
 
 #### Commands
 
@@ -115,12 +121,12 @@ Wirelessly connect arbitrary AE2 channel devices to an ME controller — no cabl
 
 #### Usage
 
-| Mode | Action | Effect |
-|------|--------|--------|
-| QUEUE | Shift + right-click device | Add target to queue |
-| QUEUE | Sneak + left-click device | Batch-collect adjacent channel devices recursively |
-| BIND | Shift + right-click controller | Execute binding — connect all queued targets |
-| Any | Right-click air | Toggle between QUEUE / BIND mode |
+| Mode | Interaction | Effect |
+|------|-------------|--------|
+| QUEUE | **Shift + right-click** device | Add the target device to the connection queue |
+| QUEUE | **Sneak + left-click** device | Batch-collect adjacent channel devices recursively |
+| BIND | **Shift + right-click** controller | Execute binding — wirelessly connect all queued targets to this controller |
+| Any | **Right-click** air | Toggle between QUEUE / BIND mode |
 
 ---
 
