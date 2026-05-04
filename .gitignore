@@ -45,5 +45,9 @@ build_log_diagnosis.txt
 Sources/
 progress.md
 sources/
-docs/
+docs/*
+!docs/releases/
 SuperWirelessKit_Spec.md
+.deepseek/
+.superpowers/
+AGENTS.md

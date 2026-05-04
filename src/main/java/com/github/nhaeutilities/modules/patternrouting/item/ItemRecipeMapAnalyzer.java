@@ -1,5 +1,7 @@
 package com.github.nhaeutilities.modules.patternrouting.item;
 
+import java.util.List;
+
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -10,10 +12,14 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.world.World;
 
+import org.lwjgl.input.Keyboard;
+
 import com.github.nhaeutilities.NHAEUtilities;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
 import com.github.nhaeutilities.modules.patternrouting.util.MachineRecipeMapResolver;
 
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 import gregtech.api.interfaces.tileentity.IGregTechTileEntity;
 import gregtech.api.recipe.RecipeMap;
 
@@ -76,6 +82,66 @@ public class ItemRecipeMapAnalyzer extends Item {
     @Override
     public boolean doesSneakBypassUse(World world, int x, int y, int z, EntityPlayer player) {
         return true;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public void addInformation(ItemStack stack, EntityPlayer player, List list, boolean advanced) {
+        if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
+            list.add(
+                EnumChatFormatting.YELLOW + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.feature.title"));
+            list.add(
+                EnumChatFormatting.GRAY + "(1) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.feature.map_detection")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.feature.map_detection.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "(2) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.feature.type_analysis")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.feature.type_analysis.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "(3) "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.feature.nei_bookmark")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.feature.nei_bookmark.desc"));
+            list.add("");
+            list.add(EnumChatFormatting.YELLOW + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.usage.title"));
+            list.add(
+                EnumChatFormatting.GRAY + "- "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.usage.right_click_air")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.usage.right_click_air.desc"));
+            list.add(
+                EnumChatFormatting.GRAY + "- "
+                    + EnumChatFormatting.WHITE
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.usage.shift_right_click_machine")
+                    + EnumChatFormatting.GRAY
+                    + ": "
+                    + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.usage.shift_right_click_machine.desc"));
+        } else {
+            list.add(
+                EnumChatFormatting.GRAY + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.hint.quick_open"));
+            list.add(
+                EnumChatFormatting.GRAY + I18nUtil.tr("nhaeutilities.tooltip.recipe_map_analyzer.hint.quick_detect"));
+            list.add(
+                EnumChatFormatting.GRAY + I18nUtil.tr("nhaeutilities.tooltip.hint.hold_shift_prefix")
+                    + " "
+                    + EnumChatFormatting.AQUA
+                    + I18nUtil.tr("nhaeutilities.tooltip.key.shift")
+                    + EnumChatFormatting.GRAY
+                    + " "
+                    + I18nUtil.tr("nhaeutilities.tooltip.hint.hold_shift"));
+        }
     }
 
     private static RecipeMap<?> resolveRecipeMap(IGregTechTileEntity tileEntity) {
