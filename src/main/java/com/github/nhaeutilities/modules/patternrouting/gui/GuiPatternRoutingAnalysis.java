@@ -1,6 +1,9 @@
 package com.github.nhaeutilities.modules.patternrouting.gui;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
@@ -18,6 +21,8 @@ import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
 import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
 import com.gtnewhorizons.modularui.common.widget.Scrollable;
 import com.gtnewhorizons.modularui.common.widget.TextWidget;
+
+import codechicken.nei.LayoutManager;
 
 public final class GuiPatternRoutingAnalysis {
 
@@ -56,11 +61,15 @@ public final class GuiPatternRoutingAnalysis {
         builder.widget(scrollable);
 
         int buttonY = GUI_H - 30;
-        int buttonW = 90;
+        int numButtons = 3;
+        int buttonW = 64;
         int buttonH = 18;
+        int gap = 4;
+        int totalWidth = numButtons * buttonW + (numButtons - 1) * gap;
+        int startX = (GUI_W - totalWidth) / 2;
 
         ButtonWidget refreshButton = new ButtonWidget();
-        refreshButton.setPos(GUI_W / 2 - buttonW - 4, buttonY);
+        refreshButton.setPos(startX, buttonY);
         refreshButton.setSize(buttonW, buttonH);
         refreshButton.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
         refreshButton.setSynced(false, false);
@@ -69,11 +78,24 @@ public final class GuiPatternRoutingAnalysis {
 
         TextWidget refreshText = new TextWidget(
             t("nhaeutilities.gui.pattern_routing_analysis.button.refresh", "Refresh"));
-        refreshText.setPos(GUI_W / 2 - buttonW - 4 + 24, buttonY + 5);
+        refreshText.setPos(startX + 23, buttonY + 5);
         builder.widget(refreshText);
 
+        ButtonWidget bookmarkButton = new ButtonWidget();
+        bookmarkButton.setPos(startX + buttonW + gap, buttonY);
+        bookmarkButton.setSize(buttonW, buttonH);
+        bookmarkButton.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
+        bookmarkButton.setSynced(false, false);
+        bookmarkButton.setOnClick((cd, w) -> addBookmarkFromCurrentResult());
+        builder.widget(bookmarkButton);
+
+        TextWidget bookmarkText = new TextWidget(
+            t("nhaeutilities.gui.pattern_routing_analysis.button.add_bookmark", "Add Bookmark"));
+        bookmarkText.setPos(startX + buttonW + gap + 14, buttonY + 5);
+        builder.widget(bookmarkText);
+
         ButtonWidget closeButton = new ButtonWidget();
-        closeButton.setPos(GUI_W / 2 + 4, buttonY);
+        closeButton.setPos(startX + 2 * (buttonW + gap), buttonY);
         closeButton.setSize(buttonW, buttonH);
         closeButton.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
         closeButton.setSynced(false, false);
@@ -81,7 +103,7 @@ public final class GuiPatternRoutingAnalysis {
         builder.widget(closeButton);
 
         TextWidget closeText = new TextWidget(t("nhaeutilities.gui.pattern_routing_analysis.button.close", "Close"));
-        closeText.setPos(GUI_W / 2 + 4 + 30, buttonY + 5);
+        closeText.setPos(startX + 2 * (buttonW + gap) + 23, buttonY + 5);
         builder.widget(closeText);
 
         return builder.build();
@@ -95,6 +117,52 @@ public final class GuiPatternRoutingAnalysis {
         prepareInitialStateAndRequest(
             readStoredRecipeMap(player),
             () -> NetworkHandler.sendToServer(new PacketRequestRecipeMapAnalysis()));
+    }
+
+    static void addBookmarkFromCurrentResult() {
+        GuiPatternRoutingAnalysisState.Snapshot snapshot = GuiPatternRoutingAnalysisState.snapshot();
+        if (snapshot == null || snapshot.result == null) {
+            return;
+        }
+
+        List<ItemStack> allNcStacks = new ArrayList<ItemStack>();
+        Set<String> seen = new HashSet<String>();
+        for (RecipeMapAnalysisResult.RecipeTypeGroup group : snapshot.result.repeatedTypes) {
+            for (ItemStack stack : group.ncItemStacks) {
+                String sig = signatureKey(stack);
+                if (seen.add(sig)) {
+                    allNcStacks.add(stack.copy());
+                }
+            }
+        }
+        for (RecipeMapAnalysisResult.RecipeTypeGroup group : snapshot.result.singleOccurrenceTypes) {
+            for (ItemStack stack : group.ncItemStacks) {
+                String sig = signatureKey(stack);
+                if (seen.add(sig)) {
+                    allNcStacks.add(stack.copy());
+                }
+            }
+        }
+
+        if (allNcStacks.isEmpty()) {
+            return;
+        }
+
+        try {
+            if (LayoutManager.bookmarkPanel != null) {
+                LayoutManager.bookmarkPanel
+                    .addGroup(allNcStacks, codechicken.nei.BookmarkPanel.BookmarkViewMode.DEFAULT, false);
+                LayoutManager.bookmarkPanel.save();
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private static String signatureKey(ItemStack stack) {
+        if (stack == null || stack.getItem() == null) {
+            return "";
+        }
+        Object registryName = net.minecraft.item.Item.itemRegistry.getNameForObject(stack.getItem());
+        return registryName + "@" + stack.getItemDamage();
     }
 
     private static void prepareInitialStateAndRequest(String recipeMapId, Runnable requestSender) {

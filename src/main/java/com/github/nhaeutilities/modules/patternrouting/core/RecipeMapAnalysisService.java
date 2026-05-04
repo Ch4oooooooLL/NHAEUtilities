@@ -83,6 +83,7 @@ public final class RecipeMapAnalysisService {
 
         String circuitName = "";
         List<String> ncNames = new ArrayList<String>();
+        List<ItemStack> ncItemStacks = new ArrayList<ItemStack>();
         if (snapshot != null) {
             for (RecipeInputSemanticSnapshot input : snapshot.inputSnapshots) {
                 if (input.type == InputSemanticType.PROGRAMMING_CIRCUIT && input.stack != null) {
@@ -90,12 +91,13 @@ public final class RecipeMapAnalysisService {
                     circuitName = num >= 0 ? "Programmed Circuit #" + num : displayName(input.stack);
                 } else if (input.type == InputSemanticType.NON_CONSUMABLE && input.stack != null) {
                     ncNames.add(displayName(input.stack));
+                    ncItemStacks.add(input.stack.copy());
                 }
             }
         }
 
         String displaySummary = buildDisplaySummary(circuitName, ncNames);
-        return new TypeDescriptor(groupingKey, circuitKey, manualItemsKey, displaySummary, incomplete);
+        return new TypeDescriptor(groupingKey, circuitKey, manualItemsKey, displaySummary, incomplete, ncItemStacks);
     }
 
     private static String displayName(ItemStack stack) {
@@ -143,7 +145,8 @@ public final class RecipeMapAnalysisService {
                     accumulator.circuitKey,
                     accumulator.manualItemsKey,
                     accumulator.displaySummary,
-                    accumulator.matchCount));
+                    accumulator.matchCount,
+                    accumulator.ncItemStacks));
         }
         return new RecipeMapAnalysisResult(groups, totalTypeCount, hasIncompleteAnalysis);
     }
@@ -177,14 +180,17 @@ public final class RecipeMapAnalysisService {
         private final String manualItemsKey;
         private final String displaySummary;
         private final boolean incomplete;
+        private final List<ItemStack> ncItemStacks;
 
         private TypeDescriptor(String groupingKey, String circuitKey, String manualItemsKey, String displaySummary,
-            boolean incomplete) {
+            boolean incomplete, List<ItemStack> ncItemStacks) {
             this.groupingKey = normalize(groupingKey);
             this.circuitKey = normalize(circuitKey);
             this.manualItemsKey = normalize(manualItemsKey);
             this.displaySummary = normalize(displaySummary);
             this.incomplete = incomplete;
+            this.ncItemStacks = ncItemStacks != null ? new ArrayList<ItemStack>(ncItemStacks)
+                : new ArrayList<ItemStack>();
         }
     }
 
@@ -193,12 +199,14 @@ public final class RecipeMapAnalysisService {
         private final String circuitKey;
         private final String manualItemsKey;
         private final String displaySummary;
+        private final List<ItemStack> ncItemStacks;
         private int matchCount;
 
         private TypeAccumulator(TypeDescriptor descriptor) {
             this.circuitKey = descriptor.circuitKey;
             this.manualItemsKey = descriptor.manualItemsKey;
             this.displaySummary = descriptor.displaySummary;
+            this.ncItemStacks = descriptor.ncItemStacks;
             this.matchCount = 1;
         }
     }

@@ -269,6 +269,7 @@ nhaeutilities.gui.pattern_routing_analysis.section.single=单次出现类型（%
 nhaeutilities.gui.pattern_routing_analysis.section.none=无
 nhaeutilities.gui.pattern_routing_analysis.group.unnamed=未命名类型
 nhaeutilities.gui.pattern_routing_analysis.button.refresh=刷新
+nhaeutilities.gui.pattern_routing_analysis.button.add_bookmark=添加书签
 nhaeutilities.gui.pattern_routing_analysis.button.close=关闭
 nhaeutilities.gui.pattern_routing_analysis.helper=列表中的每种类型都需要一个空白样板输入总成。
 nhaeutilities.gui.pattern_routing_analysis.error.no_recipe_map=没有已存储的配方映射。

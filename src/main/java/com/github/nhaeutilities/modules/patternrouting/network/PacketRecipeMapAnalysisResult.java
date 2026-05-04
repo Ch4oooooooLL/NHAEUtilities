@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.item.ItemStack;
 
 import com.github.nhaeutilities.modules.patternrouting.core.RecipeMapAnalysisResult;
 import com.github.nhaeutilities.modules.patternrouting.gui.GuiPatternRoutingAnalysisState;
@@ -70,12 +71,22 @@ public class PacketRecipeMapAnalysisResult implements IMessage {
         List<RecipeMapAnalysisResult.RecipeTypeGroup> groups = new ArrayList<RecipeMapAnalysisResult.RecipeTypeGroup>(
             totalGroupCount);
         for (int i = 0; i < totalGroupCount; i++) {
+            String circuitKey = ByteBufUtils.readUTF8String(buf);
+            String manualItemsKey = ByteBufUtils.readUTF8String(buf);
+            String displaySummary = ByteBufUtils.readUTF8String(buf);
+            int matchCount = buf.readInt();
+            int ncCount = buf.readInt();
+            List<ItemStack> ncStacks = new ArrayList<ItemStack>(ncCount);
+            for (int j = 0; j < ncCount; j++) {
+                ncStacks.add(ByteBufUtils.readItemStack(buf));
+            }
             groups.add(
                 new RecipeMapAnalysisResult.RecipeTypeGroup(
-                    ByteBufUtils.readUTF8String(buf),
-                    ByteBufUtils.readUTF8String(buf),
-                    ByteBufUtils.readUTF8String(buf),
-                    buf.readInt()));
+                    circuitKey,
+                    manualItemsKey,
+                    displaySummary,
+                    matchCount,
+                    ncStacks));
         }
         return new RecipeMapAnalysisResult(groups, exactTotalTypeCount, hasIncompleteAnalysis);
     }
@@ -94,6 +105,10 @@ public class PacketRecipeMapAnalysisResult implements IMessage {
             ByteBufUtils.writeUTF8String(buf, group.manualItemsKey);
             ByteBufUtils.writeUTF8String(buf, group.displaySummary);
             buf.writeInt(group.matchCount);
+            buf.writeInt(group.ncItemStacks.size());
+            for (ItemStack ncStack : group.ncItemStacks) {
+                ByteBufUtils.writeItemStack(buf, ncStack);
+            }
         }
     }
 

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import net.minecraft.item.ItemStack;
+
 public final class RecipeMapAnalysisResult {
 
     public final int totalTypeCount;
@@ -41,12 +43,21 @@ public final class RecipeMapAnalysisResult {
         public final String manualItemsKey;
         public final String displaySummary;
         public final int matchCount;
+        public final List<ItemStack> ncItemStacks;
 
         public RecipeTypeGroup(String circuitKey, String manualItemsKey, String displaySummary, int matchCount) {
+            this(circuitKey, manualItemsKey, displaySummary, matchCount, Collections.<ItemStack>emptyList());
+        }
+
+        public RecipeTypeGroup(String circuitKey, String manualItemsKey, String displaySummary, int matchCount,
+            List<ItemStack> ncItemStacks) {
             this.circuitKey = normalize(circuitKey);
             this.manualItemsKey = normalize(manualItemsKey);
             this.displaySummary = normalize(displaySummary);
             this.matchCount = Math.max(0, matchCount);
+            this.ncItemStacks = ncItemStacks != null
+                ? Collections.unmodifiableList(new ArrayList<ItemStack>(ncItemStacks))
+                : Collections.<ItemStack>emptyList();
         }
 
         private static String normalize(String value) {
