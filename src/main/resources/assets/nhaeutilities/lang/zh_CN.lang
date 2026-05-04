@@ -292,3 +292,14 @@ nhaeutilities.tooltip.recipe_map_analyzer.hint.quick_detect=潜行右击 GregTec
 nhaeutilities.msg.item.block_not_detectable=无法检测方块
 nhaeutilities.msg.item.machine_part_unsupported=不支持的机器部件
 nhaeutilities.msg.item.detected_recipe_map=已检测到配方映射：%s
+
+item.nhaeutilities.tutorial_book.name=NHAE Utilities 指南
+nhaeutilities.tutorial=NHAE Utilities 指南
+nhaeutilities.tutorial.pages=7
+nhaeutilities.tutorial.pages.0=== NHAEUtilities 指南 ===\n\n三个模块：\n- 样板生成器（第1章）\n- 样板路由（第2章）\n- 超级无线设置工具（第3章）\n\n手持本书右键可随时重新打开。
+nhaeutilities.tutorial.pages.1=第1章 样板生成器\n\n操作：\n- 右键空气：打开生成器界面\n- 潜行+右键空气：打开存储界面\n- 潜行+右键方块：检测、导出\n- 安全终端：绑定 ME 网络\n\n流程：构建缓存 > 选择映射 > 过滤 > 生成
+nhaeutilities.tutorial.pages.2=过滤与生成\n\n过滤语法：[ID]、(矿辞)、{显示名称}。* 表示禁用。\n输出槽位：逗号分隔，从1开始编号。留空则保留全部输出。\n\n生成时从绑定网络或背包中自动消耗空白样板。结果存入虚拟存储。
+nhaeutilities.tutorial.pages.3=存储与冲突\n\n潜行+右键空气查看/搜索/删除。提取到背包或潜行+右键容器导出。\n\n配方冲突时会弹出交互式选择器。缩小过滤范围可减少冲突。
+nhaeutilities.tutorial.pages.4=第2章 样板路由\n\n物品：配方映射分析器\n\n操作：\n- 右键空气：打开分析界面\n- 潜行+右键机器：检测配方映射\n\n自动将编码样板路由到匹配的多方块输入仓。
+nhaeutilities.tutorial.pages.5=分析与路由\n\n点击刷新进行分析。显示重复和单次出现类型，估算空白样板需求。添加书签可将 NC 物品发送至 NEI。\n\n后备：暂存到索引、返还背包、或掉落在附近。
+nhaeutilities.tutorial.pages.6=第3章 超级无线设置工具\n\n操作：\n- 潜行+左键：将设备加入队列\n- 潜行+右键控制器：一次性绑定全部\n\n批量：潜行+左键同时将相邻需频道设备加入队列。\n提示栏显示模式、数量和状态。

@@ -3,6 +3,7 @@ package com.github.nhaeutilities;
 import com.github.nhaeutilities.core.config.ConfigChangeHandler;
 import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleRegistry;
+import com.github.nhaeutilities.handler.TutorialBookHandler;
 import com.github.nhaeutilities.proxy.CommonProxy;
 
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -55,6 +56,7 @@ public class NHAEUtilities {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
+        TutorialBookHandler.init();
         proxy.init(event, moduleRegistry, this);
     }
 

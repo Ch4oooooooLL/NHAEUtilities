@@ -290,3 +290,14 @@ nhaeutilities.tooltip.recipe_map_analyzer.hint.quick_detect=Shift + right-click 
 nhaeutilities.msg.item.block_not_detectable=Block not detectable
 nhaeutilities.msg.item.machine_part_unsupported=Unsupported machine part
 nhaeutilities.msg.item.detected_recipe_map=Detected recipe map: %s
+
+item.nhaeutilities.tutorial_book.name=NHAE Utilities Guide
+nhaeutilities.tutorial=NHAE Utilities Guide
+nhaeutilities.tutorial.pages=7
+nhaeutilities.tutorial.pages.0=== NHAEUtilities Guide ===\n\nThree modules:\n- Pattern Generator (Ch.1)\n- Pattern Routing (Ch.2)\n- Super Wireless Kit (Ch.3)\n\nRight-click this book to reopen anytime.
+nhaeutilities.tutorial.pages.1=Ch.1 Pattern Generator\n\nControls:\n- Right-click air: Generator GUI\n- Shift+right-click air: Storage\n- Shift+right-click block: Detect, export\n- Security terminal: Bind to ME network\n\nWorkflow: Build cache > Select map > Filter > Generate
+nhaeutilities.tutorial.pages.2=Filters & Generation\n\nFilters: [ID], (ore dict), {display name}. * disables.\nOutput Slots: comma-separated 1-based, blank=all.\n\nGeneration consumes blank patterns from bound network or inventory. Results go to virtual storage.
+nhaeutilities.tutorial.pages.3=Storage & Conflict\n\nShift+right-click air to view/search/delete. Extract to inventory or shift+right-click container to export.\n\nWhen recipes conflict, an interactive picker appears. Narrow filters to reduce conflicts.
+nhaeutilities.tutorial.pages.4=Ch.2 Pattern Routing\n\nItem: Recipe Map Analyzer\n\nControls:\n- Right-click air: Analysis GUI\n- Shift+right-click machine: Detect recipe map\n\nAuto-routes encoded patterns to matching multiblock input hatches.
+nhaeutilities.tutorial.pages.5=Analysis & Routing\n\nClick Refresh to analyze. Shows repeated vs single types, blank-pattern estimates. Add Bookmark sends NC items to NEI.\n\nFallbacks: staged to index, returned to inventory, or dropped nearby.
+nhaeutilities.tutorial.pages.6=Ch.3 Super Wireless Kit\n\nControls:\n- Shift+left-click: Queue devices\n- Shift+right-click controller: Bind all\n\nBatch: Shift+left-click also queues adjacent channel devices.\nTooltips show mode, count, pending status.
