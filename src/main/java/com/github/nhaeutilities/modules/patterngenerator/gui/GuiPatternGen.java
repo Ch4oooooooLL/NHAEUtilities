@@ -174,8 +174,9 @@ public class GuiPatternGen {
         scrollable.widget(tfOutputSlots);
 
         TextWidget outputSlotsHint = new TextWidget(
-            EnumChatFormatting.DARK_GRAY
-                + t("nhaeutilities.gui.pattern_gen.hint.output_slots", "Comma-separated 1-based output slots; blank keeps all outputs."));
+            EnumChatFormatting.DARK_GRAY + t(
+                "nhaeutilities.gui.pattern_gen.hint.output_slots",
+                "Comma-separated 1-based output slots; blank keeps all outputs."));
         outputSlotsHint.setPos(6, refY + 104 + 3);
         scrollable.widget(outputSlotsHint);
 

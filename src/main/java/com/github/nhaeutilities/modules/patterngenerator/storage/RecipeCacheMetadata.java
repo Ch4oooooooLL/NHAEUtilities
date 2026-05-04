@@ -8,7 +8,7 @@ import java.util.Map;
  */
 public class RecipeCacheMetadata {
 
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
 
     public int cacheVersion = CURRENT_VERSION;
     public long createdAt = System.currentTimeMillis();

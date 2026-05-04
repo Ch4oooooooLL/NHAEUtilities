@@ -14,10 +14,36 @@ public final class RecipeTransferMetadataExtractor {
     private static final String EMPTY_JSON_ARRAY = "[]";
     private static final String EMPTY_JSON_OBJECT = "{}";
     private static final String GT_NEI_FIXED_POSITIONED_STACK = "gregtech.nei.GTNEIDefaultHandler$FixedPositionedStack";
-    private static final Method GT_IS_ANY_INTEGRATED_CIRCUIT = findGtCircuitMethod();
-    private static final Method GT_IS_NOT_CONSUMED = findGtIsNotConsumedMethod();
+    private static volatile Method GT_IS_ANY_INTEGRATED_CIRCUIT;
+    private static volatile Method GT_IS_NOT_CONSUMED;
+    private static volatile boolean circuitMethodInitialized;
+    private static volatile boolean notConsumedMethodInitialized;
 
     private RecipeTransferMetadataExtractor() {}
+
+    private static Method getGtCircuitMethod() {
+        if (!circuitMethodInitialized) {
+            synchronized (RecipeTransferMetadataExtractor.class) {
+                if (!circuitMethodInitialized) {
+                    GT_IS_ANY_INTEGRATED_CIRCUIT = findGtCircuitMethod();
+                    circuitMethodInitialized = true;
+                }
+            }
+        }
+        return GT_IS_ANY_INTEGRATED_CIRCUIT;
+    }
+
+    private static Method getGtIsNotConsumedMethod() {
+        if (!notConsumedMethodInitialized) {
+            synchronized (RecipeTransferMetadataExtractor.class) {
+                if (!notConsumedMethodInitialized) {
+                    GT_IS_NOT_CONSUMED = findGtIsNotConsumedMethod();
+                    notConsumedMethodInitialized = true;
+                }
+            }
+        }
+        return GT_IS_NOT_CONSUMED;
+    }
 
     public static Metadata extract(IRecipeHandler recipe, int recipeIndex, String recipeCategory) {
         return extract(recipe, recipeIndex, "", recipeCategory);
@@ -118,11 +144,12 @@ public final class RecipeTransferMetadataExtractor {
     }
 
     private static boolean isProgrammingCircuit(ItemStack stack) {
-        if (stack == null || GT_IS_ANY_INTEGRATED_CIRCUIT == null) {
+        Method method = getGtCircuitMethod();
+        if (stack == null || method == null) {
             return false;
         }
         try {
-            Object result = GT_IS_ANY_INTEGRATED_CIRCUIT.invoke(null, stack);
+            Object result = method.invoke(null, stack);
             return Boolean.TRUE.equals(result);
         } catch (Exception ignored) {
             return false;
@@ -130,12 +157,13 @@ public final class RecipeTransferMetadataExtractor {
     }
 
     private static boolean isNonConsumable(PositionedStack positionedStack, ItemStack selected) {
-        if (positionedStack != null && GT_IS_NOT_CONSUMED != null
+        Method method = getGtIsNotConsumedMethod();
+        if (positionedStack != null && method != null
             && GT_NEI_FIXED_POSITIONED_STACK.equals(
                 positionedStack.getClass()
                     .getName())) {
             try {
-                Object result = GT_IS_NOT_CONSUMED.invoke(positionedStack);
+                Object result = method.invoke(positionedStack);
                 if (Boolean.TRUE.equals(result)) {
                     return true;
                 }
@@ -202,6 +230,16 @@ public final class RecipeTransferMetadataExtractor {
         }
         return value.replace("\\", "\\\\")
             .replace("\"", "\\\"");
+    }
+
+    static void setGtCircuitMethod(Method method) {
+        GT_IS_ANY_INTEGRATED_CIRCUIT = method;
+        circuitMethodInitialized = true;
+    }
+
+    static void setGtIsNotConsumedMethod(Method method) {
+        GT_IS_NOT_CONSUMED = method;
+        notConsumedMethodInitialized = true;
     }
 
     private static Method findGtCircuitMethod() {

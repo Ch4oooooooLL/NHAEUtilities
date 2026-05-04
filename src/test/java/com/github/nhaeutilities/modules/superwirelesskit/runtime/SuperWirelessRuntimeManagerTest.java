@@ -1,6 +1,5 @@
 package com.github.nhaeutilities.modules.superwirelesskit.runtime;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -317,7 +316,8 @@ public class SuperWirelessRuntimeManagerTest {
         private final boolean controllerMissing;
         private final boolean targetMissing;
 
-        private MissingHostBindingNodeResolver(BindingBlockRef blockRef, boolean controllerMissing, boolean targetMissing) {
+        private MissingHostBindingNodeResolver(BindingBlockRef blockRef, boolean controllerMissing,
+            boolean targetMissing) {
             this.blockRef = blockRef;
             this.controllerMissing = controllerMissing;
             this.targetMissing = targetMissing;

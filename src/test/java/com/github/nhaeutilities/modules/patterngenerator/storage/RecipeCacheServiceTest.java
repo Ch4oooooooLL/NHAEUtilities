@@ -3,8 +3,10 @@ package com.github.nhaeutilities.modules.patterngenerator.storage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -338,6 +340,22 @@ public class RecipeCacheServiceTest {
         assertEquals(1, sourceInvalidations.get());
     }
 
+    @Test
+    public void createOrRefreshCacheNowRejectsConcurrentBuilds() throws Exception {
+        setCaching(true);
+
+        try {
+            RecipeCacheService.createOrRefreshCacheNow();
+            fail("Expected createOrRefreshCacheNow to reject concurrent builds");
+        } catch (IllegalStateException e) {
+            assertTrue(
+                e.getMessage()
+                    .contains("recipe_cache_build_in_progress"));
+        } finally {
+            setCaching(false);
+        }
+    }
+
     private static RecipeEntry sampleRecipe(int duration) {
         return new RecipeEntry("gt", "gt.recipe.assembler", "Assembler", null, null, null, null, null, duration, 30);
     }
@@ -350,6 +368,12 @@ public class RecipeCacheServiceTest {
             }
         }
         return mapId + ":" + (recipes != null ? recipes.size() : 0) + ":" + durationTotal;
+    }
+
+    private static void setCaching(boolean value) throws Exception {
+        Field field = RecipeCacheService.class.getDeclaredField("caching");
+        field.setAccessible(true);
+        field.setBoolean(null, value);
     }
 
     private static final class FakeStorageBackend implements RecipeCacheService.StorageBackend {

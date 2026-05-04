@@ -10,6 +10,7 @@ import com.github.nhaeutilities.modules.patterngenerator.PatternGeneratorModule;
 import com.github.nhaeutilities.modules.patterngenerator.gui.GuiHandler;
 import com.github.nhaeutilities.modules.patterngenerator.item.ModItems;
 import com.github.nhaeutilities.modules.patternrouting.PatternRoutingModule;
+import com.github.nhaeutilities.modules.patternrouting.gui.PatternRoutingGuiHandler;
 import com.github.nhaeutilities.modules.superwirelesskit.SuperWirelessKitModule;
 
 import appeng.api.AEApi;
@@ -70,7 +71,8 @@ public class CommonProxy {
         }
 
         try {
-            NetworkRegistry.INSTANCE.registerGuiHandler(modInstance, new GuiHandler());
+            PatternRoutingGuiHandler handler = new PatternRoutingGuiHandler(new GuiHandler());
+            NetworkRegistry.INSTANCE.registerGuiHandler(modInstance, handler);
         } catch (Throwable t) {
             FMLLog.warning("[NHAEUtilities] Failed to register pattern generator GUI handler: %s", t.getMessage());
         }

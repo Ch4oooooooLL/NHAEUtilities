@@ -8,6 +8,8 @@ import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleDefinition;
 import com.github.nhaeutilities.modules.patternrouting.command.CommandNau;
 import com.github.nhaeutilities.modules.patternrouting.config.ForgeConfig;
+import com.github.nhaeutilities.modules.patternrouting.item.ModItems;
+import com.github.nhaeutilities.modules.patternrouting.network.NetworkHandler;
 
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
@@ -41,6 +43,8 @@ public class PatternRoutingModule implements ModuleDefinition {
     public void preInit(FMLPreInitializationEvent event) {
         PatternRoutingRuntime.setEnabled(coreConfig.isPatternRoutingEnabled());
         PatternRoutingRuntime.setDebugLogEnabled(ForgeConfig.isDebugModeEnabled());
+        ModItems.init();
+        NetworkHandler.init();
     }
 
     @Override

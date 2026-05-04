@@ -44,8 +44,12 @@ public class SuperWirelessLifecycleHandlerTest {
         handler.onChunkLoad(new ChunkEvent.Load(chunk));
 
         assertTrue(manager.refreshChunkCalled);
-        assertTrue(sink.contents().contains("LIFECYCLE_CHUNK_LOAD"));
-        assertTrue(sink.contents().contains("chunk=0:2,3"));
+        assertTrue(
+            sink.contents()
+                .contains("LIFECYCLE_CHUNK_LOAD"));
+        assertTrue(
+            sink.contents()
+                .contains("chunk=0:2,3"));
     }
 
     @Test
@@ -61,9 +65,15 @@ public class SuperWirelessLifecycleHandlerTest {
         handler.onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.END, world));
 
         assertTrue(manager.refreshDeferredBindingsCalled);
-        assertTrue(sink.contents().contains("LIFECYCLE_WORLD_TICK_REFRESH"));
-        assertTrue(sink.contents().contains("world=0"));
-        assertTrue(sink.contents().contains("time=40"));
+        assertTrue(
+            sink.contents()
+                .contains("LIFECYCLE_WORLD_TICK_REFRESH"));
+        assertTrue(
+            sink.contents()
+                .contains("world=0"));
+        assertTrue(
+            sink.contents()
+                .contains("time=40"));
     }
 
     @Test
@@ -79,7 +89,9 @@ public class SuperWirelessLifecycleHandlerTest {
         handler.onWorldTick(new TickEvent.WorldTickEvent(Side.SERVER, TickEvent.Phase.END, world));
 
         assertFalse(manager.refreshDeferredBindingsCalled);
-        assertFalse(sink.contents().contains("LIFECYCLE_WORLD_TICK_REFRESH"));
+        assertFalse(
+            sink.contents()
+                .contains("LIFECYCLE_WORLD_TICK_REFRESH"));
     }
 
     @Test
@@ -96,8 +108,12 @@ public class SuperWirelessLifecycleHandlerTest {
         handler.onBlockBreak(event);
 
         assertTrue(manager.onBlockBrokenCalled);
-        assertTrue(sink.contents().contains("LIFECYCLE_BLOCK_BREAK"));
-        assertTrue(sink.contents().contains("block=0:4,5,6"));
+        assertTrue(
+            sink.contents()
+                .contains("LIFECYCLE_BLOCK_BREAK"));
+        assertTrue(
+            sink.contents()
+                .contains("block=0:4,5,6"));
     }
 
     @Test
@@ -113,8 +129,12 @@ public class SuperWirelessLifecycleHandlerTest {
         handler.onWorldUnload(new WorldEvent.Unload(world));
 
         assertTrue(manager.onWorldUnloadCalled);
-        assertTrue(sink.contents().contains("LIFECYCLE_WORLD_UNLOAD"));
-        assertTrue(sink.contents().contains("world=0"));
+        assertTrue(
+            sink.contents()
+                .contains("LIFECYCLE_WORLD_UNLOAD"));
+        assertTrue(
+            sink.contents()
+                .contains("world=0"));
     }
 
     private static World allocateWorld(int dimensionId, boolean remote, long totalWorldTime) throws Exception {
@@ -252,7 +272,8 @@ public class SuperWirelessLifecycleHandlerTest {
 
         @Override
         public void write(String line) {
-            contents.append(line).append('\n');
+            contents.append(line)
+                .append('\n');
         }
 
         @Override

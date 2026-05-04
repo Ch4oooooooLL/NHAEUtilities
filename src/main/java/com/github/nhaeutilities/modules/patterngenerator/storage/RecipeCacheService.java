@@ -57,6 +57,24 @@ public final class RecipeCacheService {
         return true;
     }
 
+    public static CacheStatistics createOrRefreshCacheNow() {
+        storageBackend.prepareAccessContext();
+        synchronized (RecipeCacheService.class) {
+            if (caching) {
+                throw new IllegalStateException("recipe_cache_build_in_progress");
+            }
+            caching = true;
+        }
+
+        try {
+            return rebuildNow(null);
+        } finally {
+            synchronized (RecipeCacheService.class) {
+                caching = false;
+            }
+        }
+    }
+
     public static boolean isCaching() {
         return caching;
     }
@@ -67,6 +85,27 @@ public final class RecipeCacheService {
 
     public static CacheQueryResult loadRecipes(String recipeMapKeyword) {
         return loadAndFilterRecipes(recipeMapKeyword, null);
+    }
+
+    public static CacheQueryResult loadExactRecipeMap(String recipeMapId) {
+        RecipeCacheMetadata metadata = loadValidatedMetadata(false);
+        if (metadata == null) {
+            return CacheQueryResult.invalid("cache_missing_or_invalid");
+        }
+
+        String normalizedMapId = recipeMapId != null ? recipeMapId.trim() : "";
+        RecipeCacheMetadata.RecipeMapInfo info = metadata.recipeMaps.get(normalizedMapId);
+        if (info == null) {
+            return CacheQueryResult
+                .valid(java.util.Collections.<String>emptyList(), new java.util.ArrayList<RecipeEntry>(), 0, 0);
+        }
+
+        List<RecipeEntry> recipes = loadConsistentRecipeMap(normalizedMapId, info);
+        if (recipes == null) {
+            return CacheQueryResult.invalid("cache_missing_or_invalid");
+        }
+        return CacheQueryResult
+            .valid(java.util.Collections.singletonList(normalizedMapId), recipes, recipes.size(), recipes.size());
     }
 
     public static CacheQueryResult loadAndFilterRecipes(String recipeMapKeyword, CompositeFilter filter) {

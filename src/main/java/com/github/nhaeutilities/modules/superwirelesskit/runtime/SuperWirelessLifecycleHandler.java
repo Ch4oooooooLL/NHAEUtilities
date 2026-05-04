@@ -38,10 +38,7 @@ public class SuperWirelessLifecycleHandler {
         if (world == null || world.isRemote) {
             return;
         }
-        SuperWirelessDebugLog.log(
-            "LIFECYCLE_WORLD_UNLOAD",
-            "world=%d",
-            Integer.valueOf(world.provider.dimensionId));
+        SuperWirelessDebugLog.log("LIFECYCLE_WORLD_UNLOAD", "world=%d", Integer.valueOf(world.provider.dimensionId));
         runtimeManager.onWorldUnload(world);
     }
 

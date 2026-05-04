@@ -24,7 +24,8 @@ class OutputSlotSelection {
     }
 
     static OutputSlotSelection parse(String rawSelection) {
-        if (rawSelection == null || rawSelection.trim().isEmpty()) {
+        if (rawSelection == null || rawSelection.trim()
+            .isEmpty()) {
             return new OutputSlotSelection(true, new HashSet<Integer>());
         }
 
