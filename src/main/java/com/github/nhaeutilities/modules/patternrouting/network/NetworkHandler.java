@@ -30,6 +30,31 @@ public final class NetworkHandler {
             PacketRecipeMapAnalysisResult.class,
             packetId++,
             Side.CLIENT);
+        INSTANCE.registerMessage(
+            PacketBatchEncodeBookmarks.Handler.class,
+            PacketBatchEncodeBookmarks.class,
+            packetId++,
+            Side.SERVER);
+        INSTANCE.registerMessage(
+            PacketBatchEncodeResult.Handler.class,
+            PacketBatchEncodeResult.class,
+            packetId++,
+            Side.CLIENT);
+        INSTANCE.registerMessage(
+            PacketRequestFilterRules.Handler.class,
+            PacketRequestFilterRules.class,
+            packetId++,
+            Side.SERVER);
+        INSTANCE.registerMessage(
+            PacketFilterRulesResult.Handler.class,
+            PacketFilterRulesResult.class,
+            packetId++,
+            Side.CLIENT);
+        INSTANCE.registerMessage(
+            PacketUpdateFilterRules.Handler.class,
+            PacketUpdateFilterRules.class,
+            packetId++,
+            Side.SERVER);
         initialized = true;
     }
 

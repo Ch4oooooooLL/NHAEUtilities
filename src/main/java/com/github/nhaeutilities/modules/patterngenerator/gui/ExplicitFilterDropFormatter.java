@@ -12,7 +12,7 @@ import net.minecraft.util.EnumChatFormatting;
 import com.github.nhaeutilities.modules.patterngenerator.util.ItemStackUtil;
 import com.github.nhaeutilities.modules.patterngenerator.util.OreDictUtil;
 
-final class ExplicitFilterDropFormatter {
+public final class ExplicitFilterDropFormatter {
 
     private static final Pattern SPECIAL_REGEX_CHARS = Pattern.compile("[{}()\\[\\].+*?^$\\\\|]");
 
@@ -41,20 +41,20 @@ final class ExplicitFilterDropFormatter {
         List<DropChoice> options = new ArrayList<DropChoice>();
 
         if (itemId >= 0) {
-            options.add(
-                new DropChoice(
-                    DropChoiceSource.ITEM_ID,
-                    meta != null ? "[" + itemId + ":" + meta.intValue() + "]" : "[" + itemId + "]"));
+            String rawId = meta != null ? itemId + ":" + meta.intValue() : String.valueOf(itemId);
+            options.add(new DropChoice(DropChoiceSource.ITEM_ID, "[" + rawId + "]", rawId));
         }
 
         String oreName = firstNonBlank(oreNames);
         if (!oreName.isEmpty()) {
-            options.add(new DropChoice(DropChoiceSource.ORE_DICT, "(" + escapeRegexToken(oreName) + ")"));
+            String escaped = escapeRegexToken(oreName);
+            options.add(new DropChoice(DropChoiceSource.ORE_DICT, "(" + escaped + ")", oreName));
         }
 
         String safeDisplayName = sanitize(displayName);
         if (!safeDisplayName.isEmpty()) {
-            options.add(new DropChoice(DropChoiceSource.DISPLAY_NAME, "{" + escapeRegexToken(safeDisplayName) + "}"));
+            String escaped = escapeRegexToken(safeDisplayName);
+            options.add(new DropChoice(DropChoiceSource.DISPLAY_NAME, "{" + escaped + "}", safeDisplayName));
         }
 
         return options.isEmpty() ? DropChoices.empty() : new DropChoices(options, 0);
@@ -65,7 +65,9 @@ final class ExplicitFilterDropFormatter {
         if (safeToken.isEmpty()) {
             return DropChoices.empty();
         }
-        return new DropChoices(Collections.singletonList(new DropChoice(DropChoiceSource.CUSTOM, safeToken)), 0);
+        return new DropChoices(
+            Collections.singletonList(new DropChoice(DropChoiceSource.CUSTOM, safeToken, safeToken)),
+            0);
     }
 
     private static boolean shouldIncludeMeta(ItemStack stack) {
@@ -106,21 +108,23 @@ final class ExplicitFilterDropFormatter {
         return stripped != null ? stripped.trim() : "";
     }
 
-    enum DropChoiceSource {
+    public enum DropChoiceSource {
         ITEM_ID,
         ORE_DICT,
         DISPLAY_NAME,
         CUSTOM
     }
 
-    static final class DropChoice {
+    public static final class DropChoice {
 
         private final DropChoiceSource source;
         private final String token;
+        private final String rawContent;
 
-        private DropChoice(DropChoiceSource source, String token) {
+        private DropChoice(DropChoiceSource source, String token, String rawContent) {
             this.source = source;
             this.token = token;
+            this.rawContent = rawContent;
         }
 
         DropChoiceSource getSource() {
@@ -130,9 +134,13 @@ final class ExplicitFilterDropFormatter {
         String getToken() {
             return token;
         }
+
+        String getRawContent() {
+            return rawContent;
+        }
     }
 
-    static final class DropChoices {
+    public static final class DropChoices {
 
         private static final DropChoices EMPTY = new DropChoices(Collections.<DropChoice>emptyList(), -1);
 

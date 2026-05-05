@@ -88,6 +88,12 @@ public class CommonProxy {
                 .registries()
                 .wireless()
                 .registerWirelessHandler((IWirelessTermHandler) ModItems.itemPatternGenerator);
+            if (ModItems.itemPatternIndex != null) {
+                AEApi.instance()
+                    .registries()
+                    .wireless()
+                    .registerWirelessHandler((IWirelessTermHandler) ModItems.itemPatternIndex);
+            }
         } catch (Throwable t) {
             FMLLog.warning("[NHAEUtilities] Failed to register pattern generator wireless handler: %s", t.getMessage());
         }

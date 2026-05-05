@@ -60,6 +60,7 @@ public class GuiPatternGen {
         scrollable.widget(labelRecipe);
 
         FilterTextFieldWidget tfRecipeMap = new FilterTextFieldWidget();
+        tfRecipeMap.setDegradeEnabled(false);
         tfRecipeMap.setText(getSavedField(held, PacketSaveFields.NBT_RECIPE_MAP));
         tfRecipeMap.setPos(6, refY + 14);
         tfRecipeMap.setSize(fullFieldW, 14);
@@ -80,6 +81,7 @@ public class GuiPatternGen {
 
         FilterTextFieldWidget tfOutputOre = new FilterTextFieldWidget();
         tfOutputOre.setText(getSavedField(held, PacketSaveFields.NBT_OUTPUT_ORE));
+        tfOutputOre.markLoadDegradePending();
         tfOutputOre.setPos(inputX, refY + 14);
         tfOutputOre.setSize(fieldW, 14);
         tfOutputOre.setTextColor(0xFFFFFF);
@@ -94,6 +96,7 @@ public class GuiPatternGen {
 
         FilterTextFieldWidget tfInputOre = new FilterTextFieldWidget();
         tfInputOre.setText(getSavedField(held, PacketSaveFields.NBT_INPUT_ORE));
+        tfInputOre.markLoadDegradePending();
         tfInputOre.setPos(inputX, refY + 32);
         tfInputOre.setSize(fieldW, 14);
         tfInputOre.setTextColor(0xFFFFFF);
@@ -108,6 +111,7 @@ public class GuiPatternGen {
 
         FilterTextFieldWidget tfNCItem = new FilterTextFieldWidget();
         tfNCItem.setText(getSavedField(held, PacketSaveFields.NBT_NC_ITEM));
+        tfNCItem.markLoadDegradePending();
         tfNCItem.setPos(inputX, refY + 50);
         tfNCItem.setSize(fieldW, 14);
         tfNCItem.setTextColor(0xFFFFFF);
@@ -165,6 +169,7 @@ public class GuiPatternGen {
         scrollable.widget(btnTierText);
 
         FilterTextFieldWidget tfOutputSlots = new FilterTextFieldWidget(itemStack -> "");
+        tfOutputSlots.setDegradeEnabled(false);
         tfOutputSlots.setText(getSavedField(held, PacketSaveFields.NBT_OUTPUT_SLOTS));
         tfOutputSlots.setPos(inputX, refY + 86);
         tfOutputSlots.setSize(fieldW, 14);
@@ -194,6 +199,7 @@ public class GuiPatternGen {
 
         FilterTextFieldWidget tfBlacklistIn = new FilterTextFieldWidget();
         tfBlacklistIn.setText(getSavedField(held, PacketSaveFields.NBT_BLACKLIST_INPUT));
+        tfBlacklistIn.markLoadDegradePending();
         tfBlacklistIn.setPos(inputX, refY + 14);
         tfBlacklistIn.setSize(fieldW, 14);
         tfBlacklistIn.setTextColor(0xFFFFFF);
@@ -209,6 +215,7 @@ public class GuiPatternGen {
 
         FilterTextFieldWidget tfBlacklistOut = new FilterTextFieldWidget();
         tfBlacklistOut.setText(getSavedField(held, PacketSaveFields.NBT_BLACKLIST_OUTPUT));
+        tfBlacklistOut.markLoadDegradePending();
         tfBlacklistOut.setPos(inputX, refY + 32);
         tfBlacklistOut.setSize(fieldW, 14);
         tfBlacklistOut.setTextColor(0xFFFFFF);
@@ -220,20 +227,19 @@ public class GuiPatternGen {
         TextWidget regexHint = new TextWidget(
             EnumChatFormatting.DARK_GRAY + t(
                 "nhaeutilities.gui.pattern_gen.hint.regex",
-                "Regex, ore dict, or display name tokens are supported."));
+                "Select match type (ID/Ore/Name) with the button; brackets are optional."));
         regexHint.setPos(6, refY + 50 + 3);
         scrollable.widget(regexHint);
 
         TextWidget blacklistHint = new TextWidget(
-            EnumChatFormatting.DARK_GRAY
-                + t("nhaeutilities.gui.pattern_gen.hint.blacklist", "Blacklist fields exclude matching stacks."));
+            EnumChatFormatting.DARK_GRAY + t("nhaeutilities.gui.pattern_gen.hint.blacklist", "* disables the field."));
         blacklistHint.setPos(6, refY + 60 + 3);
         scrollable.widget(blacklistHint);
 
         TextWidget blacklistExamples = new TextWidget(
             EnumChatFormatting.DARK_GRAY + t(
                 "nhaeutilities.gui.pattern_gen.hint.blacklist_examples",
-                "Examples: [itemId], (oreName), {Display Name}"));
+                "Type plain text for name/ore, or [8119] for ID match. Use brackets for multi-type rules."));
         blacklistExamples.setPos(6, refY + 70 + 3);
         scrollable.widget(blacklistExamples);
 
@@ -289,11 +295,11 @@ public class GuiPatternGen {
         Runnable saveFunction = () -> NetworkHandler.INSTANCE.sendToServer(
             new PacketSaveFields(
                 tfRecipeMap.getText(),
-                tfOutputOre.getText(),
-                tfInputOre.getText(),
-                tfNCItem.getText(),
-                tfBlacklistIn.getText(),
-                tfBlacklistOut.getText(),
+                tfOutputOre.getEffectiveValue(),
+                tfInputOre.getEffectiveValue(),
+                tfNCItem.getEffectiveValue(),
+                tfBlacklistIn.getEffectiveValue(),
+                tfBlacklistOut.getEffectiveValue(),
                 "",
                 tfOutputSlots.getText(),
                 currentTierIndex[0] - 1));
@@ -329,11 +335,11 @@ public class GuiPatternGen {
             NetworkHandler.INSTANCE.sendToServer(
                 new PacketPreviewRecipeCount(
                     tfRecipeMap.getText(),
-                    tfOutputOre.getText(),
-                    tfInputOre.getText(),
-                    tfNCItem.getText(),
-                    tfBlacklistIn.getText(),
-                    tfBlacklistOut.getText(),
+                    tfOutputOre.getEffectiveValue(),
+                    tfInputOre.getEffectiveValue(),
+                    tfNCItem.getEffectiveValue(),
+                    tfBlacklistIn.getEffectiveValue(),
+                    tfBlacklistOut.getEffectiveValue(),
                     currentTierIndex[0] - 1));
             GuiPatternGenStatusBridge.setStatus("Preview requested");
         });
@@ -358,11 +364,11 @@ public class GuiPatternGen {
             NetworkHandler.INSTANCE.sendToServer(
                 new PacketGeneratePatterns(
                     tfRecipeMap.getText(),
-                    tfOutputOre.getText(),
-                    tfInputOre.getText(),
-                    tfNCItem.getText(),
-                    tfBlacklistIn.getText(),
-                    tfBlacklistOut.getText(),
+                    tfOutputOre.getEffectiveValue(),
+                    tfInputOre.getEffectiveValue(),
+                    tfNCItem.getEffectiveValue(),
+                    tfBlacklistIn.getEffectiveValue(),
+                    tfBlacklistOut.getEffectiveValue(),
                     "",
                     tfOutputSlots.getText(),
                     currentTierIndex[0] - 1));
@@ -377,83 +383,22 @@ public class GuiPatternGen {
 
     private static void attachDragChoiceSelector(Scrollable scrollable, FilterTextFieldWidget field, int fieldX,
         int fieldY, int fieldWidth) {
-        final ExplicitFilterDropFormatter.DropChoices[] currentChoices = new ExplicitFilterDropFormatter.DropChoices[] {
-            ExplicitFilterDropFormatter.DropChoices.empty() };
-        final int[] currentIndex = new int[] { -1 };
-
         FilterDragChoiceButtonWidget selector = new FilterDragChoiceButtonWidget(field);
         selector.setSynced(false, false);
         selector.setPos(fieldX + fieldWidth - DRAG_SELECTOR_W, fieldY);
         selector.setSize(DRAG_SELECTOR_W, 14);
-        selector.setEnabled(widget -> hasAlternativeChoices(currentChoices[0]));
-        selector.setBackground(() -> buildSelectorBackground(currentChoices[0], currentIndex[0]));
-        selector.addTooltip("Cycle drag choices");
+        selector.setBackground(
+            () -> new IDrawable[] { new Rectangle().setColor(DRAG_SELECTOR_BG),
+                new Text(field.getCurrentCategoryLabel()).color(0xFFFFFF)
+                    .alignment(Alignment.Center) });
+        selector.addTooltip(
+            t("nhaeutilities.gui.pattern_gen.drag_choice.tooltip.line1", "Left click: next match type") + "\n"
+                + t("nhaeutilities.gui.pattern_gen.drag_choice.tooltip.line2", "Right click: previous match type"));
         selector.setOnClick((clickData, widget) -> {
-            if (!hasAlternativeChoices(currentChoices[0])) {
-                return;
-            }
-
             int direction = clickData.mouseButton == 1 ? -1 : 1;
-            currentIndex[0] = cycleIndex(currentIndex[0], currentChoices[0].size(), direction);
-            field.applyDropChoice(
-                currentChoices[0].getOptions()
-                    .get(currentIndex[0]));
+            field.cycleCategory(direction);
         });
         scrollable.widget(selector);
-
-        field.setDropChoicesListener(choices -> {
-            currentChoices[0] = choices != null ? choices : ExplicitFilterDropFormatter.DropChoices.empty();
-            currentIndex[0] = currentChoices[0].getDefaultIndex();
-        });
-    }
-
-    private static boolean hasAlternativeChoices(ExplicitFilterDropFormatter.DropChoices choices) {
-        return choices != null && choices.size() > 1;
-    }
-
-    private static int cycleIndex(int currentIndex, int size, int direction) {
-        if (size <= 0) {
-            return -1;
-        }
-
-        int safeCurrent = currentIndex >= 0 ? currentIndex : 0;
-        int next = (safeCurrent + direction) % size;
-        return next < 0 ? next + size : next;
-    }
-
-    private static IDrawable[] buildSelectorBackground(ExplicitFilterDropFormatter.DropChoices choices,
-        int currentIndex) {
-        return new IDrawable[] { new Rectangle().setColor(DRAG_SELECTOR_BG),
-            new Text(resolveChoiceLabel(choices, currentIndex)).color(0xFFFFFF)
-                .alignment(Alignment.Center) };
-    }
-
-    private static String resolveChoiceLabel(ExplicitFilterDropFormatter.DropChoices choices, int currentIndex) {
-        if (choices == null || choices.isEmpty()) {
-            return "";
-        }
-
-        int safeIndex = currentIndex;
-        if (safeIndex < 0 || safeIndex >= choices.size()) {
-            safeIndex = choices.getDefaultIndex();
-        }
-        if (safeIndex < 0 || safeIndex >= choices.size()) {
-            return "";
-        }
-
-        ExplicitFilterDropFormatter.DropChoice choice = choices.getOptions()
-            .get(safeIndex);
-        switch (choice.getSource()) {
-            case ITEM_ID:
-                return "ID";
-            case ORE_DICT:
-                return "Ore";
-            case DISPLAY_NAME:
-                return "Name";
-            case CUSTOM:
-            default:
-                return "Custom";
-        }
     }
 
     private static String getSavedField(ItemStack stack, String key) {

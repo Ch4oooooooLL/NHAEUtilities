@@ -6,19 +6,24 @@ import java.util.List;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
+import com.github.nhaeutilities.NHAEUtilities;
 import com.github.nhaeutilities.modules.patterngenerator.storage.PatternStagingStorage;
 
+import appeng.api.features.IWirelessTermHandler;
+import appeng.api.util.IConfigManager;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-public class ItemPatternIndex extends Item {
+public class ItemPatternIndex extends Item implements IWirelessTermHandler {
 
-    private static final int MAX_SUMMARY_GROUPS = 5;
+    public static final int GUI_ID_PATTERN_INDEX = 202;
+    public static final int GUI_ID_STAGING_STORAGE = 203;
 
     public ItemPatternIndex() {
         setUnlocalizedName("nhaeutilities.pattern_index");
@@ -27,17 +32,31 @@ public class ItemPatternIndex extends Item {
 
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-        if (world == null || world.isRemote || player == null) {
-            return stack;
-        }
-
-        List<String> lines = buildSummaryLines(
-            PatternStagingStorage.getSummary(player.getUniqueID()),
-            MAX_SUMMARY_GROUPS);
-        for (String line : lines) {
-            sendSummaryLine(player, line);
+        if (!world.isRemote) {
+            if (player.isSneaking()) {
+                player.openGui(
+                    NHAEUtilities.instance,
+                    GUI_ID_STAGING_STORAGE,
+                    world,
+                    (int) player.posX,
+                    (int) player.posY,
+                    (int) player.posZ);
+            } else {
+                player.openGui(
+                    NHAEUtilities.instance,
+                    GUI_ID_PATTERN_INDEX,
+                    world,
+                    (int) player.posX,
+                    (int) player.posY,
+                    (int) player.posZ);
+            }
         }
         return stack;
+    }
+
+    @Override
+    public boolean doesSneakBypassUse(World world, int x, int y, int z, EntityPlayer player) {
+        return true;
     }
 
     @Override
@@ -50,6 +69,13 @@ public class ItemPatternIndex extends Item {
         list.add(
             EnumChatFormatting.GRAY
                 + StatCollector.translateToLocal("nhaeutilities.tooltip.pattern_index.player_bound"));
+        list.add("");
+        list.add(
+            EnumChatFormatting.GRAY
+                + StatCollector.translateToLocal("nhaeutilities.tooltip.pattern_index.right_click"));
+        list.add(
+            EnumChatFormatting.GRAY
+                + StatCollector.translateToLocal("nhaeutilities.tooltip.pattern_index.shift_right_click"));
     }
 
     static List<String> buildSummaryLines(PatternStagingStorage.StorageSummary summary, int maxGroups) {
@@ -91,5 +117,45 @@ public class ItemPatternIndex extends Item {
         }
         player.addChatMessage(
             new ChatComponentText(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted(key, args)));
+    }
+
+    @Override
+    public String getEncryptionKey(ItemStack item) {
+        if (item != null && item.hasTagCompound()) {
+            return item.getTagCompound()
+                .getString("encryptionKey");
+        }
+        return "";
+    }
+
+    @Override
+    public void setEncryptionKey(ItemStack item, String encKey, String name) {
+        if (item != null) {
+            if (!item.hasTagCompound()) {
+                item.setTagCompound(new NBTTagCompound());
+            }
+            item.getTagCompound()
+                .setString("encryptionKey", encKey);
+        }
+    }
+
+    @Override
+    public boolean canHandle(ItemStack is) {
+        return is != null && is.getItem() == this;
+    }
+
+    @Override
+    public boolean usePower(EntityPlayer player, double amount, ItemStack is) {
+        return true;
+    }
+
+    @Override
+    public boolean hasPower(EntityPlayer player, double amount, ItemStack is) {
+        return true;
+    }
+
+    @Override
+    public IConfigManager getConfigManager(ItemStack is) {
+        return null;
     }
 }

@@ -2,8 +2,10 @@ package com.github.nhaeutilities.modules.patterngenerator.filter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -11,6 +13,7 @@ import java.util.regex.PatternSyntaxException;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 
+import com.github.nhaeutilities.modules.patterngenerator.gui.ExplicitFilterDropFormatter;
 import com.github.nhaeutilities.modules.patterngenerator.util.ItemStackUtil;
 import com.github.nhaeutilities.modules.patterngenerator.util.OreDictUtil;
 
@@ -556,5 +559,220 @@ public class ExplicitStackMatcher {
         private static ParseResult invalid() {
             return new ParseResult("", -1, false);
         }
+    }
+
+    public static final class DegradeResult {
+
+        private final boolean isExplicit;
+        private final boolean isValid;
+        private final String rawText;
+        private final ExplicitFilterDropFormatter.DropChoiceSource category;
+        private final String errorMessage;
+
+        private DegradeResult(boolean isExplicit, boolean isValid, String rawText,
+            ExplicitFilterDropFormatter.DropChoiceSource category, String errorMessage) {
+            this.isExplicit = isExplicit;
+            this.isValid = isValid;
+            this.rawText = rawText;
+            this.category = category;
+            this.errorMessage = errorMessage;
+        }
+
+        static DegradeResult noBrackets(String text) {
+            return new DegradeResult(false, true, text, null, null);
+        }
+
+        static DegradeResult degraded(String rawText, ExplicitFilterDropFormatter.DropChoiceSource category) {
+            return new DegradeResult(false, true, rawText, category, null);
+        }
+
+        static DegradeResult explicit(String text) {
+            return new DegradeResult(true, true, text, ExplicitFilterDropFormatter.DropChoiceSource.CUSTOM, null);
+        }
+
+        static DegradeResult error(String errorMessage) {
+            return new DegradeResult(false, false, null, null, errorMessage);
+        }
+
+        public boolean isExplicit() {
+            return isExplicit;
+        }
+
+        public boolean isValid() {
+            return isValid;
+        }
+
+        public String getRawText() {
+            return rawText;
+        }
+
+        public ExplicitFilterDropFormatter.DropChoiceSource getCategory() {
+            return category;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
+    }
+
+    public static DegradeResult degrade(String text) {
+        if (text == null) {
+            return DegradeResult.noBrackets("");
+        }
+
+        String trimmed = text.trim();
+        if (trimmed.isEmpty() || "*".equals(trimmed)) {
+            return DegradeResult.noBrackets(trimmed);
+        }
+
+        boolean hasBrackets = false;
+        for (int i = 0; i < trimmed.length(); i++) {
+            char ch = trimmed.charAt(i);
+            if (ch == '[' || ch == '(' || ch == '{' || ch == ']' || ch == ')' || ch == '}') {
+                hasBrackets = true;
+                break;
+            }
+        }
+
+        if (!hasBrackets) {
+            return DegradeResult.noBrackets(trimmed);
+        }
+
+        Map<ExplicitFilterDropFormatter.DropChoiceSource, String> extracted = new EnumMap<ExplicitFilterDropFormatter.DropChoiceSource, String>(
+            ExplicitFilterDropFormatter.DropChoiceSource.class);
+        boolean idFound = false;
+        boolean oreFound = false;
+        boolean nameFound = false;
+        int index = 0;
+
+        while (index < trimmed.length()) {
+            char ch = trimmed.charAt(index);
+            if (Character.isWhitespace(ch) || ch == ',' || ch == ';' || ch == '|') {
+                index++;
+                continue;
+            }
+
+            if (ch == '[') {
+                int end = trimmed.indexOf(']', index + 1);
+                if (end < 0) {
+                    return DegradeResult.error("Unclosed ID bracket");
+                }
+                String content = trimmed.substring(index + 1, end)
+                    .trim();
+                if (content.isEmpty()) {
+                    return DegradeResult.error("Empty ID bracket");
+                }
+                String[] parts = content.split(":", -1);
+                if (parts.length == 0 || parts.length > 2) {
+                    return DegradeResult.error("Invalid ID format: " + content);
+                }
+                try {
+                    Integer.parseInt(parts[0]);
+                } catch (NumberFormatException e) {
+                    return DegradeResult.error("Invalid ID number: " + parts[0]);
+                }
+                if (parts.length == 2) {
+                    if (parts[1].isEmpty()) {
+                        return DegradeResult.error("Invalid meta in ID: " + content);
+                    }
+                    try {
+                        Integer.parseInt(parts[1]);
+                    } catch (NumberFormatException e) {
+                        return DegradeResult.error("Invalid meta number: " + parts[1]);
+                    }
+                }
+                extracted.put(ExplicitFilterDropFormatter.DropChoiceSource.ITEM_ID, content);
+                idFound = true;
+                index = end + 1;
+                continue;
+            }
+
+            if (ch == '(') {
+                String content = extractDelimited(trimmed, index, '(', ')');
+                if (content == null) {
+                    return DegradeResult.error("Unclosed ore dict bracket");
+                }
+                if (content.trim()
+                    .isEmpty()) {
+                    return DegradeResult.error("Empty ore dict bracket");
+                }
+                String safeContent = content.trim();
+                try {
+                    Pattern.compile(safeContent);
+                } catch (PatternSyntaxException e) {
+                    return DegradeResult.error("Invalid regex in (): " + e.getMessage());
+                }
+                extracted.put(ExplicitFilterDropFormatter.DropChoiceSource.ORE_DICT, safeContent);
+                oreFound = true;
+                index += content.length() + 2;
+                continue;
+            }
+
+            if (ch == '{') {
+                String content = extractDelimited(trimmed, index, '{', '}');
+                if (content == null) {
+                    return DegradeResult.error("Unclosed display name bracket");
+                }
+                if (content.trim()
+                    .isEmpty()) {
+                    return DegradeResult.error("Empty display name bracket");
+                }
+                String safeContent = content.trim();
+                try {
+                    Pattern.compile(safeContent);
+                } catch (PatternSyntaxException e) {
+                    return DegradeResult.error("Invalid regex in {}: " + e.getMessage());
+                }
+                extracted.put(ExplicitFilterDropFormatter.DropChoiceSource.DISPLAY_NAME, safeContent);
+                nameFound = true;
+                index += content.length() + 2;
+                continue;
+            }
+
+            return DegradeResult.error("Unexpected character '" + ch + "' in filter input");
+        }
+
+        int categoryCount = (idFound ? 1 : 0) + (oreFound ? 1 : 0) + (nameFound ? 1 : 0);
+        if (categoryCount == 0) {
+            return DegradeResult.noBrackets(trimmed);
+        }
+
+        if (categoryCount > 1) {
+            return DegradeResult.explicit(trimmed);
+        }
+
+        if (idFound) {
+            return DegradeResult.degraded(
+                extracted.get(ExplicitFilterDropFormatter.DropChoiceSource.ITEM_ID),
+                ExplicitFilterDropFormatter.DropChoiceSource.ITEM_ID);
+        }
+        if (oreFound) {
+            return DegradeResult.degraded(
+                extracted.get(ExplicitFilterDropFormatter.DropChoiceSource.ORE_DICT),
+                ExplicitFilterDropFormatter.DropChoiceSource.ORE_DICT);
+        }
+        return DegradeResult.degraded(
+            extracted.get(ExplicitFilterDropFormatter.DropChoiceSource.DISPLAY_NAME),
+            ExplicitFilterDropFormatter.DropChoiceSource.DISPLAY_NAME);
+    }
+
+    private static String extractDelimited(String source, int startIndex, char open, char close) {
+        int depth = 1;
+        for (int i = startIndex + 1; i < source.length(); i++) {
+            char ch = source.charAt(i);
+            if (ch == '\\' && i + 1 < source.length()) {
+                i++;
+                continue;
+            }
+            if (ch == open) {
+                depth++;
+            } else if (ch == close) {
+                depth--;
+                if (depth == 0) {
+                    return source.substring(startIndex + 1, i);
+                }
+            }
+        }
+        return null;
     }
 }
