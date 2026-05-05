@@ -1,7 +1,13 @@
 package com.github.nhaeutilities.core.config;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
+import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
@@ -18,6 +24,9 @@ public final class CoreConfig {
     private static final String PATTERN_GENERATOR_ENABLED_COMMENT = "Enable the pattern generator module. [Requires MC restart]";
     private static final String SUPER_WIRELESS_KIT_ENABLED_COMMENT = "Enable the super wireless kit module. [Requires MC restart]";
     private static final String PATTERN_ROUTING_ENABLED_COMMENT = "Enable the pattern routing module. [Requires MC restart]";
+
+    public static final List<String> MODULE_CATEGORY_NAMES = Collections.unmodifiableList(
+        Arrays.asList(PATTERN_GENERATOR_CATEGORY, PATTERN_ROUTING_CATEGORY, SUPER_WIRELESS_KIT_CATEGORY));
 
     private static Configuration configuration;
 
@@ -83,6 +92,46 @@ public final class CoreConfig {
      */
     public static void saveIfChanged() {
         if (configuration != null && configuration.hasChanged()) {
+            configuration.save();
+        }
+    }
+
+    /**
+     * Removes stale categories from the shared {@link Configuration} that were left
+     * behind by older code versions. After removal, the config file is saved
+     * immediately so the cleaned structure persists on disk.
+     *
+     * <p>
+     * Stale categories include root-level sections (e.g. {@code conflict},
+     * {@code patternGenerator}) and lowercase module aliases
+     * (e.g. {@code modules.patterngenerator}) that no longer match the current
+     * camelCase module paths.
+     */
+    public static void migrateStaleCategories() {
+        if (configuration == null) {
+            return;
+        }
+
+        Set<String> knownNames = new HashSet<String>(MODULE_CATEGORY_NAMES);
+        boolean changed = false;
+
+        for (String name : new HashSet<String>(configuration.getCategoryNames())) {
+            if (name.equals(MODULES_CATEGORY)) {
+                continue;
+            }
+            if (name.startsWith(MODULES_CATEGORY + ".")) {
+                String relative = name.substring(MODULES_CATEGORY.length() + 1);
+                String moduleName = relative.contains(".") ? relative.substring(0, relative.indexOf('.')) : relative;
+                if (knownNames.contains(MODULES_CATEGORY + "." + moduleName)) {
+                    continue;
+                }
+            }
+            ConfigCategory category = configuration.getCategory(name);
+            configuration.removeCategory(category);
+            changed = true;
+        }
+
+        if (changed) {
             configuration.save();
         }
     }

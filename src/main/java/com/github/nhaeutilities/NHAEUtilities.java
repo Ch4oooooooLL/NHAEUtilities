@@ -43,6 +43,10 @@ public class NHAEUtilities {
         // Load config for ALL modules (including disabled ones) so every module's
         // settings are visible in the config GUI regardless of enabled state.
         moduleRegistry.loadAllConfigs(CoreConfig.getConfiguration());
+
+        // Remove stale categories left behind by older code versions before saving
+        // the config file, so the on-disk config stays clean.
+        CoreConfig.migrateStaleCategories();
         CoreConfig.saveIfChanged();
 
         // Register the config-change listener so that edits made in the in-game

@@ -7,29 +7,15 @@ import net.minecraftforge.common.config.Configuration;
 
 public final class ConfigGuiLayout {
 
-    private static final String MODULES_CATEGORY = "modules";
-
     private ConfigGuiLayout() {}
 
+    /**
+     * Returns the canonical module category names for the config GUI.
+     * Uses a definitive whitelist from {@link CoreConfig#MODULE_CATEGORY_NAMES}
+     * rather than scanning the config file, so stale categories from older code
+     * versions are never presented as top-level entries.
+     */
     public static List<String> getTopLevelModuleCategoryNames(Configuration cfg) {
-        List<String> names = new ArrayList<String>();
-        if (cfg == null) {
-            return names;
-        }
-
-        for (String categoryName : cfg.getCategoryNames()) {
-            if (!categoryName.startsWith(MODULES_CATEGORY + ".")) {
-                continue;
-            }
-
-            String relativeName = categoryName.substring(MODULES_CATEGORY.length() + 1);
-            if (relativeName.contains(".")) {
-                continue;
-            }
-
-            names.add(categoryName);
-        }
-
-        return names;
+        return new ArrayList<String>(CoreConfig.MODULE_CATEGORY_NAMES);
     }
 }
