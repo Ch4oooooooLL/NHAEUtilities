@@ -2,6 +2,7 @@ package com.github.nhaeutilities.modules.patternrouting.item;
 
 import java.util.List;
 
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
@@ -10,6 +11,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IIcon;
 import net.minecraft.world.World;
 
 import org.lwjgl.input.Keyboard;
@@ -27,12 +29,33 @@ public class ItemRecipeMapAnalyzer extends Item {
 
     public static final int GUI_ID_ANALYSIS = 201;
     public static final String NBT_RECIPE_MAP = "recipeMap";
+    private static final int GREEN_TINT = 0x44BB44;
+
+    @SideOnly(Side.CLIENT)
+    private IIcon encodedPatternIcon;
 
     public ItemRecipeMapAnalyzer() {
         setUnlocalizedName("nhaeutilities.recipe_map_analyzer");
-        setTextureName("nhaeutilities:recipe_map_analyzer");
         setMaxStackSize(1);
         setCreativeTab(CreativeTabs.tabTools);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(IIconRegister register) {
+        encodedPatternIcon = register.registerIcon("appliedenergistics2:ItemEncodedPattern");
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconFromDamage(int damage) {
+        return encodedPatternIcon;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public int getColorFromItemStack(ItemStack stack, int renderPass) {
+        return GREEN_TINT;
     }
 
     @Override

@@ -3,6 +3,7 @@ package com.github.nhaeutilities.modules.patterngenerator.config;
 import java.util.Objects;
 
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 
 import cpw.mods.fml.common.FMLLog;
 
@@ -10,6 +11,7 @@ public final class ForgeConfig {
 
     private static final String MODULE_CATEGORY = "modules.patternGenerator";
     private static final String MODULE_PREFIX = MODULE_CATEGORY + ".";
+    private static final String LANG_PREFIX = "nhaeutilities.config.";
 
     private static final String CATEGORY_CONFLICT = MODULE_PREFIX + "conflict";
     private static final String CATEGORY_REQUEST_PROTECTION = MODULE_PREFIX + "requestProtection";
@@ -89,163 +91,177 @@ public final class ForgeConfig {
     }
 
     private static void loadConflictConfig(Configuration cfg) {
-        int configuredBatchSize = cfg.getInt(
+        Property batchSizeProp = cfg.get(
+            CATEGORY_CONFLICT,
             "batchSize",
-            CATEGORY_CONFLICT,
             DEFAULT_CONFLICT_BATCH_SIZE,
+            "How many conflict groups are sent to client per batch. Larger values may cause network lag.",
             MIN_CONFLICT_BATCH_SIZE,
-            MAX_CONFLICT_BATCH_SIZE,
-            "How many conflict groups are sent to client per batch. Larger values may cause network lag.");
-        conflictBatchSize = normalizeConflictBatchSize(configuredBatchSize);
+            MAX_CONFLICT_BATCH_SIZE);
+        batchSizeProp.setLanguageKey(LANG_PREFIX + CATEGORY_CONFLICT + ".batchSize");
+        conflictBatchSize = normalizeConflictBatchSize(batchSizeProp.getInt());
 
-        int configuredMaxFiltered = cfg.getInt(
+        Property maxFilteredProp = cfg.get(
+            CATEGORY_CONFLICT,
             "maxFilteredRecipes",
-            CATEGORY_CONFLICT,
             DEFAULT_MAX_FILTERED_RECIPES,
+            "Maximum number of filtered recipes allowed for interactive conflict selection. Exceeding this aborts interactive selection.",
             512,
-            65536,
-            "Maximum number of filtered recipes allowed for interactive conflict selection. Exceeding this aborts interactive selection.");
-        maxFilteredRecipes = configuredMaxFiltered;
+            65536);
+        maxFilteredProp.setLanguageKey(LANG_PREFIX + CATEGORY_CONFLICT + ".maxFilteredRecipes");
+        maxFilteredRecipes = maxFilteredProp.getInt();
 
-        int configuredMaxGroups = cfg.getInt(
-            "maxConflictGroups",
+        Property maxGroupsProp = cfg.get(
             CATEGORY_CONFLICT,
+            "maxConflictGroups",
             DEFAULT_MAX_CONFLICT_GROUPS,
+            "Maximum number of conflict groups allowed for interactive conflict selection. Exceeding this aborts interactive selection.",
             64,
-            1024,
-            "Maximum number of conflict groups allowed for interactive conflict selection. Exceeding this aborts interactive selection.");
-        maxConflictGroups = configuredMaxGroups;
+            1024);
+        maxGroupsProp.setLanguageKey(LANG_PREFIX + CATEGORY_CONFLICT + ".maxConflictGroups");
+        maxConflictGroups = maxGroupsProp.getInt();
     }
 
     private static void loadRequestProtectionConfig(Configuration cfg) {
-        int configuredWindowMs = cfg.getInt(
-            "windowMs",
+        Property windowMsProp = cfg.get(
             CATEGORY_REQUEST_PROTECTION,
+            "windowMs",
             DEFAULT_DUPLICATE_WINDOW_MS,
+            "Time window in milliseconds to collapse duplicate generation requests from the same player. Prevents rapid-fire duplicate submissions.",
             100,
-            5000,
-            "Time window in milliseconds to collapse duplicate generation requests from the same player. Prevents rapid-fire duplicate submissions.");
-        duplicateWindowMs = configuredWindowMs;
+            5000);
+        windowMsProp.setLanguageKey(LANG_PREFIX + CATEGORY_REQUEST_PROTECTION + ".windowMs");
+        duplicateWindowMs = windowMsProp.getInt();
     }
 
     private static void loadUIConfig(Configuration cfg) {
-        int configuredPatternGenWidth = cfg.getInt(
-            "guiWidth",
+        Property patternGenWidthProp = cfg.get(
             CATEGORY_UI_PATTERN_GEN,
+            "guiWidth",
             DEFAULT_PATTERN_GEN_GUI_WIDTH,
+            "Width of the main Pattern Generator GUI.",
             200,
-            500,
-            "Width of the main Pattern Generator GUI.");
-        patternGenGuiWidth = configuredPatternGenWidth;
+            500);
+        patternGenWidthProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_PATTERN_GEN + ".guiWidth");
+        patternGenGuiWidth = patternGenWidthProp.getInt();
 
-        int configuredPatternGenHeight = cfg.getInt(
-            "guiHeight",
+        Property patternGenHeightProp = cfg.get(
             CATEGORY_UI_PATTERN_GEN,
+            "guiHeight",
             DEFAULT_PATTERN_GEN_GUI_HEIGHT,
+            "Height of the main Pattern Generator GUI.",
             200,
-            600,
-            "Height of the main Pattern Generator GUI.");
-        patternGenGuiHeight = configuredPatternGenHeight;
+            600);
+        patternGenHeightProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_PATTERN_GEN + ".guiHeight");
+        patternGenGuiHeight = patternGenHeightProp.getInt();
 
-        int configuredPickerWidth = cfg.getInt(
+        Property pickerWidthProp = cfg.get(
+            CATEGORY_UI_RECIPE_PICKER,
             "guiWidth",
-            CATEGORY_UI_RECIPE_PICKER,
             DEFAULT_RECIPE_PICKER_GUI_WIDTH,
+            "Width of the Recipe Picker GUI.",
             300,
-            600,
-            "Width of the Recipe Picker GUI.");
-        recipePickerGuiWidth = configuredPickerWidth;
+            600);
+        pickerWidthProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".guiWidth");
+        recipePickerGuiWidth = pickerWidthProp.getInt();
 
-        int configuredPickerMinHeight = cfg.getInt(
+        Property pickerMinHeightProp = cfg.get(
+            CATEGORY_UI_RECIPE_PICKER,
             "minHeight",
-            CATEGORY_UI_RECIPE_PICKER,
             DEFAULT_RECIPE_PICKER_MIN_HEIGHT,
+            "Minimum height of the Recipe Picker GUI.",
             150,
-            400,
-            "Minimum height of the Recipe Picker GUI.");
-        recipePickerMinHeight = configuredPickerMinHeight;
+            400);
+        pickerMinHeightProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".minHeight");
+        recipePickerMinHeight = pickerMinHeightProp.getInt();
 
-        int configuredPickerIdealHeight = cfg.getInt(
+        Property pickerIdealHeightProp = cfg.get(
+            CATEGORY_UI_RECIPE_PICKER,
             "idealHeight",
-            CATEGORY_UI_RECIPE_PICKER,
             DEFAULT_RECIPE_PICKER_IDEAL_HEIGHT,
+            "Ideal height of the Recipe Picker GUI (used for initial sizing).",
             200,
-            500,
-            "Ideal height of the Recipe Picker GUI (used for initial sizing).");
-        recipePickerIdealHeight = configuredPickerIdealHeight;
+            500);
+        pickerIdealHeightProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".idealHeight");
+        recipePickerIdealHeight = pickerIdealHeightProp.getInt();
 
-        int configuredPickerRowHeight = cfg.getInt(
+        Property pickerRowHeightProp = cfg.get(
+            CATEGORY_UI_RECIPE_PICKER,
             "rowHeight",
-            CATEGORY_UI_RECIPE_PICKER,
             DEFAULT_RECIPE_PICKER_ROW_HEIGHT,
+            "Height of each row in the Recipe Picker list.",
             20,
-            50,
-            "Height of each row in the Recipe Picker list.");
-        recipePickerRowHeight = configuredPickerRowHeight;
+            50);
+        pickerRowHeightProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".rowHeight");
+        recipePickerRowHeight = pickerRowHeightProp.getInt();
 
-        int configuredPickerRowGap = cfg.getInt(
+        Property pickerRowGapProp = cfg.get(
+            CATEGORY_UI_RECIPE_PICKER,
             "rowGap",
-            CATEGORY_UI_RECIPE_PICKER,
             DEFAULT_RECIPE_PICKER_ROW_GAP,
+            "Gap between rows in the Recipe Picker list.",
             0,
-            5,
-            "Gap between rows in the Recipe Picker list.");
-        recipePickerRowGap = configuredPickerRowGap;
+            5);
+        pickerRowGapProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".rowGap");
+        recipePickerRowGap = pickerRowGapProp.getInt();
 
-        int configuredPickerMaxDetailLines = cfg.getInt(
-            "maxDetailLines",
+        Property pickerMaxDetailLinesProp = cfg.get(
             CATEGORY_UI_RECIPE_PICKER,
+            "maxDetailLines",
             DEFAULT_RECIPE_PICKER_MAX_DETAIL_LINES,
+            "Maximum number of lines displayed in the recipe detail panel.",
             20,
-            200,
-            "Maximum number of lines displayed in the recipe detail panel.");
-        recipePickerMaxDetailLines = configuredPickerMaxDetailLines;
+            200);
+        pickerMaxDetailLinesProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".maxDetailLines");
+        recipePickerMaxDetailLines = pickerMaxDetailLinesProp.getInt();
     }
 
     private static void loadStorageConfig(Configuration cfg) {
-        String configuredDirectoryName = cfg.getString(
-            "directoryName",
+        Property directoryNameProp = cfg.get(
             CATEGORY_STORAGE,
+            "directoryName",
             DEFAULT_STORAGE_DIRECTORY_NAME,
             "Name of the directory where generated patterns are stored (in the save folder).");
-        storageDirectoryName = configuredDirectoryName;
+        directoryNameProp.setLanguageKey(LANG_PREFIX + CATEGORY_STORAGE + ".directoryName");
+        storageDirectoryName = directoryNameProp.getString();
 
-        String configuredRecipeCacheDirectoryName = cfg.getString(
-            "recipeCacheDirectoryName",
+        Property recipeCacheDirProp = cfg.get(
             CATEGORY_STORAGE,
+            "recipeCacheDirectoryName",
             DEFAULT_RECIPE_CACHE_DIRECTORY_NAME,
             "Name of the subdirectory used for persisted recipe cache files (under the storage directory).");
-        recipeCacheDirectoryName = configuredRecipeCacheDirectoryName;
+        recipeCacheDirProp.setLanguageKey(LANG_PREFIX + CATEGORY_STORAGE + ".recipeCacheDirectoryName");
+        recipeCacheDirectoryName = recipeCacheDirProp.getString();
     }
 
     private static void loadAdvancedConfig(Configuration cfg) {
-        String configuredPatternId = cfg.getString(
-            "encodedPatternId",
+        Property patternIdProp = cfg.get(
             CATEGORY_ADVANCED,
+            "encodedPatternId",
             DEFAULT_ENCODED_PATTERN_ID,
             "Item ID of the AE2 encoded pattern item. Used for compatibility with different AE2 versions.");
-        encodedPatternId = configuredPatternId;
+        patternIdProp.setLanguageKey(LANG_PREFIX + CATEGORY_ADVANCED + ".encodedPatternId");
+        encodedPatternId = patternIdProp.getString();
     }
 
     private static void applyCategoryMetadata(Configuration cfg) {
-        String langPrefix = "nhaeutilities.config.";
         cfg.getCategory(MODULE_CATEGORY)
-            .setLanguageKey(langPrefix + MODULE_CATEGORY)
+            .setLanguageKey(LANG_PREFIX + MODULE_CATEGORY)
             .setRequiresMcRestart(true);
         cfg.getCategory(CATEGORY_CONFLICT)
-            .setLanguageKey(langPrefix + CATEGORY_CONFLICT);
+            .setLanguageKey(LANG_PREFIX + CATEGORY_CONFLICT);
         cfg.getCategory(CATEGORY_REQUEST_PROTECTION)
-            .setLanguageKey(langPrefix + CATEGORY_REQUEST_PROTECTION);
+            .setLanguageKey(LANG_PREFIX + CATEGORY_REQUEST_PROTECTION);
         cfg.getCategory(MODULE_PREFIX + "ui")
-            .setLanguageKey(langPrefix + MODULE_PREFIX + "ui");
+            .setLanguageKey(LANG_PREFIX + MODULE_PREFIX + "ui");
         cfg.getCategory(CATEGORY_UI_PATTERN_GEN)
-            .setLanguageKey(langPrefix + CATEGORY_UI_PATTERN_GEN);
+            .setLanguageKey(LANG_PREFIX + CATEGORY_UI_PATTERN_GEN);
         cfg.getCategory(CATEGORY_UI_RECIPE_PICKER)
-            .setLanguageKey(langPrefix + CATEGORY_UI_RECIPE_PICKER);
+            .setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER);
         cfg.getCategory(CATEGORY_STORAGE)
-            .setLanguageKey(langPrefix + CATEGORY_STORAGE);
+            .setLanguageKey(LANG_PREFIX + CATEGORY_STORAGE);
         cfg.getCategory(CATEGORY_ADVANCED)
-            .setLanguageKey(langPrefix + CATEGORY_ADVANCED);
+            .setLanguageKey(LANG_PREFIX + CATEGORY_ADVANCED);
     }
 
     public static int getConflictBatchSize() {
