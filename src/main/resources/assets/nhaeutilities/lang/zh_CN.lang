@@ -259,6 +259,28 @@ nhaeutilities.config.modules.patternRouting.debug.enabled=启用
 nhaeutilities.config.modules.superWirelessKit.debug=调试
 nhaeutilities.config.modules.superWirelessKit.debug.enabled=启用
 
+# 配置项提示
+nhaeutilities.config.modules.patternGenerator.basic.enabled.tooltip=启用样板生成器模块。需要重启 Minecraft 生效。
+nhaeutilities.config.modules.superWirelessKit.basic.enabled.tooltip=启用超级无线设置工具模块。需要重启 Minecraft 生效。
+nhaeutilities.config.modules.patternRouting.basic.enabled.tooltip=启用样板路由模块。需要重启 Minecraft 生效。
+nhaeutilities.config.modules.patternGenerator.conflict.batchSize.tooltip=每批次发送到客户端的冲突组数量。较大的值可能导致网络延迟。
+nhaeutilities.config.modules.patternGenerator.conflict.maxFilteredRecipes.tooltip=允许交互式冲突选择的最大过滤配方数。超过此值将中止交互式选择。
+nhaeutilities.config.modules.patternGenerator.conflict.maxConflictGroups.tooltip=允许交互式冲突选择的最大冲突组数。超过此值将中止交互式选择。
+nhaeutilities.config.modules.patternGenerator.requestProtection.windowMs.tooltip=合并同一玩家重复生成请求的时间窗口（毫秒）。可防止快速重复提交。
+nhaeutilities.config.modules.patternGenerator.ui.patternGen.guiWidth.tooltip=样板生成器主界面的宽度。
+nhaeutilities.config.modules.patternGenerator.ui.patternGen.guiHeight.tooltip=样板生成器主界面的高度。
+nhaeutilities.config.modules.patternGenerator.ui.recipePicker.guiWidth.tooltip=配方选择界面的宽度。
+nhaeutilities.config.modules.patternGenerator.ui.recipePicker.minHeight.tooltip=配方选择界面的最小高度。
+nhaeutilities.config.modules.patternGenerator.ui.recipePicker.idealHeight.tooltip=配方选择界面的理想高度（用于初始尺寸设定）。
+nhaeutilities.config.modules.patternGenerator.ui.recipePicker.rowHeight.tooltip=配方选择列表中每行的高度。
+nhaeutilities.config.modules.patternGenerator.ui.recipePicker.rowGap.tooltip=配方选择列表中行之间的间距。
+nhaeutilities.config.modules.patternGenerator.ui.recipePicker.maxDetailLines.tooltip=配方详情面板中显示的最大行数。
+nhaeutilities.config.modules.patternGenerator.storage.directoryName.tooltip=存放已生成样板的目录名称（位于存档文件夹中）。
+nhaeutilities.config.modules.patternGenerator.storage.recipeCacheDirectoryName.tooltip=持久化配方缓存文件的子目录名称（位于存储目录中）。
+nhaeutilities.config.modules.patternGenerator.advanced.encodedPatternId.tooltip=AE2 编码样板物品的 ID。用于兼容不同版本的 AE2。
+nhaeutilities.config.modules.patternRouting.debug.enabled.tooltip=启用详细的样板路由调试日志。可能影响性能。
+nhaeutilities.config.modules.superWirelessKit.debug.enabled.tooltip=启用详细的超级无线设置工具调试日志。写入 logs/superwirelesskit-debug.log，可能影响性能。
+
 nhaeutilities.msg.pattern.routed_fallback_inventory=[NHAEUtilities] 当前无可用的暂存目标。样板已返还到你的背包。
 nhaeutilities.msg.pattern.route_success=[NHAEUtilities] 已将编码样板直接写入匹配的合成输入仓。
 nhaeutilities.msg.pattern.route_target_full=[NHAEUtilities] 已找到匹配的合成输入仓，但其中没有空闲样板位。

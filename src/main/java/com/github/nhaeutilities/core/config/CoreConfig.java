@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
@@ -21,9 +22,7 @@ public final class CoreConfig {
     private static final String PATTERN_ROUTING_CATEGORY = "modules.patternRouting";
     private static final String PATTERN_ROUTING_BASIC_CATEGORY = PATTERN_ROUTING_CATEGORY + ".basic";
     private static final String ENABLED_PROPERTY = "enabled";
-    private static final String PATTERN_GENERATOR_ENABLED_COMMENT = "Enable the pattern generator module. [Requires MC restart]";
-    private static final String SUPER_WIRELESS_KIT_ENABLED_COMMENT = "Enable the super wireless kit module. [Requires MC restart]";
-    private static final String PATTERN_ROUTING_ENABLED_COMMENT = "Enable the pattern routing module. [Requires MC restart]";
+    private static final String LANG_PREFIX = "nhaeutilities.config.";
 
     public static final List<String> MODULE_CATEGORY_NAMES = Collections.unmodifiableList(
         Arrays.asList(PATTERN_GENERATOR_CATEGORY, PATTERN_ROUTING_CATEGORY, SUPER_WIRELESS_KIT_CATEGORY));
@@ -149,26 +148,38 @@ public final class CoreConfig {
     }
 
     private static boolean readPatternGeneratorEnabled(Configuration cfg) {
-        Property property = cfg
-            .get(PATTERN_GENERATOR_BASIC_CATEGORY, ENABLED_PROPERTY, true, PATTERN_GENERATOR_ENABLED_COMMENT);
+        String langKey = LANG_PREFIX + PATTERN_GENERATOR_BASIC_CATEGORY + "." + ENABLED_PROPERTY;
+        Property property = cfg.get(
+            PATTERN_GENERATOR_BASIC_CATEGORY,
+            ENABLED_PROPERTY,
+            true,
+            StatCollector.translateToLocal(langKey + ".tooltip"));
         property.setRequiresMcRestart(true);
-        property.setLanguageKey("nhaeutilities.config." + PATTERN_GENERATOR_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
+        property.setLanguageKey(langKey);
         return property.getBoolean();
     }
 
     private static boolean readSuperWirelessKitEnabled(Configuration cfg) {
-        Property property = cfg
-            .get(SUPER_WIRELESS_KIT_BASIC_CATEGORY, ENABLED_PROPERTY, true, SUPER_WIRELESS_KIT_ENABLED_COMMENT);
+        String langKey = LANG_PREFIX + SUPER_WIRELESS_KIT_BASIC_CATEGORY + "." + ENABLED_PROPERTY;
+        Property property = cfg.get(
+            SUPER_WIRELESS_KIT_BASIC_CATEGORY,
+            ENABLED_PROPERTY,
+            true,
+            StatCollector.translateToLocal(langKey + ".tooltip"));
         property.setRequiresMcRestart(true);
-        property.setLanguageKey("nhaeutilities.config." + SUPER_WIRELESS_KIT_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
+        property.setLanguageKey(langKey);
         return property.getBoolean();
     }
 
     private static boolean readPatternRoutingEnabled(Configuration cfg) {
-        Property property = cfg
-            .get(PATTERN_ROUTING_BASIC_CATEGORY, ENABLED_PROPERTY, true, PATTERN_ROUTING_ENABLED_COMMENT);
+        String langKey = LANG_PREFIX + PATTERN_ROUTING_BASIC_CATEGORY + "." + ENABLED_PROPERTY;
+        Property property = cfg.get(
+            PATTERN_ROUTING_BASIC_CATEGORY,
+            ENABLED_PROPERTY,
+            true,
+            StatCollector.translateToLocal(langKey + ".tooltip"));
         property.setRequiresMcRestart(true);
-        property.setLanguageKey("nhaeutilities.config." + PATTERN_ROUTING_BASIC_CATEGORY + "." + ENABLED_PROPERTY);
+        property.setLanguageKey(langKey);
         return property.getBoolean();
     }
 

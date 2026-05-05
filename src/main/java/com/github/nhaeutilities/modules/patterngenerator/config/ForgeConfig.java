@@ -2,6 +2,7 @@ package com.github.nhaeutilities.modules.patterngenerator.config;
 
 import java.util.Objects;
 
+import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
@@ -95,7 +96,7 @@ public final class ForgeConfig {
             CATEGORY_CONFLICT,
             "batchSize",
             DEFAULT_CONFLICT_BATCH_SIZE,
-            "How many conflict groups are sent to client per batch. Larger values may cause network lag.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_CONFLICT + ".batchSize.tooltip"),
             MIN_CONFLICT_BATCH_SIZE,
             MAX_CONFLICT_BATCH_SIZE);
         batchSizeProp.setLanguageKey(LANG_PREFIX + CATEGORY_CONFLICT + ".batchSize");
@@ -105,7 +106,7 @@ public final class ForgeConfig {
             CATEGORY_CONFLICT,
             "maxFilteredRecipes",
             DEFAULT_MAX_FILTERED_RECIPES,
-            "Maximum number of filtered recipes allowed for interactive conflict selection. Exceeding this aborts interactive selection.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_CONFLICT + ".maxFilteredRecipes.tooltip"),
             512,
             65536);
         maxFilteredProp.setLanguageKey(LANG_PREFIX + CATEGORY_CONFLICT + ".maxFilteredRecipes");
@@ -115,7 +116,7 @@ public final class ForgeConfig {
             CATEGORY_CONFLICT,
             "maxConflictGroups",
             DEFAULT_MAX_CONFLICT_GROUPS,
-            "Maximum number of conflict groups allowed for interactive conflict selection. Exceeding this aborts interactive selection.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_CONFLICT + ".maxConflictGroups.tooltip"),
             64,
             1024);
         maxGroupsProp.setLanguageKey(LANG_PREFIX + CATEGORY_CONFLICT + ".maxConflictGroups");
@@ -127,7 +128,7 @@ public final class ForgeConfig {
             CATEGORY_REQUEST_PROTECTION,
             "windowMs",
             DEFAULT_DUPLICATE_WINDOW_MS,
-            "Time window in milliseconds to collapse duplicate generation requests from the same player. Prevents rapid-fire duplicate submissions.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_REQUEST_PROTECTION + ".windowMs.tooltip"),
             100,
             5000);
         windowMsProp.setLanguageKey(LANG_PREFIX + CATEGORY_REQUEST_PROTECTION + ".windowMs");
@@ -139,7 +140,7 @@ public final class ForgeConfig {
             CATEGORY_UI_PATTERN_GEN,
             "guiWidth",
             DEFAULT_PATTERN_GEN_GUI_WIDTH,
-            "Width of the main Pattern Generator GUI.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_UI_PATTERN_GEN + ".guiWidth.tooltip"),
             200,
             500);
         patternGenWidthProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_PATTERN_GEN + ".guiWidth");
@@ -149,7 +150,7 @@ public final class ForgeConfig {
             CATEGORY_UI_PATTERN_GEN,
             "guiHeight",
             DEFAULT_PATTERN_GEN_GUI_HEIGHT,
-            "Height of the main Pattern Generator GUI.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_UI_PATTERN_GEN + ".guiHeight.tooltip"),
             200,
             600);
         patternGenHeightProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_PATTERN_GEN + ".guiHeight");
@@ -159,7 +160,7 @@ public final class ForgeConfig {
             CATEGORY_UI_RECIPE_PICKER,
             "guiWidth",
             DEFAULT_RECIPE_PICKER_GUI_WIDTH,
-            "Width of the Recipe Picker GUI.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".guiWidth.tooltip"),
             300,
             600);
         pickerWidthProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".guiWidth");
@@ -169,7 +170,7 @@ public final class ForgeConfig {
             CATEGORY_UI_RECIPE_PICKER,
             "minHeight",
             DEFAULT_RECIPE_PICKER_MIN_HEIGHT,
-            "Minimum height of the Recipe Picker GUI.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".minHeight.tooltip"),
             150,
             400);
         pickerMinHeightProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".minHeight");
@@ -179,7 +180,7 @@ public final class ForgeConfig {
             CATEGORY_UI_RECIPE_PICKER,
             "idealHeight",
             DEFAULT_RECIPE_PICKER_IDEAL_HEIGHT,
-            "Ideal height of the Recipe Picker GUI (used for initial sizing).",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".idealHeight.tooltip"),
             200,
             500);
         pickerIdealHeightProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".idealHeight");
@@ -189,7 +190,7 @@ public final class ForgeConfig {
             CATEGORY_UI_RECIPE_PICKER,
             "rowHeight",
             DEFAULT_RECIPE_PICKER_ROW_HEIGHT,
-            "Height of each row in the Recipe Picker list.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".rowHeight.tooltip"),
             20,
             50);
         pickerRowHeightProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".rowHeight");
@@ -199,7 +200,7 @@ public final class ForgeConfig {
             CATEGORY_UI_RECIPE_PICKER,
             "rowGap",
             DEFAULT_RECIPE_PICKER_ROW_GAP,
-            "Gap between rows in the Recipe Picker list.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".rowGap.tooltip"),
             0,
             5);
         pickerRowGapProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".rowGap");
@@ -209,7 +210,7 @@ public final class ForgeConfig {
             CATEGORY_UI_RECIPE_PICKER,
             "maxDetailLines",
             DEFAULT_RECIPE_PICKER_MAX_DETAIL_LINES,
-            "Maximum number of lines displayed in the recipe detail panel.",
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".maxDetailLines.tooltip"),
             20,
             200);
         pickerMaxDetailLinesProp.setLanguageKey(LANG_PREFIX + CATEGORY_UI_RECIPE_PICKER + ".maxDetailLines");
@@ -221,7 +222,7 @@ public final class ForgeConfig {
             CATEGORY_STORAGE,
             "directoryName",
             DEFAULT_STORAGE_DIRECTORY_NAME,
-            "Name of the directory where generated patterns are stored (in the save folder).");
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_STORAGE + ".directoryName.tooltip"));
         directoryNameProp.setLanguageKey(LANG_PREFIX + CATEGORY_STORAGE + ".directoryName");
         storageDirectoryName = directoryNameProp.getString();
 
@@ -229,7 +230,7 @@ public final class ForgeConfig {
             CATEGORY_STORAGE,
             "recipeCacheDirectoryName",
             DEFAULT_RECIPE_CACHE_DIRECTORY_NAME,
-            "Name of the subdirectory used for persisted recipe cache files (under the storage directory).");
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_STORAGE + ".recipeCacheDirectoryName.tooltip"));
         recipeCacheDirProp.setLanguageKey(LANG_PREFIX + CATEGORY_STORAGE + ".recipeCacheDirectoryName");
         recipeCacheDirectoryName = recipeCacheDirProp.getString();
     }
@@ -239,7 +240,7 @@ public final class ForgeConfig {
             CATEGORY_ADVANCED,
             "encodedPatternId",
             DEFAULT_ENCODED_PATTERN_ID,
-            "Item ID of the AE2 encoded pattern item. Used for compatibility with different AE2 versions.");
+            StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_ADVANCED + ".encodedPatternId.tooltip"));
         patternIdProp.setLanguageKey(LANG_PREFIX + CATEGORY_ADVANCED + ".encodedPatternId");
         encodedPatternId = patternIdProp.getString();
     }

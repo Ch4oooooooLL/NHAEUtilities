@@ -2,6 +2,7 @@ package com.github.nhaeutilities.modules.superwirelesskit.config;
 
 import java.util.Objects;
 
+import net.minecraft.util.StatCollector;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.config.Property;
 
@@ -27,7 +28,7 @@ public final class ForgeConfig {
                 CATEGORY_DEBUG,
                 ENABLED_PROPERTY,
                 false,
-                "Enable detailed SuperWirelessKit debug logging. Writes logs/superwirelesskit-debug.log and may affect performance.");
+                StatCollector.translateToLocal(LANG_PREFIX + CATEGORY_DEBUG + "." + ENABLED_PROPERTY + ".tooltip"));
             enabledProperty.setLanguageKey(LANG_PREFIX + CATEGORY_DEBUG + "." + ENABLED_PROPERTY);
             debugModeEnabled = enabledProperty.getBoolean(false);
             applyCategoryMetadata(cfg);
