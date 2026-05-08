@@ -15,6 +15,7 @@ import net.minecraftforge.common.util.ForgeDirection;
 
 import org.lwjgl.input.Keyboard;
 
+import com.github.nhaeutilities.modules.superwirelesskit.data.BindingRecord;
 import com.github.nhaeutilities.modules.superwirelesskit.data.BindingTargetRef;
 import com.github.nhaeutilities.modules.superwirelesskit.data.ControllerEndpointRef;
 import com.github.nhaeutilities.modules.superwirelesskit.service.BindingBatchResult;
@@ -24,6 +25,8 @@ import com.github.nhaeutilities.modules.superwirelesskit.tool.SuperWirelessKitSt
 import com.github.nhaeutilities.modules.superwirelesskit.tool.SuperWirelessKitTargetResolver;
 
 public class ItemSuperWirelessKit extends Item {
+
+    private static final int MAX_DISPLAY_TARGETS = 8;
 
     public ItemSuperWirelessKit() {
         setUnlocalizedName("nhaeutilities.super_wireless_kit");
@@ -126,13 +129,33 @@ public class ItemSuperWirelessKit extends Item {
                 "nhaeutilities.tooltip.swk.controller",
                 controller != null ? formatController(controller) : tr("nhaeutilities.gui.common.none")));
         if (Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
-            list.add(
-                EnumChatFormatting.GRAY
-                    + tr("nhaeutilities.tooltip.swk.queue", SuperWirelessKitStackState.getQueuedTargetCount(stack)));
-            list.add(
-                EnumChatFormatting.GRAY + tr(
-                    "nhaeutilities.tooltip.swk.pending",
-                    SuperWirelessKitStackState.getPendingBindingCount(stack)));
+            List<BindingTargetRef> queuedTargets = SuperWirelessKitStackState.getQueuedTargets(stack);
+            list.add(EnumChatFormatting.GRAY + tr("nhaeutilities.tooltip.swk.queue", queuedTargets.size()));
+            int queueDisplay = Math.min(queuedTargets.size(), MAX_DISPLAY_TARGETS);
+            for (int i = 0; i < queueDisplay; i++) {
+                list.add(EnumChatFormatting.DARK_GRAY + "  " + formatTarget(i + 1, queuedTargets.get(i)));
+            }
+            if (queuedTargets.size() > MAX_DISPLAY_TARGETS) {
+                list.add(
+                    EnumChatFormatting.DARK_GRAY + "  "
+                        + tr("nhaeutilities.tooltip.swk.target_more", queuedTargets.size() - MAX_DISPLAY_TARGETS));
+            }
+            List<BindingRecord> pendingBindings = SuperWirelessKitStackState.getPendingBindings(stack);
+            list.add(EnumChatFormatting.GRAY + tr("nhaeutilities.tooltip.swk.pending", pendingBindings.size()));
+            int pendingDisplay = Math.min(pendingBindings.size(), MAX_DISPLAY_TARGETS);
+            for (int i = 0; i < pendingDisplay; i++) {
+                list.add(
+                    EnumChatFormatting.DARK_GRAY + "  "
+                        + formatTarget(
+                            i + 1,
+                            pendingBindings.get(i)
+                                .getTarget()));
+            }
+            if (pendingBindings.size() > MAX_DISPLAY_TARGETS) {
+                list.add(
+                    EnumChatFormatting.DARK_GRAY + "  "
+                        + tr("nhaeutilities.tooltip.swk.target_more", pendingBindings.size() - MAX_DISPLAY_TARGETS));
+            }
             list.add(EnumChatFormatting.GRAY + tr("nhaeutilities.tooltip.swk.batch_usage"));
         } else {
             list.add(
@@ -167,6 +190,24 @@ public class ItemSuperWirelessKit extends Item {
             + controller.getZ()
             + "/"
             + controller.getFace()
+                .name();
+    }
+
+    private static String formatTarget(int index, BindingTargetRef target) {
+        return "#" + index
+            + ": "
+            + target.getFingerprint()
+                .getTargetType()
+            + "@"
+            + target.getDimensionId()
+            + ":"
+            + target.getX()
+            + ","
+            + target.getY()
+            + ","
+            + target.getZ()
+            + "/"
+            + target.getSide()
                 .name();
     }
 

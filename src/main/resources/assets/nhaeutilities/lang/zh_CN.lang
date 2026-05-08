@@ -82,6 +82,7 @@ nhaeutilities.tooltip.swk.title=超级无线设置工具
 nhaeutilities.tooltip.swk.mode=模式：%s
 nhaeutilities.tooltip.swk.queue=已排队目标：%s
 nhaeutilities.tooltip.swk.pending=待绑定目标：%s
+nhaeutilities.tooltip.swk.target_more=……还有 %s 个
 nhaeutilities.tooltip.swk.controller=控制器：%s
 nhaeutilities.tooltip.swk.batch_usage=潜行并左键设备，可递归加入相邻的需频道设备
 nhaeutilities.msg.swk.mode_switched=模式已切换为 %s

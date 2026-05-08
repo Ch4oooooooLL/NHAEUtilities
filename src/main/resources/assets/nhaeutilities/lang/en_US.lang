@@ -83,6 +83,7 @@ nhaeutilities.tooltip.swk.title=Super Wireless Kit
 nhaeutilities.tooltip.swk.mode=Mode: %s
 nhaeutilities.tooltip.swk.queue=Queued targets: %s
 nhaeutilities.tooltip.swk.pending=Pending bindings: %s
+nhaeutilities.tooltip.swk.target_more=...and %s more
 nhaeutilities.tooltip.swk.controller=Controller: %s
 nhaeutilities.tooltip.swk.batch_usage=Sneak + left click a device to recursively queue adjacent channel devices
 nhaeutilities.msg.swk.mode_switched=Mode switched to %s

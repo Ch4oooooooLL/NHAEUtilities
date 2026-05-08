@@ -79,14 +79,13 @@ final class BindingBatchProcessor {
                     successCount++;
                 } else {
                     SuperWirelessDebugLog.log(
-                        "BIND_BATCH_REJECT_TARGET_OWNED_BY_OTHER_CONTROLLER",
+                        "BIND_BATCH_DROP_TARGET_OWNED_BY_OTHER_CONTROLLER",
                         "bindingId=%s existingBindingId=%s target=%s existingController=%s requestedController=%s",
                         record.getBindingId(),
                         exactExisting.getBindingId(),
                         formatTarget(record),
                         formatController(exactExisting.getController()),
                         formatController(controller));
-                    failures.add(record);
                 }
                 continue;
             }
@@ -116,14 +115,13 @@ final class BindingBatchProcessor {
                     successCount++;
                 } else {
                     SuperWirelessDebugLog.log(
-                        "BIND_BATCH_REJECT_NODE_OWNED_BY_OTHER_CONTROLLER",
+                        "BIND_BATCH_DROP_NODE_OWNED_BY_OTHER_CONTROLLER",
                         "bindingId=%s existingBindingId=%s target=%s existingController=%s requestedController=%s",
                         record.getBindingId(),
                         existing.getBindingId(),
                         formatTarget(record),
                         formatController(existing.getController()),
                         formatController(controller));
-                    failures.add(record);
                 }
                 continue;
             }
