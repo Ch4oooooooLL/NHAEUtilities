@@ -3,12 +3,14 @@ package com.github.nhaeutilities.modules.patterngenerator.item;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.IIcon;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
@@ -25,9 +27,30 @@ public class ItemPatternIndex extends Item implements IWirelessTermHandler {
     public static final int GUI_ID_PATTERN_INDEX = 202;
     public static final int GUI_ID_STAGING_STORAGE = 203;
 
+    @SideOnly(Side.CLIENT)
+    private IIcon encodedPatternIcon;
+
     public ItemPatternIndex() {
         setUnlocalizedName("nhaeutilities.pattern_index");
         setMaxStackSize(1);
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void registerIcons(IIconRegister register) {
+        encodedPatternIcon = register.registerIcon("appliedenergistics2:ItemEncodedPattern");
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public IIcon getIconFromDamage(int damage) {
+        return encodedPatternIcon;
+    }
+
+    @Override
+    @SideOnly(Side.CLIENT)
+    public int getColorFromItemStack(ItemStack stack, int renderPass) {
+        return 0x8888FF;
     }
 
     @Override
