@@ -55,13 +55,10 @@ public class MixinPackageBoundaryTest {
 
     @Test
     public void activeMixinConfigKeepsBothPatternRoutingAndSuperwirelessMixinsReachable() throws IOException {
-        String activeConfig = readResource("/mixins.nhaeutilities.json");
         String patternRoutingConfig = readResource("/mixins.nhaeutilities.patternrouting.json");
         String superWirelessConfig = readResource("/mixins.nhaeutilities.superwirelesskit.json");
         String manifest = new String(Files.readAllBytes(Paths.get("META-INF", "MANIFEST.MF")), StandardCharsets.UTF_8);
 
-        assertTrue(activeConfig.contains("\"package\": \"com.github.nhaeutilities.modules.patterngenerator.mixin\""));
-        assertTrue(activeConfig.contains("\"mixins\": []"));
         assertTrue(
             patternRoutingConfig.contains("\"package\": \"com.github.nhaeutilities.modules.patternrouting.mixin\""));
         assertTrue(patternRoutingConfig.contains("\"MixinMTEMultiBlockBase\""));
@@ -74,7 +71,7 @@ public class MixinPackageBoundaryTest {
         assertTrue(superWirelessConfig.contains("\"MixinGridNode\""));
         assertTrue(
             manifest.contains(
-                "MixinConfigs: mixins.nhaeutilities.json,mixins.nhaeutilities.patternrouting.json,mixins.nhaeutilities.superwirelesskit.json"));
+                "MixinConfigs: mixins.nhaeutilities.patternrouting.json,mixins.nhaeutilities.superwirelesskit.json"));
     }
 
     private static String readResource(String path) throws IOException {
