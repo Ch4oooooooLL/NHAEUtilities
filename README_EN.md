@@ -1,151 +1,181 @@
 # NHAEUtilities
 
-[![MC Version](https://img.shields.io/badge/Minecraft-1.7.10-brightgreen)](https://github.com/NHAEUtilities/NHAEUtilities)
-[![Forge](https://img.shields.io/badge/Forge-10.13.4.1614-red)](https://files.minecraftforge.net/)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/NHAEUtilities/NHAEUtilities)
+<p align="center">
+  <img src="https://img.shields.io/badge/Minecraft-1.7.10-62b47a?style=flat-square&logo=mojang" alt="MC">
+  <img src="https://img.shields.io/badge/Forge-10.13.4.1614-f16436?style=flat-square" alt="Forge">
+  <img src="https://img.shields.io/badge/Version-0.3-blue?style=flat-square" alt="Version">
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License">
+  <img src="https://img.shields.io/badge/Java-21-e76f00?style=flat-square&logo=openjdk" alt="Java">
+  <img src="https://img.shields.io/badge/GTNH-Compatible-ffaa00?style=flat-square" alt="GTNH">
+</p>
 
-A utility mod designed for Minecraft 1.7.10 GregTech: New Horizons, providing three functional modules:
+<p align="center"><strong>A utility mod for GregTech: New Horizons</strong> — Pattern Generation · Pattern Routing · Wireless ME</p>
 
-- **Pattern Generator** — Batch-export GregTech machine recipes as standard AE2 encoded patterns with configurable filtering and balancing
-- **Pattern Routing** — Automatically route AE2 encoded patterns to matching GregTech multiblock Crafting Input Hatches with automatic slot configuration
-- **Super Wireless Kit** — Wirelessly connect arbitrary AE2 channel devices to an ME controller — no cables or quantum bridges needed
+---
+
+## At a Glance
+
+| Module | Item | Core Capability |
+|--------|------|-----------------|
+| **Pattern Generator** | Pattern Generator | Batch-encode GT machine recipes as AE2 processing patterns with filtering and conflict resolution |
+| **Pattern Routing** | Recipe Map Analyzer | Auto-route AE2 patterns to GT multiblock input hatches, analyze recipe maps |
+| **Super Wireless Kit** | Super Wireless Kit | Wirelessly connect AE2 channel devices to an ME controller — no cables needed |
 
 [中文](README.md)
 
+---
+
 ## Table of Contents
 
-- [Dependencies](#dependencies)
-- [Installation](#installation)
-- [Modules](#modules)
-  - [Pattern Generator](#1-pattern-generator)
-  - [Pattern Routing](#2-pattern-routing)
-  - [Super Wireless Kit](#3-super-wireless-kit)
+- [Quick Start](#quick-start)
+- [Pattern Generator](#pattern-generator)
+- [Pattern Routing](#pattern-routing)
+- [Super Wireless Kit](#super-wireless-kit)
 - [Building](#building)
 - [Configuration](#configuration)
+- [Contributing](#contributing)
 - [License](#license)
 
-## Dependencies
+---
+
+## Quick Start
+
+**Dependencies**
 
 | Mod | Minimum Version |
-|-----|-----------------|
+|:----|:----------------|
 | GregTech | 5.09.51.482 |
 | Applied Energistics 2 | rv3-beta-690 |
 | Not Enough Items | 2.8.44 |
 
-## Installation
+**Installation**
 
-1. Download the latest JAR from [Releases](https://github.com/NHAEUtilities/NHAEUtilities/releases)
-2. Place the JAR into your Minecraft instance's `mods/` directory
-3. Launch the game — modules can be toggled independently in the config
+1. Download the latest JAR from [Releases](https://github.com/Ch4oooooooLL/NHAEUtilities/releases)
+2. Place it in your Minecraft instance's `mods/` folder
+3. Launch — each module can be toggled independently in the config
 
-## Modules
+> **Tip** — On first use or after mod/config changes, click **Cache** in the Pattern Generator interface to build the recipe cache.
 
-### 1. Pattern Generator
+---
 
-**Item:** Pattern Generator
+## Pattern Generator
 
-Batch-encode GregTech machine recipes into AE2 processing patterns, with advanced filtering, ore dictionary replacement, and conflict resolution.
+Batch-encode GregTech machine recipes into AE2 processing patterns.
 
-#### Features
+### Features
 
-- **Batch Encoding** — Build/refresh the cache, then export GT machine recipes as processing patterns in bulk
-- **Smart Filtering** — Regex-based filtering, ore dictionary replacement rules, and voltage tier filtering
-- **Explicit Syntax** — Filter fields use `[ID]` / `(ore dict regex)` / `{display name regex}`; use `*` to match all
-- **Conflict Resolution** — When multiple recipes produce the same output, resolve via GUI
-- **Virtual Storage** — Generated patterns stored in internal storage, not directly in inventory
-- **Consumption Tracking** — Auto-consumes blank patterns from a bound ME network or player inventory
+- **Batch Encoding** — One-click export of GT machine recipes after cache build
+- **Smart Filtering** — Regex filtering, ore dictionary replacement, voltage tier selection
+- **Explicit Syntax** — Fields use `[ID]` / `(ore dict regex)` / `{display name regex}`; `*` matches all
+- **Conflict Resolution** — Manual GUI selection when multiple recipes produce the same output
+- **Virtual Storage** — Patterns stored internally, not cluttering inventory
+- **Consumption Tracking** — Auto-consumes blank patterns from bound ME network or inventory
 
-#### Usage
+### Usage
 
 | Interaction | Effect |
-|-------------|--------|
-| **Right-click** (air) | Open the **main configuration terminal** — fill in machine ID, filter rules, voltage tier, and submit the generation request |
-| **Shift + right-click** (air) | Open the **storage manager** — browse and manage patterns stored in the virtual storage |
-| **Shift + right-click** (block) | **Block inspection / conditional export** — inspect the target GT machine's recipe info; if the target is a writable container, export virtual patterns to it |
-| **Shift + right-click** (security terminal) | Bind to an ME network to auto-consume blank patterns from the network during generation |
+|:------------|:-------|
+| Right-click air | Open the **main config terminal** |
+| Shift + right-click air | Open the **storage manager** |
+| Shift + right-click block | Inspect GT machine recipe / export patterns to container |
+| Shift + right-click security terminal | Bind ME network for blank pattern consumption |
 
-> After the first launch, a restart, or a mod/config change, click **Cache** in the main interface first, then use preview or generate once caching is complete.
-
-#### Commands
+<details>
+<summary>Commands</summary>
 
 ```
 /patterngen list                        # List all recipe maps
 /patterngen count <id> [filters...]     # Preview matching recipe count
 /patterngen generate <id> [filters...]  # Generate patterns
 ```
+</details>
 
 ---
 
-### 2. Pattern Routing
+## Pattern Routing
 
-**Item:** Recipe Map Analyzer
+Recipe Map Analyzer automatically routes AE2 patterns to matching GregTech multiblock input hatches, with recipe analysis capabilities.
 
-Automatically route AE2 encoded patterns into matching GregTech multiblock crafting input hatches, with recipe analysis capabilities.
+### Features
 
-#### Features
+- **Auto Routing** — Patterns are automatically dispatched to matching multiblock controller input hatches
+- **Slot Refresh** — Buses are reassigned when a multiblock structure forms
+- **Slot Auto-Config** — Empty input bus slots are auto-configured on receiving their first pattern
+- **Manual Item Extraction** — Auto-extracts programming circuits and manual items from the AE network
+- **Recipe Analysis** — Analyzes recipe maps, displays duplicate and single-occurrence input types, calculates minimal pattern assembly count
+- **Filter Rules** — Blacklist and manual match rules for precise routing control
 
-- **Auto Routing** — Encoded patterns are automatically routed to the correct multiblock controller's input hatches upon creation
-- **Slot Refresh** — Input bus slots are reassigned when a multiblock structure forms
-- **Slot Auto-Config** — Empty input bus slots are auto-configured upon receiving their first pattern
-- **Manual Item Extraction** — Automatically extracts required manual/circuit items from the AE network when configuring empty slots
-- **Recipe Map Analysis** — Analyzes recipe maps, displays duplicate and single-occurrence input types, and calculates the minimum number of patterns needed
-
-#### Usage
+### Usage
 
 | Interaction | Effect |
-|-------------|--------|
-| **Right-click** (air) | Open the **recipe analysis GUI** — analyze recipe maps, view duplicate inputs and minimum pattern assembly count |
-| **Shift + right-click** (GT machine) | Detect and save the machine's recipe map for subsequent analysis and routing |
+|:------------|:-------|
+| Right-click air | Open the **recipe analysis GUI** |
+| Shift + right-click GT machine | Save the machine's recipe map for analysis and routing |
 
-#### Commands
+<details>
+<summary>Commands</summary>
 
 ```
 /nau repairrouting    # Repair blank routing metadata in loaded multiblock controllers
 ```
+</details>
 
 ---
 
-### 3. Super Wireless Kit
+## Super Wireless Kit
 
-**Item:** Super Wireless Kit
+Wirelessly connect AE2 channel devices to an ME controller.
 
-Wirelessly connect arbitrary AE2 channel devices to an ME controller — no cables or quantum bridges needed.
+### Features
 
-#### Features
-
-- **Dual Mode** — QUEUE (record targets) and BIND (connect targets to controller)
-- **Batch Collection** — Sneak + left-click a device to recursively collect adjacent channel devices
-- **Virtual Grid Connection** — Creates virtual GridConnection between the controller node and target devices
-- **Persistent Binding** — Bindings are saved to world data and auto-reconnect on chunk reload / node refresh
+- **Dual Mode** — QUEUE (record targets) / BIND (connect targets to controller)
+- **Batch Collection** — Sneak + left-click to recursively collect adjacent channel devices
+- **Virtual Grid Connection** — Creates virtual GridConnection between controller node and targets
+- **Persistent Binding** — Bindings saved to world data, auto-reconnect on chunk reload / node refresh
 - **Permission Checks** — Respects AE2 SecurityPermissions.BUILD
 
-#### Usage
+### Usage
 
 | Mode | Interaction | Effect |
-|------|-------------|--------|
-| QUEUE | **Shift + right-click** device | Add the target device to the connection queue |
-| QUEUE | **Sneak + left-click** device | Batch-collect adjacent channel devices recursively |
-| BIND | **Shift + right-click** controller | Execute binding — wirelessly connect all queued targets to this controller |
-| Any | **Right-click** air | Toggle between QUEUE / BIND mode |
+|:-----|:------------|:-------|
+| QUEUE | Shift + right-click device | Add to connection queue |
+| QUEUE | Sneak + left-click device | Batch-collect adjacent channel devices |
+| BIND | Shift + right-click controller | Connect all queued targets wirelessly |
+| Any | Right-click air | Toggle QUEUE / BIND |
 
 ---
 
 ## Building
 
 ```bash
-# Format check + compile + test + package
-./gradlew build
-
-# Fix formatting violations
-./gradlew spotlessApply
+JAVA_HOME=/usr/lib/jvm/java-21-temurin-jdk ./gradlew build          # format + compile + test + jar
+JAVA_HOME=/usr/lib/jvm/java-21-temurin-jdk ./gradlew spotlessApply  # fix formatting violations
 ```
+
+> **Note** — Java 21 is required. Java 25 is incompatible with Gradle 8.12.
+
+---
 
 ## Configuration
 
-Module toggles and debug settings are managed via Forge configuration:
+Module toggles and debug options are managed via Forge configuration:
+
 - In-game: `Mods → NHAEUtilities → Config`
-- File path: `<instance>/config/nhaeutilities.cfg`
+- File: `<instance>/config/nhaeutilities.cfg`
+
+---
+
+## Contributing
+
+Issues and pull requests are welcome. Please follow the repository commit style:
+
+```
+feat: short description
+fix: short description
+```
+
+---
 
 ## License
 
-This project has no license specified at this time.
+[MIT](LICENSE)
