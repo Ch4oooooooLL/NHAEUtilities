@@ -12,10 +12,12 @@ public class GuiPatternGenStatusBridgeTest {
     @After
     public void tearDown() {
         GuiPatternGenStatusBridge.clearStatus();
+        GuiPatternGenStatusBridge.unregister();
     }
 
     @Test
     public void clearStatusRestoresDefaultText() {
+        GuiPatternGenStatusBridge.register(s -> {});
         GuiPatternGenStatusBridge.setStatus("Building cache");
         GuiPatternGenStatusBridge.clearStatus();
 
@@ -24,6 +26,7 @@ public class GuiPatternGenStatusBridgeTest {
 
     @Test
     public void setStatusReturnsTheAssignedValue() {
+        GuiPatternGenStatusBridge.register(s -> {});
         GuiPatternGenStatusBridge.setStatus("Preview requested");
 
         assertEquals("Preview requested", GuiPatternGenStatusBridge.getStatus());

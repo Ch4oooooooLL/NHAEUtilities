@@ -46,7 +46,7 @@ public final class RecipeMapAnalysisService {
                 }
                 if (recipeClassified < recipeInputs) inputSkipCount++;
 
-                TypeDescriptor descriptor = describe(snapshot);
+                TypeDescriptor descriptor = describe(snapshot, recipe);
                 if (descriptor.incomplete) {
                     hasIncompleteAnalysis = true;
                 }
@@ -74,7 +74,7 @@ public final class RecipeMapAnalysisService {
         return buildResult(grouped, grouped.size(), hasIncompleteAnalysis);
     }
 
-    private static TypeDescriptor describe(RecipeAnalysisSnapshot snapshot) {
+    private static TypeDescriptor describe(RecipeAnalysisSnapshot snapshot, RecipeEntry recipe) {
         String circuitKey = normalize(snapshot != null ? snapshot.programmingCircuit : "");
         String manualItemsKey = joinSignatures(
             snapshot != null ? snapshot.nonConsumableSignatures : Collections.<String>emptyList());
@@ -96,7 +96,13 @@ public final class RecipeMapAnalysisService {
             }
         }
 
-        String displaySummary = buildDisplaySummary(circuitName, ncNames);
+        String displaySummary;
+        if (groupingKey.isEmpty() && recipe != null) {
+            groupingKey = buildFallbackGroupingKey(recipe);
+            displaySummary = buildOutputDisplaySummary(recipe);
+        } else {
+            displaySummary = buildDisplaySummary(circuitName, ncNames);
+        }
         return new TypeDescriptor(groupingKey, circuitKey, manualItemsKey, displaySummary, incomplete, ncItemStacks);
     }
 
@@ -134,6 +140,48 @@ public final class RecipeMapAnalysisService {
             summary.append("No circuit or non-consumables");
         }
         return summary.toString();
+    }
+
+    private static String buildFallbackGroupingKey(RecipeEntry recipe) {
+        if (recipe.recipeId != null && !recipe.recipeId.isEmpty()) {
+            return recipe.recipeId;
+        }
+        if (recipe.outputs != null && recipe.outputs.length > 0) {
+            for (ItemStack output : recipe.outputs) {
+                if (output != null && output.getItem() != null) {
+                    String sig = GTRecipeSemanticExtractor.itemSignature(output);
+                    if (!sig.isEmpty()) {
+                        return sig;
+                    }
+                }
+            }
+        }
+        return "unknown_" + System.identityHashCode(recipe);
+    }
+
+    private static String buildOutputDisplaySummary(RecipeEntry recipe) {
+        StringBuilder sb = new StringBuilder();
+        if (recipe.outputs != null) {
+            int shown = 0;
+            for (ItemStack output : recipe.outputs) {
+                if (output == null || output.getItem() == null) {
+                    continue;
+                }
+                if (shown > 0) {
+                    sb.append(", ");
+                }
+                if (shown >= 3) {
+                    sb.append("...");
+                    break;
+                }
+                sb.append(displayName(output));
+                shown++;
+            }
+        }
+        if (sb.length() == 0) {
+            sb.append("No circuit or non-consumables");
+        }
+        return sb.toString();
     }
 
     private static RecipeMapAnalysisResult buildResult(Map<String, TypeAccumulator> grouped, int totalTypeCount,

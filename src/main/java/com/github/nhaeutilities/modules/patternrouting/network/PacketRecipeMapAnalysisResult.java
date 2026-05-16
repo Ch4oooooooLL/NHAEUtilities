@@ -20,7 +20,7 @@ import io.netty.buffer.ByteBuf;
 
 public class PacketRecipeMapAnalysisResult implements IMessage {
 
-    private static final int MAX_GROUP_COUNT = 256;
+    private static final int MAX_GROUP_COUNT = 512;
 
     private String recipeMapId;
     private String errorKey;
@@ -46,6 +46,9 @@ public class PacketRecipeMapAnalysisResult implements IMessage {
         errorKey = ByteBufUtils.readUTF8String(buf);
         if (buf.readBoolean()) {
             result = readResult(buf);
+            if (result == null) {
+                errorKey = "nhaeutilities.msg.analysis.deserialization_error";
+            }
         } else {
             result = null;
         }
@@ -66,7 +69,7 @@ public class PacketRecipeMapAnalysisResult implements IMessage {
         boolean hasIncompleteAnalysis = buf.readBoolean();
         int totalGroupCount = buf.readInt();
         if (totalGroupCount < 0 || totalGroupCount > MAX_GROUP_COUNT) {
-            throw new IllegalArgumentException("Invalid recipe-map analysis group count: " + totalGroupCount);
+            return null;
         }
         List<RecipeMapAnalysisResult.RecipeTypeGroup> groups = new ArrayList<RecipeMapAnalysisResult.RecipeTypeGroup>(
             totalGroupCount);

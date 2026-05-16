@@ -4,23 +4,28 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.cleanroommc.modularui.api.drawable.IKey;
+import com.cleanroommc.modularui.drawable.GuiTextures;
+import com.cleanroommc.modularui.drawable.Rectangle;
+import com.cleanroommc.modularui.factory.ClientGUI;
+import com.cleanroommc.modularui.screen.ModularPanel;
+import com.cleanroommc.modularui.utils.Alignment;
+import com.cleanroommc.modularui.widget.ScrollWidget;
+import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
+import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.cleanroommc.modularui.widgets.TextWidget;
+import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.nhaeutilities.NHAEUtilities;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
 import com.github.nhaeutilities.modules.patternrouting.network.NetworkHandler;
 import com.github.nhaeutilities.modules.patternrouting.network.PacketUpdateFilterRules;
 import com.github.nhaeutilities.modules.patternrouting.service.FilterRule;
 import com.github.nhaeutilities.modules.patternrouting.service.FilterRule.RuleType;
-import com.gtnewhorizons.modularui.api.ModularUITextures;
-import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
-import com.gtnewhorizons.modularui.api.math.Alignment;
-import com.gtnewhorizons.modularui.api.screen.ModularWindow;
-import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
-import com.gtnewhorizons.modularui.common.widget.Scrollable;
-import com.gtnewhorizons.modularui.common.widget.TextWidget;
-import com.gtnewhorizons.modularui.common.widget.textfield.TextFieldWidget;
+import com.github.nhaeutilities.modules.shared.NHTextures;
+import com.github.nhaeutilities.modules.shared.nei.NeiRecipeExtractionContext;
 
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -34,201 +39,207 @@ public final class GuiAddFilterRule {
 
     private GuiAddFilterRule() {}
 
-    public static ModularWindow createWindow(UIBuildContext buildContext) {
-        return createWindow(buildContext, null, -1);
+    public static ModularPanel createWindow(EntityPlayer player) {
+        return createWindow(player, null, -1);
     }
 
-    public static ModularWindow createWindow(UIBuildContext buildContext, FilterRule existingRule, int editIndex) {
-        ModularWindow.Builder builder = ModularWindow.builder(GUI_W, GUI_H);
-        builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
-
+    public static ModularPanel createWindow(EntityPlayer player, FilterRule existingRule, int editIndex) {
         boolean isEdit = existingRule != null;
         PatternIndexGuiState state = PatternIndexGuiState.instance();
 
+        final int capturedEditIndex = editIndex;
+        NeiRecipeExtractionContext.instance()
+            .activate(data -> {
+                if (data.recipeMapId != null && !data.recipeMapId.isEmpty()
+                    && RecipeMap.ALL_RECIPE_MAPS.containsKey(data.recipeMapId)) {
+                    state.recipeMapId = data.recipeMapId;
+                    state.recipeMapSearch = "";
+                }
+                ClientGUI.close();
+                PatternIndexClientScreen.openAddFilterRuleGui(null, capturedEditIndex);
+            });
+
+        ModularPanel panel = ModularPanel.defaultPanel("add_filter_rule", GUI_W, GUI_H)
+            .background(GuiTextures.MC_BACKGROUND);
+
         String titleKey = isEdit ? "nhaeutilities.gui.filter_rule.title_edit"
             : "nhaeutilities.gui.filter_rule.title_add";
-        TextWidget title = new TextWidget(
-            EnumChatFormatting.BOLD + t(titleKey, isEdit ? "Edit Filter Rule" : "Add Filter Rule"));
-        title.setScale(1.2f);
-        title.setSize(GUI_W - 16, 20);
-        title.setPos(8, 8);
-        builder.widget(title);
+        panel.child(
+            new TextWidget(
+                IKey.str(t(titleKey, isEdit ? "Edit Filter Rule" : "Add Filter Rule"))
+                    .style(EnumChatFormatting.BOLD)).scale(1.2f)
+                        .pos(8, 8)
+                        .size(GUI_W - 16, 20));
 
-        TextWidget typeLabel = new TextWidget(t("nhaeutilities.gui.filter_rule.label_type", "Rule Type:"));
-        typeLabel.setPos(8, 34);
-        builder.widget(typeLabel);
+        panel.child(new TextWidget(IKey.str(t("nhaeutilities.gui.filter_rule.label_type", "Rule Type:"))).pos(8, 32));
 
         boolean isBlacklist = state.ruleType == RuleType.BLACKLIST;
 
-        ButtonWidget blacklistBtn = new ButtonWidget();
-        blacklistBtn.setPos(8, 50);
-        blacklistBtn.setSize(64, 18);
-        blacklistBtn.setBackground(
-            isBlacklist ? new Rectangle().setColor(0xFF3366CC) : ModularUITextures.VANILLA_BUTTON_NORMAL);
-        blacklistBtn.setSynced(false, false);
         final int editIdx = editIndex;
-        blacklistBtn.setOnClick((cd, w) -> {
+        int btnWType = 64;
+        int btnWManual = 72;
+        ButtonWidget<?> btnBlacklist = new ButtonWidget<>();
+        btnBlacklist.pos(8, 48)
+            .size(btnWType, 16)
+            .background(isBlacklist ? new Rectangle().setColor(0xFF3366CC) : NHTextures.BUTTON)
+            .overlay(
+                IKey.str(t("nhaeutilities.gui.filter_rule.type_blacklist", "Blacklist"))
+                    .shadow(false));
+        btnBlacklist.disableHoverBackground();
+        btnBlacklist.onMousePressed(mb -> {
             if (!isBlacklist) {
                 state.ruleType = RuleType.BLACKLIST;
                 reloadWindow(state.recipeMapId.isEmpty() ? "" : state.recipeMapId, state.itemPattern, editIdx);
             }
+            return true;
         });
-        builder.widget(blacklistBtn);
+        panel.child(btnBlacklist);
 
-        TextWidget blacklistText = new TextWidget(t("nhaeutilities.gui.filter_rule.type_blacklist", "Blacklist"));
-        blacklistText.setPos(13, 53);
-        builder.widget(blacklistText);
-
-        ButtonWidget manualBtn = new ButtonWidget();
-        manualBtn.setPos(76, 50);
-        manualBtn.setSize(72, 18);
-        manualBtn.setBackground(
-            !isBlacklist ? new Rectangle().setColor(0xFF3366CC) : ModularUITextures.VANILLA_BUTTON_NORMAL);
-        manualBtn.setSynced(false, false);
-        manualBtn.setOnClick((cd, w) -> {
+        ButtonWidget<?> btnManual = new ButtonWidget<>();
+        btnManual.pos(8 + btnWType + 4, 48)
+            .size(btnWManual, 16)
+            .background(!isBlacklist ? new Rectangle().setColor(0xFF3366CC) : NHTextures.BUTTON)
+            .overlay(
+                IKey.str(t("nhaeutilities.gui.filter_rule.type_manual", "Manual Match"))
+                    .shadow(false));
+        btnManual.disableHoverBackground();
+        btnManual.onMousePressed(mb -> {
             if (isBlacklist) {
                 state.ruleType = RuleType.MANUAL_MATCH;
                 reloadWindow(state.recipeMapId.isEmpty() ? "" : state.recipeMapId, state.itemPattern, editIdx);
             }
+            return true;
         });
-        builder.widget(manualBtn);
+        panel.child(btnManual);
 
-        TextWidget manualText = new TextWidget(t("nhaeutilities.gui.filter_rule.type_manual", "Manual Match"));
-        manualText.setPos(80, 53);
-        builder.widget(manualText);
-
-        TextWidget itemLabel = new TextWidget(
-            t("nhaeutilities.gui.filter_rule.label_item", "Item Pattern ([ID]/(ore)/{display}):"));
-        itemLabel.setPos(8, 76);
-        builder.widget(itemLabel);
+        panel.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.filter_rule.label_item", "Item Pattern ([ID]/(ore)/{display}):")))
+                    .pos(8, 72));
 
         String initItemText = state.itemPattern;
         TextFieldWidget itemField = new TextFieldWidget();
-        itemField.setPos(8, 92);
-        itemField.setSize(GUI_W - 16, 14);
+        itemField.pos(8, 88);
+        itemField.size(GUI_W - 16, 14);
         itemField.setTextColor(isBlacklist ? 0x888888 : 0xFFFFFF);
-        itemField.setBackground(new Rectangle().setColor(0xFF222244));
+        itemField.background(new Rectangle().setColor(0xFF222244));
         itemField.setTextAlignment(Alignment.CenterLeft);
         itemField.setText(initItemText);
-        builder.widget(itemField);
+        panel.child(itemField);
 
         if (isBlacklist) {
-            TextWidget disabledHint = new TextWidget(
-                EnumChatFormatting.GRAY + t("nhaeutilities.gui.filter_rule.item_disabled", "(disabled for blacklist)"));
-            disabledHint.setPos(8, 92);
-            disabledHint.setSize(GUI_W - 16, 14);
-            builder.widget(disabledHint);
+            panel.child(
+                new TextWidget(
+                    IKey.str(t("nhaeutilities.gui.filter_rule.item_disabled", "(disabled for blacklist)"))
+                        .style(EnumChatFormatting.GRAY)).pos(8, 88)
+                            .size(GUI_W - 16, 14));
         }
 
-        TextWidget mapLabel = new TextWidget(t("nhaeutilities.gui.filter_rule.label_map", "RecipeMap:"));
-        mapLabel.setPos(8, 114);
-        builder.widget(mapLabel);
+        panel.child(new TextWidget(IKey.str(t("nhaeutilities.gui.filter_rule.label_map", "RecipeMap:"))).pos(8, 110));
+
+        panel.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.filter_rule.map_hint", "Press R/U on NEI item to pick"))
+                    .style(EnumChatFormatting.GRAY)).pos(80, 111));
 
         String initMapText = state.recipeMapSearch.isEmpty() ? state.recipeMapId : state.recipeMapSearch;
         TextFieldWidget mapField = new TextFieldWidget();
-        mapField.setPos(8, 130);
-        mapField.setSize(GUI_W - 16 - 40, 14);
+        mapField.pos(8, 126);
+        mapField.size(GUI_W - 16 - 40, 14);
         mapField.setTextColor(0xFFFFFF);
-        mapField.setBackground(new Rectangle().setColor(0xFF222244));
+        mapField.background(new Rectangle().setColor(0xFF222244));
         mapField.setTextAlignment(Alignment.CenterLeft);
         mapField.setText(initMapText);
-        builder.widget(mapField);
+        panel.child(mapField);
 
-        ButtonWidget searchBtn = new ButtonWidget();
-        searchBtn.setPos(GUI_W - 8 - 36, 130);
-        searchBtn.setSize(36, 14);
-        searchBtn.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-        searchBtn.setSynced(false, false);
-        searchBtn.setOnClick((cd, w) -> {
-            String searchText = mapField.getText();
-            state.recipeMapSearch = searchText;
-            state.recipeMapId = "";
-            state.itemPattern = itemField.getText();
-            reloadWindow("", state.itemPattern, editIdx);
-        });
-        builder.widget(searchBtn);
-
-        TextWidget searchText = new TextWidget("...");
-        searchText.setPos(GUI_W - 8 - 30, 132);
-        builder.widget(searchText);
+        panel.child(
+            NHTextures.createButton()
+                .pos(GUI_W - 8 - 36, 126)
+                .size(36, 14)
+                .overlay(
+                    IKey.str("...")
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    String searchText = mapField.getText();
+                    state.recipeMapSearch = searchText;
+                    state.recipeMapId = "";
+                    state.itemPattern = itemField.getText();
+                    reloadWindow("", state.itemPattern, editIdx);
+                    return true;
+                }));
 
         String searchKeyword = state.recipeMapSearch.isEmpty() ? state.recipeMapId : state.recipeMapSearch;
         List<String> matchedMaps = findMatchingMaps(searchKeyword);
         if (!matchedMaps.isEmpty()) {
-            Scrollable mapList = new Scrollable().setVerticalScroll();
-            mapList.setPos(8, 148);
-            mapList.setSize(GUI_W - 16, GUI_H - 148 - 40);
+            ScrollWidget<?> mapList = new ScrollWidget<>(new VerticalScrollData()).pos(8, 144)
+                .size(GUI_W - 16, GUI_H - 144 - 40);
             int ly = 0;
             for (String mapId : matchedMaps) {
                 final String finalMapId = mapId;
-                ButtonWidget mapRow = new ButtonWidget();
-                mapRow.setPos(2, ly);
-                mapRow.setSize(GUI_W - 36, 14);
-                mapRow.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-                mapRow.setSynced(false, false);
-                mapRow.setOnClick((cd, w) -> {
-                    state.recipeMapId = finalMapId;
-                    state.recipeMapSearch = "";
-                    state.itemPattern = itemField.getText();
-                    reloadWindow(finalMapId, state.itemPattern, editIdx);
-                });
-                mapList.widget(mapRow);
-
-                TextWidget mapRowText = new TextWidget(finalMapId);
-                mapRowText.setPos(6, ly + 2);
-                mapList.widget(mapRowText);
+                mapList.child(
+                    NHTextures.createButton()
+                        .pos(2, ly)
+                        .size(GUI_W - 36, 14)
+                        .overlay(
+                            IKey.str(finalMapId)
+                                .shadow(false))
+                        .onMousePressed(mb -> {
+                            state.recipeMapId = finalMapId;
+                            state.recipeMapSearch = "";
+                            state.itemPattern = itemField.getText();
+                            reloadWindow(finalMapId, state.itemPattern, editIdx);
+                            return true;
+                        }));
                 ly += 16;
             }
-            builder.widget(mapList);
+            panel.child(mapList);
         }
 
         int btnY = GUI_H - 22;
-        ButtonWidget saveBtn = new ButtonWidget();
-        saveBtn.setPos(60, btnY);
-        saveBtn.setSize(64, 18);
-        saveBtn.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-        saveBtn.setSynced(false, false);
-        saveBtn.setOnClick((cd, w) -> {
-            state.itemPattern = itemField.getText();
-            String mapText = mapField.getText();
-            if (!mapText.isEmpty() && RecipeMap.ALL_RECIPE_MAPS.containsKey(mapText.trim())) {
-                state.recipeMapId = mapText.trim();
-            }
-            if (validateAndSave(isEdit, editIndex)) {
-                NHAEUtilities.proxy.closeCurrentScreen();
-                PatternIndexClientScreen.openPatternIndexGui(null);
-            }
-        });
-        builder.widget(saveBtn);
+        int btnW = 64;
+        int btnH = 16;
+        int startX = (GUI_W - (btnW * 2 + 4)) / 2;
 
-        TextWidget saveText = new TextWidget(t("nhaeutilities.gui.filter_rule.button_save", "Save"));
-        saveText.setPos(80, btnY + 3);
-        builder.widget(saveText);
+        panel.child(
+            NHTextures.createButton()
+                .pos(startX, btnY)
+                .size(btnW, btnH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.filter_rule.button_save", "Save"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    state.itemPattern = itemField.getText();
+                    String mapText = mapField.getText();
+                    if (!mapText.isEmpty() && RecipeMap.ALL_RECIPE_MAPS.containsKey(mapText.trim())) {
+                        state.recipeMapId = mapText.trim();
+                    }
+                    if (validateAndSave(isEdit, editIndex)) {
+                        NHAEUtilities.proxy.closeCurrentScreen();
+                    }
+                    return true;
+                }));
 
-        ButtonWidget cancelBtn = new ButtonWidget();
-        cancelBtn.setPos(140, btnY);
-        cancelBtn.setSize(64, 18);
-        cancelBtn.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-        cancelBtn.setSynced(false, false);
-        cancelBtn.setOnClick((cd, w) -> {
-            PatternIndexGuiState.clearTemp();
-            NHAEUtilities.proxy.closeCurrentScreen();
-            PatternIndexClientScreen.openPatternIndexGui(null);
-        });
-        builder.widget(cancelBtn);
+        panel.child(
+            NHTextures.createButton()
+                .pos(startX + btnW + 4, btnY)
+                .size(btnW, btnH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.common.cancel", "Cancel"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    PatternIndexGuiState.clearTemp();
+                    NHAEUtilities.proxy.closeCurrentScreen();
+                    PatternIndexClientScreen.openPatternIndexGui(null);
+                    return true;
+                }));
 
-        TextWidget cancelText = new TextWidget(t("nhaeutilities.gui.pattern_routing_analysis.button.close", "Cancel"));
-        cancelText.setPos(155, btnY + 3);
-        builder.widget(cancelText);
-
-        return builder.build();
+        return panel;
     }
 
     private static void reloadWindow(String recipeMapId, String itemPattern, int editIndex) {
         PatternIndexGuiState state = PatternIndexGuiState.instance();
         if (!recipeMapId.isEmpty()) state.recipeMapId = recipeMapId;
         state.itemPattern = itemPattern;
-        NHAEUtilities.proxy.closeCurrentScreen();
         PatternIndexClientScreen.openAddFilterRuleGui(null, editIndex);
     }
 

@@ -9,6 +9,7 @@ import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.StatCollector;
 
+import com.github.nhaeutilities.modules.patternrouting.gui.PatternIndexClientScreen;
 import com.github.nhaeutilities.modules.patternrouting.service.BookmarkBatchEncoder;
 
 import codechicken.nei.LayoutManager;
@@ -92,6 +93,7 @@ public class PacketBatchEncodeResult implements IMessage {
             }
 
             sendSummaryChat(message);
+            PatternIndexClientScreen.refreshOpenPatternIndexGui();
         }
 
         @SideOnly(Side.CLIENT)

@@ -37,8 +37,6 @@ public final class NetworkHandler {
             Side.SERVER);
         INSTANCE.registerMessage(PacketSaveFields.Handler.class, PacketSaveFields.class, packetId++, Side.SERVER);
         INSTANCE.registerMessage(PacketStorageAction.Handler.class, PacketStorageAction.class, packetId++, Side.SERVER);
-        INSTANCE
-            .registerMessage(PacketRecipeConflicts.Handler.class, PacketRecipeConflicts.class, packetId++, Side.CLIENT);
         INSTANCE.registerMessage(
             PacketPreviewRecipeCountResult.Handler.class,
             PacketPreviewRecipeCountResult.class,
@@ -47,11 +45,6 @@ public final class NetworkHandler {
         INSTANCE.registerMessage(PacketCacheProgress.Handler.class, PacketCacheProgress.class, packetId++, Side.CLIENT);
         INSTANCE
             .registerMessage(PacketCacheStatistics.Handler.class, PacketCacheStatistics.class, packetId++, Side.CLIENT);
-        INSTANCE.registerMessage(
-            PacketResolveConflicts.Handler.class,
-            PacketResolveConflicts.class,
-            packetId++,
-            Side.SERVER);
         INSTANCE.registerMessage(
             PacketRecipeConflictBatch.Handler.class,
             PacketRecipeConflictBatch.class,
@@ -62,6 +55,26 @@ public final class NetworkHandler {
             PacketResolveConflictsBatch.class,
             packetId++,
             Side.SERVER);
+        INSTANCE.registerMessage(
+            PacketRequestStorageSummary.Handler.class,
+            PacketRequestStorageSummary.class,
+            packetId++,
+            Side.SERVER);
+        INSTANCE.registerMessage(
+            PacketStorageSummaryResult.Handler.class,
+            PacketStorageSummaryResult.class,
+            packetId++,
+            Side.CLIENT);
+        INSTANCE.registerMessage(
+            PacketRequestStorageDetail.Handler.class,
+            PacketRequestStorageDetail.class,
+            packetId++,
+            Side.SERVER);
+        INSTANCE.registerMessage(
+            PacketStorageDetailResult.Handler.class,
+            PacketStorageDetailResult.class,
+            packetId++,
+            Side.CLIENT);
 
         initialized = true;
     }

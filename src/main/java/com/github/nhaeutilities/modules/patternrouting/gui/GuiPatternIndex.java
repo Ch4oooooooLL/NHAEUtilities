@@ -3,10 +3,18 @@ package com.github.nhaeutilities.modules.patternrouting.gui;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
-import com.github.nhaeutilities.NHAEUtilities;
+import com.cleanroommc.modularui.api.drawable.IKey;
+import com.cleanroommc.modularui.drawable.GuiTextures;
+import com.cleanroommc.modularui.drawable.Rectangle;
+import com.cleanroommc.modularui.screen.ModularPanel;
+import com.cleanroommc.modularui.widget.ScrollWidget;
+import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
+import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
 import com.github.nhaeutilities.modules.patternrouting.network.NetworkHandler;
 import com.github.nhaeutilities.modules.patternrouting.network.PacketBatchEncodeBookmarks;
@@ -14,13 +22,8 @@ import com.github.nhaeutilities.modules.patternrouting.network.PacketRequestFilt
 import com.github.nhaeutilities.modules.patternrouting.network.PacketUpdateFilterRules;
 import com.github.nhaeutilities.modules.patternrouting.service.FilterRule;
 import com.github.nhaeutilities.modules.patternrouting.service.FilterRule.RuleType;
-import com.gtnewhorizons.modularui.api.ModularUITextures;
-import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
-import com.gtnewhorizons.modularui.api.screen.ModularWindow;
-import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
-import com.gtnewhorizons.modularui.common.widget.Scrollable;
-import com.gtnewhorizons.modularui.common.widget.TextWidget;
+import com.github.nhaeutilities.modules.shared.NHTextures;
+import com.github.nhaeutilities.modules.shared.nei.NeiRecipeExtractionContext;
 
 import codechicken.nei.LayoutManager;
 import codechicken.nei.bookmark.BookmarkGrid;
@@ -31,137 +34,150 @@ public final class GuiPatternIndex {
     private static final int GUI_W = 240;
     private static final int GUI_H = 220;
 
+    private static final int PADDING = 8;
+    private static final int CONTENT_W = GUI_W - PADDING * 2;
+    private static final int BTN_X = CONTENT_W - 30;
+    private static final int BG_W = BTN_X - 4;
+
     private GuiPatternIndex() {}
 
-    public static ModularWindow createWindow(UIBuildContext buildContext) {
-        ModularWindow.Builder builder = ModularWindow.builder(GUI_W, GUI_H);
-        builder.setBackground(ModularUITextures.VANILLA_BACKGROUND);
+    public static ModularPanel createWindow(EntityPlayer player) {
+        NeiRecipeExtractionContext.instance()
+            .deactivate();
 
-        TextWidget title = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_index.title", "Pattern Index"));
-        title.setScale(1.2f);
-        title.setSize(GUI_W - 16, 20);
-        title.setPos(8, 8);
-        builder.widget(title);
+        ModularPanel panel = ModularPanel.defaultPanel("pattern_index", GUI_W, GUI_H)
+            .background(GuiTextures.MC_BACKGROUND);
+
+        panel.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.pattern_index.title", "Pattern Index"))
+                    .style(EnumChatFormatting.BOLD)).scale(1.2f)
+                        .pos(PADDING, 8)
+                        .size(CONTENT_W, 20));
 
         List<FilterRule> rules = PatternIndexConfigState.getRules();
         List<ItemStack> bookmarks = readBookmarkItems();
         int bookmarkCount = bookmarks != null ? bookmarks.size() : 0;
 
-        TextWidget info = new TextWidget(
-            t(
-                "nhaeutilities.gui.pattern_index.bookmark_count",
-                "Bookmarks: %s  |  Rules: %s",
-                bookmarkCount,
-                rules.size()));
-        info.setPos(8, 30);
-        builder.widget(info);
+        panel.child(
+            new TextWidget(
+                IKey.str(
+                    t(
+                        "nhaeutilities.gui.pattern_index.bookmark_count",
+                        "Bookmarks: %s  |  Rules: %s",
+                        bookmarkCount,
+                        rules.size()))).pos(PADDING, 30));
 
-        Scrollable ruleScrollable = new Scrollable().setVerticalScroll();
-        ruleScrollable.setPos(8, 48);
-        ruleScrollable.setSize(GUI_W - 16, 120);
+        panel.child(
+            new ButtonWidget<>().pos(PADDING, 44)
+                .size(CONTENT_W, 1)
+                .background(new Rectangle().setColor(0xFF444444)));
+
+        ScrollWidget<?> ruleScrollable = new ScrollWidget<>(new VerticalScrollData()).pos(PADDING, 49)
+            .size(CONTENT_W, 130);
 
         int ry = 0;
         for (int i = 0; i < rules.size(); i++) {
-            final int ruleIndex = i;
             FilterRule rule = rules.get(i);
             String ruleText = formatRule(rule);
+            final int idx = i;
 
-            ButtonWidget row = new ButtonWidget();
-            row.setPos(2, ry);
-            row.setSize(GUI_W - 56, 42);
-            row.setBackground(new Rectangle().setColor(0xFF1E1E30));
-            final int clickIndex = i;
-            row.setOnClick((cd, w) -> handleEditRule(clickIndex));
-            ruleScrollable.widget(row);
+            ButtonWidget<?> row = new ButtonWidget<>().pos(2, ry)
+                .size(BG_W, 30)
+                .background(new Rectangle().setColor(0xFF1E1E30))
+                .onMousePressed(mb -> {
+                    handleEditRule(idx);
+                    return true;
+                });
+            ruleScrollable.child(row);
 
-            TextWidget ruleLine = new TextWidget(ruleText);
-            ruleLine.setPos(6, ry + 4);
-            ruleScrollable.widget(ruleLine);
+            ruleScrollable.child(new TextWidget(IKey.str(ruleText)).pos(6, ry + 4));
 
-            ButtonWidget delBtn = new ButtonWidget();
-            delBtn.setPos(GUI_W - 48, ry + 4);
-            delBtn.setSize(28, 14);
-            delBtn.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-            delBtn.setSynced(false, false);
-            final int delIndex = i;
-            delBtn.setOnClick((cd, w) -> handleDeleteRule(delIndex));
-            ruleScrollable.widget(delBtn);
+            ruleScrollable.child(
+                NHTextures.createButton()
+                    .pos(BTN_X, ry + 3)
+                    .size(18, 12)
+                    .overlay(
+                        IKey.str("X")
+                            .style(EnumChatFormatting.RED)
+                            .shadow(false))
+                    .onMousePressed(mb -> {
+                        handleDeleteRule(idx);
+                        return true;
+                    }));
 
-            TextWidget delText = new TextWidget(EnumChatFormatting.RED + "X");
-            delText.setPos(GUI_W - 40, ry + 6);
-            ruleScrollable.widget(delText);
+            ruleScrollable.child(
+                NHTextures.createButton()
+                    .pos(BTN_X, ry + 18)
+                    .size(18, 12)
+                    .overlay(
+                        IKey.str("...")
+                            .shadow(false))
+                    .onMousePressed(mb -> {
+                        handleEditRule(idx);
+                        return true;
+                    }));
 
-            ButtonWidget editBtn = new ButtonWidget();
-            editBtn.setPos(GUI_W - 48, ry + 22);
-            editBtn.setSize(28, 14);
-            editBtn.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-            editBtn.setSynced(false, false);
-            final int editIndex = i;
-            editBtn.setOnClick((cd, w) -> handleEditRule(editIndex));
-            ruleScrollable.widget(editBtn);
-
-            TextWidget editText = new TextWidget("...");
-            editText.setPos(GUI_W - 38, ry + 24);
-            ruleScrollable.widget(editText);
-
-            ry += 46;
+            ry += 34;
         }
 
         if (rules.isEmpty()) {
-            TextWidget empty = new TextWidget(
-                EnumChatFormatting.GRAY + t("nhaeutilities.gui.pattern_index.no_rules", "No filter rules defined."));
-            empty.setPos(4, 0);
-            ruleScrollable.widget(empty);
+            ruleScrollable.child(
+                new TextWidget(
+                    IKey.str(t("nhaeutilities.gui.pattern_index.no_rules", "No filter rules defined."))
+                        .style(EnumChatFormatting.GRAY)).pos(4, 0));
         }
 
-        builder.widget(ruleScrollable);
+        ruleScrollable.getScrollArea()
+            .getScrollY()
+            .setScrollSize(rules.isEmpty() ? 12 : ry);
+        panel.child(ruleScrollable);
 
-        int btnY = GUI_H - 38;
+        int btnY = GUI_H - 34;
         int numBtns = 3;
-        int btnW = 70;
+        int btnW = 64;
+        int btnH = 16;
         int gap = 4;
         int totalW = numBtns * btnW + (numBtns - 1) * gap;
         int startX = (GUI_W - totalW) / 2;
 
-        ButtonWidget encodeBtn = new ButtonWidget();
-        encodeBtn.setPos(startX, btnY);
-        encodeBtn.setSize(btnW, 18);
-        encodeBtn.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-        encodeBtn.setSynced(false, false);
-        encodeBtn.setOnClick((cd, w) -> doBatchEncode(bookmarks));
-        builder.widget(encodeBtn);
+        panel.child(
+            NHTextures.createButton()
+                .pos(startX, btnY)
+                .size(btnW, btnH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.pattern_index.button.batch_encode", "Batch Encode"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    doBatchEncode();
+                    return true;
+                }));
 
-        TextWidget encodeText = new TextWidget(
-            t("nhaeutilities.gui.pattern_index.button.batch_encode", "Batch Encode"));
-        encodeText.setPos(startX + 8, btnY + 3);
-        builder.widget(encodeText);
+        panel.child(
+            NHTextures.createButton()
+                .pos(startX + btnW + gap, btnY)
+                .size(btnW, btnH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.pattern_index.button.add_filter", "Add Filter"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    handleAddRule();
+                    return true;
+                }));
 
-        ButtonWidget addBtn = new ButtonWidget();
-        addBtn.setPos(startX + btnW + gap, btnY);
-        addBtn.setSize(btnW, 18);
-        addBtn.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-        addBtn.setSynced(false, false);
-        addBtn.setOnClick((cd, w) -> handleAddRule());
-        builder.widget(addBtn);
+        panel.child(
+            NHTextures.createButton()
+                .pos(startX + 2 * (btnW + gap), btnY)
+                .size(btnW, btnH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.pattern_index.button.refresh", "Refresh Rules"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    NetworkHandler.sendToServer(new PacketRequestFilterRules());
+                    return true;
+                }));
 
-        TextWidget addText = new TextWidget(t("nhaeutilities.gui.pattern_index.button.add_filter", "Add Filter"));
-        addText.setPos(startX + btnW + gap + 12, btnY + 3);
-        builder.widget(addText);
-
-        ButtonWidget refreshBtn = new ButtonWidget();
-        refreshBtn.setPos(startX + 2 * (btnW + gap), btnY);
-        refreshBtn.setSize(btnW, 18);
-        refreshBtn.setBackground(ModularUITextures.VANILLA_BUTTON_NORMAL);
-        refreshBtn.setSynced(false, false);
-        refreshBtn.setOnClick((cd, w) -> NetworkHandler.sendToServer(new PacketRequestFilterRules()));
-        builder.widget(refreshBtn);
-
-        TextWidget refreshText = new TextWidget(t("nhaeutilities.gui.pattern_index.button.refresh", "Refresh Rules"));
-        refreshText.setPos(startX + 2 * (btnW + gap) + 6, btnY + 3);
-        builder.widget(refreshText);
-
-        return builder.build();
+        return panel;
     }
 
     private static String formatRule(FilterRule rule) {
@@ -183,13 +199,11 @@ public final class GuiPatternIndex {
 
     private static void handleAddRule() {
         PatternIndexGuiState.clearTemp();
-        NHAEUtilities.proxy.closeCurrentScreen();
         PatternIndexClientScreen.openAddFilterRuleGui(null, -1);
     }
 
     private static void handleEditRule(int index) {
         PatternIndexGuiState.prepareEdit(index);
-        NHAEUtilities.proxy.closeCurrentScreen();
         PatternIndexClientScreen.openAddFilterRuleGui(null, index);
     }
 
@@ -197,7 +211,8 @@ public final class GuiPatternIndex {
         NetworkHandler.sendToServer(PacketUpdateFilterRules.delete(index));
     }
 
-    private static void doBatchEncode(List<ItemStack> bookmarks) {
+    private static void doBatchEncode() {
+        List<ItemStack> bookmarks = readBookmarkItems();
         if (bookmarks == null || bookmarks.isEmpty()) return;
         NetworkHandler.sendToServer(new PacketBatchEncodeBookmarks(bookmarks));
     }

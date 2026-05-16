@@ -11,11 +11,14 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.util.StatCollector;
 import net.minecraft.world.World;
 
-import com.github.nhaeutilities.NHAEUtilities;
 import com.github.nhaeutilities.modules.patterngenerator.storage.PatternStagingStorage;
+import com.github.nhaeutilities.modules.patternrouting.gui.GuiPatternIndex;
+import com.github.nhaeutilities.modules.patternrouting.gui.GuiStagingViewer;
+import com.github.nhaeutilities.modules.shared.animation.ScreenHelper;
 
 import appeng.api.features.IWirelessTermHandler;
 import appeng.api.util.IConfigManager;
@@ -55,23 +58,14 @@ public class ItemPatternIndex extends Item implements IWirelessTermHandler {
 
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-        if (!world.isRemote) {
-            if (player.isSneaking()) {
-                player.openGui(
-                    NHAEUtilities.instance,
-                    GUI_ID_STAGING_STORAGE,
-                    world,
-                    (int) player.posX,
-                    (int) player.posY,
-                    (int) player.posZ);
-            } else {
-                player.openGui(
-                    NHAEUtilities.instance,
-                    GUI_ID_PATTERN_INDEX,
-                    world,
-                    (int) player.posX,
-                    (int) player.posY,
-                    (int) player.posZ);
+        if (world.isRemote) {
+            MovingObjectPosition hit = getMovingObjectPositionFromPlayer(world, player, false);
+            if (hit == null || hit.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) {
+                if (player.isSneaking()) {
+                    ScreenHelper.open(GuiStagingViewer.createWindow(player));
+                } else {
+                    ScreenHelper.open(GuiPatternIndex.createWindow(player));
+                }
             }
         }
         return stack;

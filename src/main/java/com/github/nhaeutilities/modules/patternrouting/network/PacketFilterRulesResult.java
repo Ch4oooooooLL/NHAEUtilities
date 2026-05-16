@@ -67,9 +67,11 @@ public class PacketFilterRulesResult implements IMessage {
         @Override
         @SideOnly(Side.CLIENT)
         public IMessage onMessage(PacketFilterRulesResult message, MessageContext ctx) {
-            PatternIndexConfigState.setRules(message.rules);
             Minecraft.getMinecraft()
-                .func_152344_a(() -> { PatternIndexClientScreen.refreshOpenPatternIndexGui(); });
+                .func_152344_a(() -> {
+                    PatternIndexConfigState.setRules(message.rules);
+                    PatternIndexClientScreen.refreshOpenPatternIndexGui();
+                });
             return null;
         }
     }

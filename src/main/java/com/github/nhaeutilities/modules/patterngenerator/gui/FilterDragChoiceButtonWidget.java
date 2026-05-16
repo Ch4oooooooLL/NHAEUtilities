@@ -2,10 +2,12 @@ package com.github.nhaeutilities.modules.patterngenerator.gui;
 
 import net.minecraft.item.ItemStack;
 
-import com.gtnewhorizons.modularui.api.widget.IDragAndDropHandler;
-import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
+import org.jetbrains.annotations.NotNull;
 
-class FilterDragChoiceButtonWidget extends ButtonWidget implements IDragAndDropHandler {
+import com.cleanroommc.modularui.integration.nei.NEIDragAndDropHandler;
+import com.cleanroommc.modularui.widgets.ButtonWidget;
+
+class FilterDragChoiceButtonWidget extends ButtonWidget<FilterDragChoiceButtonWidget> implements NEIDragAndDropHandler {
 
     private final FilterTextFieldWidget delegate;
 
@@ -14,7 +16,15 @@ class FilterDragChoiceButtonWidget extends ButtonWidget implements IDragAndDropH
     }
 
     @Override
-    public boolean handleDragAndDrop(ItemStack draggedStack, int button) {
+    public @NotNull Result onMousePressed(int mouseButton) {
+        if (delegate == null) return Result.IGNORE;
+        int direction = mouseButton == 1 ? -1 : 1;
+        delegate.cycleCategory(direction);
+        return Result.SUCCESS;
+    }
+
+    @Override
+    public boolean handleDragAndDrop(@NotNull ItemStack draggedStack, int button) {
         return delegate != null && delegate.handleDragAndDrop(draggedStack, button);
     }
 }

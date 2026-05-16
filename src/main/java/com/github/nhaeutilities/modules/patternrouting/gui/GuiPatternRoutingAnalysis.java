@@ -9,18 +9,21 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.cleanroommc.modularui.api.drawable.IKey;
+import com.cleanroommc.modularui.drawable.GuiTextures;
+import com.cleanroommc.modularui.drawable.Rectangle;
+import com.cleanroommc.modularui.screen.ModularPanel;
+import com.cleanroommc.modularui.widget.ScrollWidget;
+import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
+import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.nhaeutilities.NHAEUtilities;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
 import com.github.nhaeutilities.modules.patternrouting.core.RecipeMapAnalysisResult;
 import com.github.nhaeutilities.modules.patternrouting.item.ItemRecipeMapAnalyzer;
 import com.github.nhaeutilities.modules.patternrouting.network.NetworkHandler;
 import com.github.nhaeutilities.modules.patternrouting.network.PacketRequestRecipeMapAnalysis;
-import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
-import com.gtnewhorizons.modularui.api.screen.ModularWindow;
-import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
-import com.gtnewhorizons.modularui.common.widget.Scrollable;
-import com.gtnewhorizons.modularui.common.widget.TextWidget;
+import com.github.nhaeutilities.modules.shared.NHTextures;
 
 import codechicken.nei.LayoutManager;
 
@@ -32,81 +35,79 @@ public final class GuiPatternRoutingAnalysis {
 
     private GuiPatternRoutingAnalysis() {}
 
-    public static ModularWindow createWindow(UIBuildContext buildContext, EntityPlayer player) {
-        ModularWindow.Builder builder = ModularWindow.builder(GUI_W, GUI_H);
-        builder.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BACKGROUND);
+    public static ModularPanel createWindow(EntityPlayer player) {
+        ModularPanel panel = ModularPanel.defaultPanel("pattern_routing_analysis", GUI_W, GUI_H)
+            .background(GuiTextures.MC_BACKGROUND);
 
         GuiPatternRoutingAnalysisState.Snapshot snapshot = GuiPatternRoutingAnalysisState.snapshot();
 
-        TextWidget title = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_routing_analysis.title", "RecipeMap Analysis"));
-        title.setScale(1.2f);
-        title.setSize(GUI_W - 16, 20);
-        title.setPos(8, 8);
-        builder.widget(title);
+        panel.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.pattern_routing_analysis.title", "RecipeMap Analysis"))
+                    .style(EnumChatFormatting.BOLD)).scale(1.2f)
+                        .pos(8, 8)
+                        .size(GUI_W - 16, 20));
 
-        TextWidget summary = new TextWidget(summaryText(snapshot));
-        summary.setPos(8, 28);
-        builder.widget(summary);
+        panel.child(
+            new TextWidget(IKey.dynamic(() -> summaryText(GuiPatternRoutingAnalysisState.snapshot()))).pos(8, 28));
 
-        TextWidget status = new TextWidget(statusMessage(snapshot));
-        status.setPos(8, 42);
-        builder.widget(status);
+        panel.child(
+            new TextWidget(IKey.dynamic(() -> statusMessage(GuiPatternRoutingAnalysisState.snapshot()))).pos(8, 42));
 
-        Scrollable scrollable = new Scrollable().setVerticalScroll();
-        scrollable.setPos(8, 58);
-        scrollable.setSize(GUI_W - 16, 142);
+        ScrollWidget<?> scrollable = new ScrollWidget<>(new VerticalScrollData()).pos(8, 58)
+            .size(GUI_W - 16, 142);
 
-        populateContent(scrollable, snapshot);
-        builder.widget(scrollable);
+        int totalContentHeight = populateContent(scrollable, snapshot);
+        scrollable.getScrollArea()
+            .getScrollY()
+            .setScrollSize(totalContentHeight);
+        panel.child(scrollable);
 
         int buttonY = GUI_H - 30;
         int numButtons = 3;
         int buttonW = 64;
-        int buttonH = 18;
+        int buttonH = 16;
         int gap = 4;
         int totalWidth = numButtons * buttonW + (numButtons - 1) * gap;
         int startX = (GUI_W - totalWidth) / 2;
 
-        ButtonWidget refreshButton = new ButtonWidget();
-        refreshButton.setPos(startX, buttonY);
-        refreshButton.setSize(buttonW, buttonH);
-        refreshButton.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-        refreshButton.setSynced(false, false);
-        refreshButton.setOnClick((cd, w) -> requestAnalysis(player));
-        builder.widget(refreshButton);
+        panel.child(
+            NHTextures.createButton()
+                .pos(startX, buttonY)
+                .size(buttonW, buttonH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.pattern_routing_analysis.button.refresh", "Refresh"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    requestAnalysis(player);
+                    return true;
+                }));
 
-        TextWidget refreshText = new TextWidget(
-            t("nhaeutilities.gui.pattern_routing_analysis.button.refresh", "Refresh"));
-        refreshText.setPos(startX + 23, buttonY + 5);
-        builder.widget(refreshText);
+        panel.child(
+            NHTextures.createButton()
+                .pos(startX + buttonW + gap, buttonY)
+                .size(buttonW, buttonH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.pattern_routing_analysis.button.add_bookmark", "Add Bookmark"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    addBookmarkFromCurrentResult();
+                    return true;
+                }));
 
-        ButtonWidget bookmarkButton = new ButtonWidget();
-        bookmarkButton.setPos(startX + buttonW + gap, buttonY);
-        bookmarkButton.setSize(buttonW, buttonH);
-        bookmarkButton.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-        bookmarkButton.setSynced(false, false);
-        bookmarkButton.setOnClick((cd, w) -> addBookmarkFromCurrentResult());
-        builder.widget(bookmarkButton);
+        panel.child(
+            NHTextures.createButton()
+                .pos(startX + 2 * (buttonW + gap), buttonY)
+                .size(buttonW, buttonH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.common.close", "Close"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    NHAEUtilities.proxy.closeCurrentScreen();
+                    return true;
+                }));
 
-        TextWidget bookmarkText = new TextWidget(
-            t("nhaeutilities.gui.pattern_routing_analysis.button.add_bookmark", "Add Bookmark"));
-        bookmarkText.setPos(startX + buttonW + gap + 14, buttonY + 5);
-        builder.widget(bookmarkText);
-
-        ButtonWidget closeButton = new ButtonWidget();
-        closeButton.setPos(startX + 2 * (buttonW + gap), buttonY);
-        closeButton.setSize(buttonW, buttonH);
-        closeButton.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-        closeButton.setSynced(false, false);
-        closeButton.setOnClick((cd, w) -> NHAEUtilities.proxy.closeCurrentScreen());
-        builder.widget(closeButton);
-
-        TextWidget closeText = new TextWidget(t("nhaeutilities.gui.pattern_routing_analysis.button.close", "Close"));
-        closeText.setPos(startX + 2 * (buttonW + gap) + 23, buttonY + 5);
-        builder.widget(closeText);
-
-        return builder.build();
+        return panel;
     }
 
     static void requestAnalysis(EntityPlayer player) {
@@ -240,55 +241,48 @@ public final class GuiPatternRoutingAnalysis {
             && (normalizedHeldRecipeMapId.isEmpty() || normalizedRecipeMapId.equals(normalizedHeldRecipeMapId));
     }
 
-    private static void populateContent(Scrollable scrollable, GuiPatternRoutingAnalysisState.Snapshot snapshot) {
+    private static int populateContent(ScrollWidget<?> scrollable, GuiPatternRoutingAnalysisState.Snapshot snapshot) {
         int y = 0;
 
         if (snapshot == null || normalize(snapshot.recipeMapId).isEmpty()) {
-            TextWidget empty = new TextWidget(emptyStateMessage());
-            empty.setPos(2, y);
-            scrollable.widget(empty);
-            return;
+            scrollable.child(new TextWidget(IKey.str(emptyStateMessage())).pos(2, y));
+            return 12;
         }
 
         if (snapshot.result == null) {
-            TextWidget status = new TextWidget(statusMessage(snapshot));
-            status.setPos(2, y);
-            scrollable.widget(status);
-            return;
+            scrollable.child(new TextWidget(IKey.str(statusMessage(snapshot))).pos(2, y));
+            return 12;
         }
 
         y = addSection(scrollable, y, repeatedSectionTitle(snapshot), snapshot.result.repeatedTypes, true);
-        addSection(scrollable, y, singleSectionTitle(snapshot), snapshot.result.singleOccurrenceTypes, false);
+        y = addSection(scrollable, y, singleSectionTitle(snapshot), snapshot.result.singleOccurrenceTypes, false);
+        return y;
     }
 
-    private static int addSection(Scrollable scrollable, int startY, String title,
+    private static int addSection(ScrollWidget<?> scrollable, int startY, String title,
         List<RecipeMapAnalysisResult.RecipeTypeGroup> groups, boolean highlighted) {
         int y = startY;
-        TextWidget titleWidget = new TextWidget((highlighted ? EnumChatFormatting.BOLD : "") + title);
-        titleWidget.setPos(2, y);
-        scrollable.widget(titleWidget);
+        scrollable
+            .child(new TextWidget(IKey.str((highlighted ? EnumChatFormatting.BOLD.toString() : "") + title)).pos(2, y));
         y += 12;
 
         if (groups == null || groups.isEmpty()) {
-            TextWidget empty = new TextWidget(
-                EnumChatFormatting.GRAY + t("nhaeutilities.gui.pattern_routing_analysis.section.none", "None"));
-            empty.setPos(8, y);
-            scrollable.widget(empty);
+            scrollable.child(
+                new TextWidget(
+                    IKey.str(t("nhaeutilities.gui.pattern_routing_analysis.section.none", "None"))
+                        .style(EnumChatFormatting.GRAY)).pos(8, y));
             y += 12;
             return y + 4;
         }
 
         for (RecipeMapAnalysisResult.RecipeTypeGroup group : groups) {
-            ButtonWidget row = new ButtonWidget();
-            row.setPos(2, y - 1);
-            row.setSize(GUI_W - 34, 12);
-            row.setBackground(new Rectangle().setColor(0xFF1E1E30));
-            row.setOnClick((cd, w) -> {});
-            scrollable.widget(row);
+            scrollable.child(
+                new ButtonWidget<>().pos(2, y - 1)
+                    .size(GUI_W - 34, 12)
+                    .background(new Rectangle().setColor(0xFF1E1E30))
+                    .onMousePressed(mb -> true));
 
-            TextWidget line = new TextWidget(formatGroupLine(group));
-            line.setPos(6, y + 2);
-            scrollable.widget(line);
+            scrollable.child(new TextWidget(IKey.str(formatGroupLine(group))).pos(6, y + 2));
             y += 14;
         }
 

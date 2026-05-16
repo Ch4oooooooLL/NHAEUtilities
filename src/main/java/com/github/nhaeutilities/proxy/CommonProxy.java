@@ -7,10 +7,8 @@ import net.minecraft.item.Item;
 import com.github.nhaeutilities.core.config.CoreConfig;
 import com.github.nhaeutilities.core.module.ModuleRegistry;
 import com.github.nhaeutilities.modules.patterngenerator.PatternGeneratorModule;
-import com.github.nhaeutilities.modules.patterngenerator.gui.GuiHandler;
 import com.github.nhaeutilities.modules.patterngenerator.item.ModItems;
 import com.github.nhaeutilities.modules.patternrouting.PatternRoutingModule;
-import com.github.nhaeutilities.modules.patternrouting.gui.PatternRoutingGuiHandler;
 import com.github.nhaeutilities.modules.superwirelesskit.SuperWirelessKitModule;
 
 import appeng.api.AEApi;
@@ -20,7 +18,6 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
-import cpw.mods.fml.common.network.NetworkRegistry;
 import cpw.mods.fml.common.registry.GameRegistry;
 
 public class CommonProxy {
@@ -56,26 +53,12 @@ public class CommonProxy {
     }
 
     public void registerPatternGeneratorIntegration(Object modInstance) {
-        registerPatternGeneratorGuiHandler(modInstance);
         registerPatternGeneratorWirelessHandler();
         registerPatternGeneratorRecipe();
     }
 
     public void registerSuperWirelessKitIntegration() {
         registerSuperWirelessKitRecipe();
-    }
-
-    protected void registerPatternGeneratorGuiHandler(Object modInstance) {
-        if (modInstance == null) {
-            return;
-        }
-
-        try {
-            PatternRoutingGuiHandler handler = new PatternRoutingGuiHandler(new GuiHandler());
-            NetworkRegistry.INSTANCE.registerGuiHandler(modInstance, handler);
-        } catch (Throwable t) {
-            FMLLog.warning("[NHAEUtilities] Failed to register pattern generator GUI handler: %s", t.getMessage());
-        }
     }
 
     protected void registerPatternGeneratorWirelessHandler() {
@@ -155,6 +138,8 @@ public class CommonProxy {
     }
 
     public void closeCurrentScreen() {}
+
+    public void registerClientEventHandlers() {}
 
     public void openPatternDetailScreen(net.minecraft.entity.player.EntityPlayer player, int index,
         java.util.List<String> inputs, java.util.List<String> outputs) {}

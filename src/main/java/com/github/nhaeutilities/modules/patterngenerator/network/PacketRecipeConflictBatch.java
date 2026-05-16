@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraftforge.fluids.FluidStack;
 
 import com.github.nhaeutilities.modules.patterngenerator.gui.GuiRecipePicker;
 import com.github.nhaeutilities.modules.patterngenerator.recipe.RecipeEntry;
@@ -81,7 +84,7 @@ public class PacketRecipeConflictBatch implements IMessage {
             int recipeCount = buf.readInt();
             List<RecipeEntry> recipes = new ArrayList<RecipeEntry>(recipeCount);
             for (int recipeIndex = 0; recipeIndex < recipeCount; recipeIndex++) {
-                recipes.add(PacketRecipeConflicts.readRecipe(buf));
+                recipes.add(readRecipe(buf));
             }
             recipeGroups.add(recipes);
         }
@@ -103,9 +106,94 @@ public class PacketRecipeConflictBatch implements IMessage {
             List<RecipeEntry> recipes = safeGroups.get(i) != null ? safeGroups.get(i) : new ArrayList<RecipeEntry>();
             buf.writeInt(recipes.size());
             for (RecipeEntry recipe : recipes) {
-                PacketRecipeConflicts.writeRecipe(buf, recipe);
+                writeRecipe(buf, recipe);
             }
         }
+    }
+
+    static void writeRecipe(ByteBuf buf, RecipeEntry recipe) {
+        ByteBufUtils.writeUTF8String(buf, recipe.recipeMapId != null ? recipe.recipeMapId : "");
+        ByteBufUtils.writeUTF8String(buf, recipe.machineDisplayName != null ? recipe.machineDisplayName : "");
+        buf.writeInt(recipe.duration);
+        buf.writeInt(recipe.euPerTick);
+
+        writeItemStackArray(buf, recipe.inputs);
+        writeItemStackArray(buf, recipe.outputs);
+        writeFluidStackArray(buf, recipe.fluidInputs);
+        writeFluidStackArray(buf, recipe.fluidOutputs);
+        writeItemStackArray(buf, recipe.specialItems);
+    }
+
+    static RecipeEntry readRecipe(ByteBuf buf) {
+        String recipeMapId = ByteBufUtils.readUTF8String(buf);
+        String machineDisplayName = ByteBufUtils.readUTF8String(buf);
+        int duration = buf.readInt();
+        int euPerTick = buf.readInt();
+        ItemStack[] inputs = readItemStackArray(buf);
+        ItemStack[] outputs = readItemStackArray(buf);
+        FluidStack[] fluidInputs = readFluidStackArray(buf);
+        FluidStack[] fluidOutputs = readFluidStackArray(buf);
+        ItemStack[] specialItems = readItemStackArray(buf);
+        return new RecipeEntry(
+            "conflict",
+            recipeMapId,
+            machineDisplayName,
+            inputs,
+            outputs,
+            fluidInputs,
+            fluidOutputs,
+            specialItems,
+            duration,
+            euPerTick);
+    }
+
+    static void writeItemStackArray(ByteBuf buf, ItemStack[] stacks) {
+        ItemStack[] safeStacks = stacks != null ? stacks : new ItemStack[0];
+        buf.writeInt(safeStacks.length);
+        for (ItemStack stack : safeStacks) {
+            ByteBufUtils.writeItemStack(buf, stack);
+        }
+    }
+
+    static ItemStack[] readItemStackArray(ByteBuf buf) {
+        int len = buf.readInt();
+        ItemStack[] stacks = new ItemStack[len];
+        for (int i = 0; i < len; i++) {
+            stacks[i] = ByteBufUtils.readItemStack(buf);
+        }
+        return stacks;
+    }
+
+    static void writeFluidStackArray(ByteBuf buf, FluidStack[] stacks) {
+        FluidStack[] safeStacks = stacks != null ? stacks : new FluidStack[0];
+        buf.writeInt(safeStacks.length);
+        for (FluidStack stack : safeStacks) {
+            if (stack != null && stack.getFluid() != null && stack.amount > 0) {
+                buf.writeBoolean(true);
+                NBTTagCompound fluidTag = new NBTTagCompound();
+                stack.writeToNBT(fluidTag);
+                ByteBufUtils.writeTag(buf, fluidTag);
+            } else {
+                buf.writeBoolean(false);
+            }
+        }
+    }
+
+    static FluidStack[] readFluidStackArray(ByteBuf buf) {
+        int len = buf.readInt();
+        FluidStack[] stacks = new FluidStack[len];
+        for (int i = 0; i < len; i++) {
+            if (buf.readBoolean()) {
+                NBTTagCompound fluidTag = ByteBufUtils.readTag(buf);
+                if (fluidTag != null) {
+                    FluidStack fluidStack = FluidStack.loadFluidStackFromNBT(fluidTag);
+                    if (fluidStack != null && fluidStack.getFluid() != null && fluidStack.amount > 0) {
+                        stacks[i] = fluidStack;
+                    }
+                }
+            }
+        }
+        return stacks;
     }
 
     public static class Handler implements IMessageHandler<PacketRecipeConflictBatch, IMessage> {

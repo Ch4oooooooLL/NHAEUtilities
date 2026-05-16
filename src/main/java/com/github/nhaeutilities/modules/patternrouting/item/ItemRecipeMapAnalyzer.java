@@ -12,12 +12,13 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
+import net.minecraft.util.MovingObjectPosition;
 import net.minecraft.world.World;
 
 import org.lwjgl.input.Keyboard;
 
-import com.github.nhaeutilities.NHAEUtilities;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
+import com.github.nhaeutilities.modules.patternrouting.gui.PatternRoutingAnalysisClientScreen;
 import com.github.nhaeutilities.modules.patternrouting.util.MachineRecipeMapResolver;
 
 import cpw.mods.fml.relauncher.Side;
@@ -60,14 +61,12 @@ public class ItemRecipeMapAnalyzer extends Item {
 
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-        if (!player.isSneaking() && !world.isRemote) {
-            player.openGui(
-                NHAEUtilities.instance,
-                GUI_ID_ANALYSIS,
-                world,
-                (int) player.posX,
-                (int) player.posY,
-                (int) player.posZ);
+        if (!player.isSneaking() && world.isRemote) {
+            MovingObjectPosition hit = getMovingObjectPositionFromPlayer(world, player, false);
+            if (hit == null || hit.typeOfHit != MovingObjectPosition.MovingObjectType.BLOCK) {
+                PatternRoutingAnalysisClientScreen.openClientGui(player);
+                PatternRoutingAnalysisClientScreen.openClientGuiOnOpen(player);
+            }
         }
         return stack;
     }

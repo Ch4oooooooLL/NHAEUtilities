@@ -9,90 +9,91 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.cleanroommc.modularui.api.drawable.IKey;
+import com.cleanroommc.modularui.drawable.GuiTextures;
+import com.cleanroommc.modularui.drawable.Rectangle;
+import com.cleanroommc.modularui.factory.ClientGUI;
+import com.cleanroommc.modularui.screen.ModularPanel;
+import com.cleanroommc.modularui.utils.Alignment;
+import com.cleanroommc.modularui.widget.ScrollWidget;
+import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
+import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.cleanroommc.modularui.widgets.TextWidget;
+import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.nhaeutilities.modules.patterngenerator.network.NetworkHandler;
+import com.github.nhaeutilities.modules.patterngenerator.network.PacketRequestStorageDetail;
+import com.github.nhaeutilities.modules.patterngenerator.network.PacketRequestStorageSummary;
 import com.github.nhaeutilities.modules.patterngenerator.network.PacketStorageAction;
 import com.github.nhaeutilities.modules.patterngenerator.storage.PatternStorage;
-import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
-import com.gtnewhorizons.modularui.api.math.Alignment;
-import com.gtnewhorizons.modularui.api.screen.ModularUIContext;
-import com.gtnewhorizons.modularui.api.screen.ModularWindow;
-import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.common.internal.wrapper.ModularGui;
-import com.gtnewhorizons.modularui.common.internal.wrapper.ModularUIContainer;
-import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
-import com.gtnewhorizons.modularui.common.widget.Scrollable;
-import com.gtnewhorizons.modularui.common.widget.TextWidget;
-import com.gtnewhorizons.modularui.common.widget.textfield.TextFieldWidget;
+import com.github.nhaeutilities.modules.shared.NHTextures;
+import com.github.nhaeutilities.modules.shared.animation.ScreenHelper;
 
 public class GuiPatternStorage {
 
     private static final int GUI_W = 260;
     private static final int GUI_H = 260;
     private static final Map<UUID, String> SEARCH_QUERY_BY_PLAYER = new HashMap<UUID, String>();
+    private static UUID currentPlayerUUID;
 
     public static void open(EntityPlayer player) {
-        Minecraft mc = Minecraft.getMinecraft();
-        if (mc == null || player == null) {
-            return;
+        if (player != null) {
+            currentPlayerUUID = player.getUniqueID();
         }
-        if (mc.thePlayer != null) {
-            mc.thePlayer.closeScreen();
-        }
-        UIBuildContext buildContext = new UIBuildContext(player);
-        ModularUIContext muiContext = new ModularUIContext(buildContext, () -> {});
-        ModularWindow window = createWindow(buildContext, player);
-        mc.displayGuiScreen(new ModularGui(new ModularUIContainer(muiContext, window)));
+        NetworkHandler.INSTANCE.sendToServer(new PacketRequestStorageSummary());
     }
 
-    public static ModularWindow createWindow(UIBuildContext buildContext, EntityPlayer player) {
-        PatternStorage.StorageSummary summary = PatternStorage.getSummary(player.getUniqueID());
-        String searchQuery = getSearchQuery(player.getUniqueID());
+    public static void rebuildWithSummary(PatternStorage.StorageSummary summary) {
+        if (summary == null) {
+            return;
+        }
+        ScreenHelper.open(createWindowWithSummary(summary));
+    }
 
-        ModularWindow.Builder builder = ModularWindow.builder(GUI_W, GUI_H);
-        builder.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BACKGROUND);
+    public static ModularPanel createWindowWithSummary(PatternStorage.StorageSummary summary) {
+        UUID playerUUID = getCurrentPlayerUUID();
+        String searchQuery = getSearchQuery(playerUUID);
 
-        TextWidget titleText = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_storage.title", "Pattern Storage"));
-        titleText.setScale(1.2f);
-        titleText.setSize(GUI_W - 16, 20);
-        titleText.setPos(8, 8);
-        builder.widget(titleText);
+        ModularPanel panel = ModularPanel.defaultPanel("pattern_storage", GUI_W, GUI_H)
+            .background(GuiTextures.MC_BACKGROUND);
+
+        panel.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.pattern_storage.title", "Pattern Storage"))
+                    .style(EnumChatFormatting.BOLD)).scale(1.2f)
+                        .pos(8, 8)
+                        .size(GUI_W - 16, 20));
 
         if (summary.count == 0) {
             String msg = t("nhaeutilities.gui.pattern_storage.empty", "No stored patterns.");
-            TextWidget emptyText = new TextWidget(msg);
-            emptyText.setPos(GUI_W / 2 - approximateTextWidth(msg) / 2, 40);
-            builder.widget(emptyText);
+            panel.child(new TextWidget(IKey.str(msg)).pos(GUI_W / 2 - approximateTextWidth(msg) / 2, 40));
         } else {
             int y = 24;
-            TextWidget statsTitle = new TextWidget(
-                EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_storage.stats.title", "Storage details"));
-            statsTitle.setPos(8, y);
-            builder.widget(statsTitle);
+            panel.child(
+                new TextWidget(
+                    IKey.str(t("nhaeutilities.gui.pattern_storage.stats.title", "Storage details"))
+                        .style(EnumChatFormatting.BOLD)).pos(8, y));
             y += 14;
 
-            TextWidget countText = new TextWidget(
-                t("nhaeutilities.gui.pattern_storage.stats.count", "Pattern count: %s", summary.count));
-            countText.setPos(14, y);
-            builder.widget(countText);
+            panel.child(
+                new TextWidget(
+                    IKey.str(t("nhaeutilities.gui.pattern_storage.stats.count", "Pattern count: %s", summary.count)))
+                        .pos(14, y));
             y += 12;
 
-            TextWidget sourceText = new TextWidget(
-                t("nhaeutilities.gui.pattern_storage.stats.source", "Source: %s", summary.source));
-            sourceText.setPos(14, y);
-            builder.widget(sourceText);
+            panel.child(
+                new TextWidget(
+                    IKey.str(t("nhaeutilities.gui.pattern_storage.stats.source", "Source: %s", summary.source)))
+                        .pos(14, y));
             y += 12;
 
             String timeStr = summary.timestamp <= 0 ? t("nhaeutilities.gui.common.na", "N/A")
                 : new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(summary.timestamp));
-            TextWidget timeText = new TextWidget(
-                t("nhaeutilities.gui.pattern_storage.stats.time", "Stored at: %s", timeStr));
-            timeText.setPos(14, y);
-            builder.widget(timeText);
+            panel.child(
+                new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_storage.stats.time", "Stored at: %s", timeStr)))
+                    .pos(14, y));
             y += 16;
 
             int searchInputX = 46;
@@ -101,142 +102,144 @@ public class GuiPatternStorage {
             int searchGap = 2;
             int searchFieldW = GUI_W - 16 - searchInputX - searchBtnW - resetBtnW - searchGap * 2;
 
-            TextWidget searchLabel = new TextWidget(t("nhaeutilities.gui.pattern_storage.search.label", "Search"));
-            searchLabel.setPos(14, y + 3);
-            builder.widget(searchLabel);
+            panel.child(
+                new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_storage.search.label", "Search"))).pos(14, y + 3));
 
             TextFieldWidget tfSearch = new TextFieldWidget();
             tfSearch.setText(searchQuery);
-            tfSearch.setPos(searchInputX, y);
-            tfSearch.setSize(searchFieldW, 14);
+            tfSearch.pos(searchInputX, y);
+            tfSearch.size(searchFieldW, 14);
             tfSearch.setTextColor(0xFFFFFF);
-            tfSearch.setBackground(new Rectangle().setColor(0xFF1E1E30));
+            tfSearch.background(new Rectangle().setColor(0xFF1E1E30));
             tfSearch.setTextAlignment(Alignment.CenterLeft);
-            builder.widget(tfSearch);
+            panel.child(tfSearch);
 
             int btnSearchX = searchInputX + searchFieldW + searchGap;
-            ButtonWidget btnSearch = new ButtonWidget();
-            btnSearch.setPos(btnSearchX, y);
-            btnSearch.setSize(searchBtnW, 14);
-            btnSearch.setBackground(new Rectangle().setColor(0xFF1E1E30));
-            TextWidget btnSearchText = new TextWidget(t("nhaeutilities.gui.pattern_storage.search.button", "Go"));
-            btnSearchText.setPos(btnSearchX + 5, y + 3);
-            btnSearch.setOnClick((cd, w) -> {
-                setSearchQuery(player.getUniqueID(), tfSearch.getText());
-                open(player);
-            });
-            builder.widget(btnSearch);
-            builder.widget(btnSearchText);
+            panel.child(
+                new ButtonWidget<>().pos(btnSearchX, y)
+                    .size(searchBtnW, 14)
+                    .background(new Rectangle().setColor(0xFF1E1E30))
+                    .overlay(
+                        IKey.str(t("nhaeutilities.gui.pattern_storage.search.button", "Go"))
+                            .shadow(false))
+                    .onMousePressed(mb -> {
+                        setSearchQuery(playerUUID, tfSearch.getText());
+                        open(null);
+                        return true;
+                    }));
 
             int btnResetX = btnSearchX + searchBtnW + searchGap;
-            ButtonWidget btnReset = new ButtonWidget();
-            btnReset.setPos(btnResetX, y);
-            btnReset.setSize(resetBtnW, 14);
-            btnReset.setBackground(new Rectangle().setColor(0xFF1E1E30));
-            TextWidget btnResetText = new TextWidget(t("nhaeutilities.gui.pattern_storage.search.reset", "Reset"));
-            btnResetText.setPos(btnResetX + 3, y + 3);
-            btnReset.setOnClick((cd, w) -> {
-                setSearchQuery(player.getUniqueID(), "");
-                open(player);
-            });
-            builder.widget(btnReset);
-            builder.widget(btnResetText);
+            panel.child(
+                new ButtonWidget<>().pos(btnResetX, y)
+                    .size(resetBtnW, 14)
+                    .background(new Rectangle().setColor(0xFF1E1E30))
+                    .overlay(
+                        IKey.str(t("nhaeutilities.gui.pattern_storage.search.reset", "Reset"))
+                            .shadow(false))
+                    .onMousePressed(mb -> {
+                        setSearchQuery(playerUUID, "");
+                        open(null);
+                        return true;
+                    }));
 
             y += 20;
 
             List<Integer> filteredIndices = filterIndices(summary.previews, searchQuery);
-            TextWidget previewTitle = new TextWidget(
-                EnumChatFormatting.BOLD + t(
-                    "nhaeutilities.gui.pattern_storage.preview.title",
-                    "Patterns: %s / %s",
-                    filteredIndices.size(),
-                    summary.count));
-            previewTitle.setPos(8, y);
-            builder.widget(previewTitle);
+            panel.child(
+                new TextWidget(
+                    IKey.str(
+                        t(
+                            "nhaeutilities.gui.pattern_storage.preview.title",
+                            "Patterns: %s / %s",
+                            filteredIndices.size(),
+                            summary.count))
+                        .style(EnumChatFormatting.BOLD)).pos(8, y));
             y += 14;
 
-            Scrollable scrollable = new Scrollable().setVerticalScroll();
-            scrollable.setPos(8, y);
-            scrollable.setSize(GUI_W - 16, GUI_H - y - 40);
+            ScrollWidget<?> scrollable = new ScrollWidget<>(new VerticalScrollData()).pos(8, y)
+                .size(GUI_W - 16, GUI_H - y - 40);
 
             int listY = 0;
             if (filteredIndices.isEmpty()) {
-                TextWidget emptyResult = new TextWidget(
-                    EnumChatFormatting.GRAY + t("nhaeutilities.gui.pattern_storage.preview.empty", "No results."));
-                emptyResult.setPos(4, listY + 3);
-                scrollable.widget(emptyResult);
-                listY += 16;
+                scrollable.child(
+                    new TextWidget(
+                        IKey.str(t("nhaeutilities.gui.pattern_storage.preview.empty", "No results."))
+                            .style(EnumChatFormatting.GRAY)).pos(4, listY + 3));
             } else {
                 for (int i = 0; i < filteredIndices.size(); i++) {
                     int actualIndex = filteredIndices.get(i);
                     String name = summary.previews.get(actualIndex);
 
-                    ButtonWidget rowBtn = new ButtonWidget();
-                    rowBtn.setPos(0, listY);
-                    rowBtn.setSize(GUI_W - 28, 14);
-                    rowBtn.setBackground(new Rectangle().setColor(0xFF1E1E30));
-
-                    TextWidget rowText = new TextWidget(
-                        EnumChatFormatting.GRAY + "#" + (actualIndex + 1) + "  " + EnumChatFormatting.WHITE + name);
-                    rowText.setPos(4, listY + 3);
-
-                    rowBtn.setOnClick((cd, w) -> {
-                        PatternStorage.PatternDetail detail = PatternStorage
-                            .getPatternDetail(player.getUniqueID(), actualIndex);
-                        if (detail != null) {
-                            GuiPatternDetail.open(player, actualIndex, detail.inputs, detail.outputs);
-                        }
-                    });
-
-                    scrollable.widget(rowBtn);
-                    scrollable.widget(rowText);
+                    ButtonWidget<?> rowBtn = new ButtonWidget<>().pos(0, listY)
+                        .size(GUI_W - 28, 14)
+                        .background(new Rectangle().setColor(0xFF1E1E30))
+                        .overlay(
+                            IKey.str("#" + (actualIndex + 1) + "  " + name)
+                                .shadow(false))
+                        .onMousePressed(mb -> {
+                            NetworkHandler.INSTANCE.sendToServer(new PacketRequestStorageDetail(actualIndex));
+                            return true;
+                        });
+                    scrollable.child(rowBtn);
                     listY += 16;
                 }
             }
 
-            builder.widget(scrollable);
+            scrollable.getScrollArea()
+                .getScrollY()
+                .setScrollSize(listY > 0 ? listY : 12);
+            panel.child(scrollable);
         }
 
         int btnW = 90;
         int btnH = 20;
         int btnY = GUI_H - 32;
 
-        ButtonWidget btnExtract = new ButtonWidget();
-        btnExtract.setPos(GUI_W / 2 - btnW - 4, btnY);
-        btnExtract.setSize(btnW, btnH);
-        btnExtract.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-        TextWidget btnExtText = new TextWidget(t("nhaeutilities.gui.pattern_storage.button.extract", "Extract"));
-        btnExtText.setPos(GUI_W / 2 - btnW - 4 + 16, btnY + 6);
-        btnExtract.setOnClick((cd, w) -> {
-            NetworkHandler.INSTANCE.sendToServer(new PacketStorageAction(PacketStorageAction.ACTION_EXTRACT));
-            Minecraft.getMinecraft()
-                .displayGuiScreen(null);
-        });
-        builder.widget(btnExtract);
-        builder.widget(btnExtText);
+        panel.child(
+            NHTextures.createButton()
+                .pos(GUI_W / 2 - btnW - 4, btnY)
+                .size(btnW, btnH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.pattern_storage.button.extract", "Extract"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    NetworkHandler.INSTANCE.sendToServer(new PacketStorageAction(PacketStorageAction.ACTION_EXTRACT));
+                    ClientGUI.close();
+                    return true;
+                }));
 
-        ButtonWidget btnClear = new ButtonWidget();
-        btnClear.setPos(GUI_W / 2 + 4, btnY);
-        btnClear.setSize(btnW, btnH);
-        btnClear.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-        TextWidget btnClrText = new TextWidget(t("nhaeutilities.gui.pattern_storage.button.clear", "Clear"));
-        btnClrText.setPos(GUI_W / 2 + 4 + 20, btnY + 6);
-        btnClear.setOnClick((cd, w) -> {
-            NetworkHandler.INSTANCE.sendToServer(new PacketStorageAction(PacketStorageAction.ACTION_CLEAR));
-            Minecraft.getMinecraft()
-                .displayGuiScreen(null);
-        });
-        builder.widget(btnClear);
-        builder.widget(btnClrText);
+        panel.child(
+            NHTextures.createButton()
+                .pos(GUI_W / 2 + 4, btnY)
+                .size(btnW, btnH)
+                .overlay(
+                    IKey.str(t("nhaeutilities.gui.pattern_storage.button.clear", "Clear"))
+                        .shadow(false))
+                .onMousePressed(mb -> {
+                    NetworkHandler.INSTANCE.sendToServer(new PacketStorageAction(PacketStorageAction.ACTION_CLEAR));
+                    ClientGUI.close();
+                    return true;
+                }));
 
-        TextWidget footerText = new TextWidget(
-            EnumChatFormatting.GRAY + t(
-                "nhaeutilities.gui.pattern_storage.footer.export_hint",
-                "Sneak-right-click a container to export stored patterns."));
-        footerText.setPos(8, GUI_H - 12);
-        builder.widget(footerText);
+        panel.child(
+            new TextWidget(
+                IKey.str(
+                    t(
+                        "nhaeutilities.gui.pattern_storage.footer.export_hint",
+                        "Sneak-right-click a container to export stored patterns."))
+                    .style(EnumChatFormatting.GRAY)).pos(8, GUI_H - 12));
 
-        return builder.build();
+        return panel;
+    }
+
+    private static UUID getCurrentPlayerUUID() {
+        if (currentPlayerUUID == null) {
+            net.minecraft.entity.player.EntityPlayer p = net.minecraft.client.Minecraft.getMinecraft().thePlayer;
+            if (p != null) {
+                currentPlayerUUID = p.getUniqueID();
+            }
+        }
+        return currentPlayerUUID;
     }
 
     private static String getSearchQuery(UUID playerUUID) {

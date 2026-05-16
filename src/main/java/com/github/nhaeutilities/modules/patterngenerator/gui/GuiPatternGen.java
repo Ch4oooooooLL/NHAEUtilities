@@ -1,133 +1,190 @@
 package com.github.nhaeutilities.modules.patterngenerator.gui;
 
-import java.awt.Desktop;
-import java.io.File;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.cleanroommc.modularui.api.drawable.IKey;
+import com.cleanroommc.modularui.drawable.GuiTextures;
+import com.cleanroommc.modularui.drawable.Rectangle;
+import com.cleanroommc.modularui.screen.ModularPanel;
+import com.cleanroommc.modularui.utils.Alignment;
+import com.cleanroommc.modularui.value.StringValue;
+import com.cleanroommc.modularui.widget.ScrollWidget;
+import com.cleanroommc.modularui.widget.scroll.VerticalScrollData;
+import com.cleanroommc.modularui.widgets.ButtonWidget;
+import com.cleanroommc.modularui.widgets.TextWidget;
 import com.github.nhaeutilities.modules.patterngenerator.config.ForgeConfig;
-import com.github.nhaeutilities.modules.patterngenerator.config.ReplacementConfig;
 import com.github.nhaeutilities.modules.patterngenerator.network.NetworkHandler;
 import com.github.nhaeutilities.modules.patterngenerator.network.PacketCreateCache;
 import com.github.nhaeutilities.modules.patterngenerator.network.PacketGeneratePatterns;
 import com.github.nhaeutilities.modules.patterngenerator.network.PacketPreviewRecipeCount;
 import com.github.nhaeutilities.modules.patterngenerator.network.PacketSaveFields;
-import com.gtnewhorizons.modularui.api.drawable.IDrawable;
-import com.gtnewhorizons.modularui.api.drawable.Text;
-import com.gtnewhorizons.modularui.api.drawable.shapes.Rectangle;
-import com.gtnewhorizons.modularui.api.math.Alignment;
-import com.gtnewhorizons.modularui.api.screen.ModularWindow;
-import com.gtnewhorizons.modularui.api.screen.UIBuildContext;
-import com.gtnewhorizons.modularui.common.widget.ButtonWidget;
-import com.gtnewhorizons.modularui.common.widget.Scrollable;
-import com.gtnewhorizons.modularui.common.widget.TextWidget;
+import com.github.nhaeutilities.modules.shared.DebugLog;
+import com.github.nhaeutilities.modules.shared.NHTextures;
+import com.github.nhaeutilities.modules.shared.nei.NeiRecipeExtractionContext;
+
+import codechicken.nei.api.IGuiContainerOverlay;
 
 public class GuiPatternGen {
 
     private static final int DRAG_SELECTOR_W = 36;
     private static final int DRAG_SELECTOR_BG = 0xEE2A2A42;
 
-    public static ModularWindow createWindow(UIBuildContext buildContext, ItemStack held) {
+    public static ModularPanel createWindow(EntityPlayer player, ItemStack held) {
         GuiPatternGenStatusBridge.clearStatus();
+        GuiPatternGenStatusBridge.register(s -> {});
+
+        DebugLog.info("[NHAE] GuiPatternGen.createWindow called: player=%s, held=%s", player, held);
+
+        ItemStack freshHeld = player.getCurrentEquippedItem();
+        DebugLog.info("[NHAE] GuiPatternGen: freshHeld=%s", freshHeld);
+        if (freshHeld == null || !(freshHeld
+            .getItem() instanceof com.github.nhaeutilities.modules.patterngenerator.item.ItemPatternGenerator)) {
+            freshHeld = held;
+            DebugLog.info("[NHAE] GuiPatternGen: using parameter held instead");
+        }
+        DebugLog.info(
+            "[NHAE] GuiPatternGen: held NBT=%s",
+            freshHeld != null && freshHeld.hasTagCompound() ? freshHeld.getTagCompound()
+                .toString() : "null");
 
         int guiWidth = ForgeConfig.getPatternGenGuiWidth();
         int guiHeight = ForgeConfig.getPatternGenGuiHeight();
-        ModularWindow.Builder builder = ModularWindow.builder(guiWidth, guiHeight);
-        builder.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BACKGROUND);
 
-        TextWidget titleText = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.title", "Pattern Generator"));
-        titleText.setScale(1.2f);
-        titleText.setSize(guiWidth - 16, 20);
-        titleText.setPos(8, 8);
-        builder.widget(titleText);
+        final Runnable[] saveFunction = { () -> {} };
+        ModularPanel panel = new ModularPanel("pattern_gen") {
 
-        Scrollable scrollable = new Scrollable().setVerticalScroll();
-        scrollable.setPos(8, 24);
-        scrollable.setSize(guiWidth - 16, guiHeight - 24 - 40);
+            @Override
+            public void onClose() {
+                super.onClose();
+            }
+
+            @Override
+            public void dispose() {
+                DebugLog.info("[NHAE] GuiPatternGen panel.dispose called, state=%s", String.valueOf(getState()));
+                saveFunction[0].run();
+                NeiRecipeExtractionContext.instance()
+                    .deactivate();
+                GuiPatternGenStatusBridge.unregister();
+                super.dispose();
+            }
+        };
+        panel.background(GuiTextures.MC_BACKGROUND)
+            .size(guiWidth, guiHeight);
+
+        panel.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.pattern_gen.title", "Pattern Generator"))
+                    .style(EnumChatFormatting.BOLD)).scale(1.2f)
+                        .pos(8, 8)
+                        .size(guiWidth - 16, 20));
+
+        ScrollWidget<?> scrollable = new ScrollWidget<>(new VerticalScrollData());
+        scrollable.pos(8, 24)
+            .size(guiWidth - 16, guiHeight - 24 - 40);
 
         int refY = 0;
         int fieldW = guiWidth - 16 - 80 - 12;
         int fullFieldW = guiWidth - 16 - 12;
         int inputX = 80;
 
-        TextWidget labelRecipe = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.recipe", "Recipe"));
-        labelRecipe.setPos(6, refY + 3);
-        scrollable.widget(labelRecipe);
+        scrollable.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.pattern_gen.section.recipe", "Recipe"))
+                    .style(EnumChatFormatting.BOLD)).pos(6, refY + 3));
 
         FilterTextFieldWidget tfRecipeMap = new FilterTextFieldWidget();
         tfRecipeMap.setDegradeEnabled(false);
-        tfRecipeMap.setText(getSavedField(held, PacketSaveFields.NBT_RECIPE_MAP));
-        tfRecipeMap.setPos(6, refY + 14);
-        tfRecipeMap.setSize(fullFieldW, 14);
+        final String initialRecipeMap = getSavedField(freshHeld, PacketSaveFields.NBT_RECIPE_MAP);
+        tfRecipeMap.value(new StringValue.Dynamic(() -> tfRecipeMap.getText(), v -> tfRecipeMap.setText(v)));
+        tfRecipeMap.setText(initialRecipeMap);
+        tfRecipeMap.pos(6, refY + 14)
+            .size(fullFieldW, 14);
         tfRecipeMap.setTextColor(0xFFFFFF);
-        tfRecipeMap.setBackground(new Rectangle().setColor(0xFF1E1E30));
+        tfRecipeMap.background(new Rectangle().setColor(0xFF1E1E30));
         tfRecipeMap.setTextAlignment(Alignment.CenterLeft);
-        scrollable.widget(tfRecipeMap);
+        tfRecipeMap.setOnSave(() -> saveFunction[0].run());
+        scrollable.child(tfRecipeMap);
         refY += 38;
 
-        TextWidget labelFilter = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.filter", "Filters"));
-        labelFilter.setPos(6, refY + 3);
-        scrollable.widget(labelFilter);
+        scrollable.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.pattern_gen.section.filter", "Filters"))
+                    .style(EnumChatFormatting.BOLD)).pos(6, refY + 3));
 
-        TextWidget labelOutOre = new TextWidget(t("nhaeutilities.gui.pattern_gen.label.output_ore", "Output ore"));
-        labelOutOre.setPos(6, refY + 14 + 3);
-        scrollable.widget(labelOutOre);
+        scrollable.child(
+            new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_gen.label.output_ore", "Output ore")))
+                .pos(6, refY + 14 + 3));
 
         FilterTextFieldWidget tfOutputOre = new FilterTextFieldWidget();
-        tfOutputOre.setText(getSavedField(held, PacketSaveFields.NBT_OUTPUT_ORE));
+        final String initialOutputOre = getSavedField(freshHeld, PacketSaveFields.NBT_OUTPUT_ORE);
+        tfOutputOre.value(new StringValue.Dynamic(() -> tfOutputOre.getText(), v -> tfOutputOre.setText(v)));
+        tfOutputOre.setText(initialOutputOre);
         tfOutputOre.markLoadDegradePending();
-        tfOutputOre.setPos(inputX, refY + 14);
-        tfOutputOre.setSize(fieldW, 14);
+        tfOutputOre.enableEffectiveValueTooltip();
+        tfOutputOre.setOnSave(() -> saveFunction[0].run());
+        tfOutputOre.pos(inputX, refY + 14)
+            .size(fieldW, 14);
         tfOutputOre.setTextColor(0xFFFFFF);
-        tfOutputOre.setBackground(new Rectangle().setColor(0xFF1E1E30));
+        tfOutputOre.background(new Rectangle().setColor(0xFF1E1E30));
         tfOutputOre.setTextAlignment(Alignment.CenterLeft);
-        scrollable.widget(tfOutputOre);
+        scrollable.child(tfOutputOre);
         attachDragChoiceSelector(scrollable, tfOutputOre, inputX, refY + 14, fieldW);
 
-        TextWidget labelInOre = new TextWidget(t("nhaeutilities.gui.pattern_gen.label.input_ore", "Input ore"));
-        labelInOre.setPos(6, refY + 32 + 3);
-        scrollable.widget(labelInOre);
+        scrollable.child(
+            new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_gen.label.input_ore", "Input ore")))
+                .pos(6, refY + 32 + 3));
 
         FilterTextFieldWidget tfInputOre = new FilterTextFieldWidget();
-        tfInputOre.setText(getSavedField(held, PacketSaveFields.NBT_INPUT_ORE));
+        final String initialInputOre = getSavedField(freshHeld, PacketSaveFields.NBT_INPUT_ORE);
+        tfInputOre.value(new StringValue.Dynamic(() -> tfInputOre.getText(), v -> tfInputOre.setText(v)));
+        tfInputOre.setText(initialInputOre);
         tfInputOre.markLoadDegradePending();
-        tfInputOre.setPos(inputX, refY + 32);
-        tfInputOre.setSize(fieldW, 14);
+        tfInputOre.enableEffectiveValueTooltip();
+        tfInputOre.setOnSave(() -> saveFunction[0].run());
+        tfInputOre.pos(inputX, refY + 32)
+            .size(fieldW, 14);
         tfInputOre.setTextColor(0xFFFFFF);
-        tfInputOre.setBackground(new Rectangle().setColor(0xFF1E1E30));
+        tfInputOre.background(new Rectangle().setColor(0xFF1E1E30));
         tfInputOre.setTextAlignment(Alignment.CenterLeft);
-        scrollable.widget(tfInputOre);
+        scrollable.child(tfInputOre);
         attachDragChoiceSelector(scrollable, tfInputOre, inputX, refY + 32, fieldW);
 
-        TextWidget labelNC = new TextWidget(t("nhaeutilities.gui.pattern_gen.label.nc_item", "NC item"));
-        labelNC.setPos(6, refY + 50 + 3);
-        scrollable.widget(labelNC);
+        scrollable.child(
+            new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_gen.label.nc_item", "NC item")))
+                .pos(6, refY + 50 + 3));
 
         FilterTextFieldWidget tfNCItem = new FilterTextFieldWidget();
-        tfNCItem.setText(getSavedField(held, PacketSaveFields.NBT_NC_ITEM));
+        final String initialNCItem = getSavedField(freshHeld, PacketSaveFields.NBT_NC_ITEM);
+        tfNCItem.value(new StringValue.Dynamic(() -> tfNCItem.getText(), v -> tfNCItem.setText(v)));
+        tfNCItem.setText(initialNCItem);
         tfNCItem.markLoadDegradePending();
-        tfNCItem.setPos(inputX, refY + 50);
-        tfNCItem.setSize(fieldW, 14);
+        tfNCItem.enableEffectiveValueTooltip();
+        tfNCItem.setOnSave(() -> saveFunction[0].run());
+        tfNCItem.pos(inputX, refY + 50)
+            .size(fieldW, 14);
         tfNCItem.setTextColor(0xFFFFFF);
-        tfNCItem.setBackground(new Rectangle().setColor(0xFF1E1E30));
+        tfNCItem.background(new Rectangle().setColor(0xFF1E1E30));
         tfNCItem.setTextAlignment(Alignment.CenterLeft);
-        scrollable.widget(tfNCItem);
+        scrollable.child(tfNCItem);
         attachDragChoiceSelector(scrollable, tfNCItem, inputX, refY + 50, fieldW);
 
-        TextWidget labelTier = new TextWidget(t("nhaeutilities.gui.pattern_gen.label.tier", "Target tier"));
-        labelTier.setPos(6, refY + 68 + 3);
-        scrollable.widget(labelTier);
+        scrollable.child(
+            new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_gen.label.tier", "Target tier")))
+                .pos(6, refY + 68 + 3));
 
-        TextWidget labelOutputSlots = new TextWidget(
-            t("nhaeutilities.gui.pattern_gen.label.output_slots", "Output slots"));
-        labelOutputSlots.setPos(6, refY + 86 + 3);
-        scrollable.widget(labelOutputSlots);
+        scrollable.child(
+            new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_gen.label.output_slots", "Output slots")))
+                .pos(6, refY + 86 + 3));
 
         final List<String> tiers = Arrays.asList(
             "Any",
@@ -146,145 +203,130 @@ public class GuiPatternGen {
             "UMV",
             "UXV",
             "MAX");
-        int savedTier = getSavedInt(held, PacketSaveFields.NBT_TARGET_TIER, -1);
+        int savedTier = getSavedInt(freshHeld, PacketSaveFields.NBT_TARGET_TIER, -1);
         final int[] currentTierIndex = new int[] { Math.max(0, Math.min(tiers.size() - 1, savedTier + 1)) };
 
-        ButtonWidget btnTier = new ButtonWidget();
-        btnTier.setSynced(false, false);
-        btnTier.setPos(inputX, refY + 68);
-        btnTier.setSize(fieldW, 14);
-        btnTier.setBackground(new Rectangle().setColor(0xFF1E1E30));
-
-        TextWidget btnTierText = new TextWidget("");
-        btnTierText.setStringSupplier(() -> EnumChatFormatting.WHITE + tiers.get(currentTierIndex[0]));
-        btnTierText.setPos(inputX + 4, refY + 68 + 3);
-        btnTier.setOnClick((clickData, widget) -> {
-            if (clickData.mouseButton == 0) {
+        ButtonWidget<?> btnTier = new ButtonWidget<>();
+        btnTier.pos(inputX, refY + 68)
+            .size(fieldW, 14);
+        btnTier.background(new Rectangle().setColor(0xFF1E1E30));
+        btnTier.onMousePressed(mb -> {
+            if (mb == 0) {
                 currentTierIndex[0] = (currentTierIndex[0] + 1) % tiers.size();
-            } else if (clickData.mouseButton == 1) {
+            } else if (mb == 1) {
                 currentTierIndex[0] = (currentTierIndex[0] - 1 + tiers.size()) % tiers.size();
             }
+            return true;
         });
-        scrollable.widget(btnTier);
-        scrollable.widget(btnTierText);
+        scrollable.child(btnTier);
+
+        scrollable.child(
+            new TextWidget(IKey.dynamic(() -> EnumChatFormatting.WHITE + tiers.get(currentTierIndex[0])))
+                .pos(inputX + 4, refY + 68 + 3));
 
         FilterTextFieldWidget tfOutputSlots = new FilterTextFieldWidget(itemStack -> "");
         tfOutputSlots.setDegradeEnabled(false);
-        tfOutputSlots.setText(getSavedField(held, PacketSaveFields.NBT_OUTPUT_SLOTS));
-        tfOutputSlots.setPos(inputX, refY + 86);
-        tfOutputSlots.setSize(fieldW, 14);
+        final String initialOutputSlots = getSavedField(freshHeld, PacketSaveFields.NBT_OUTPUT_SLOTS);
+        tfOutputSlots.value(new StringValue.Dynamic(() -> tfOutputSlots.getText(), v -> tfOutputSlots.setText(v)));
+        tfOutputSlots.setText(initialOutputSlots);
+        tfOutputSlots.pos(inputX, refY + 86)
+            .size(fieldW, 14);
         tfOutputSlots.setTextColor(0xFFFFFF);
-        tfOutputSlots.setBackground(new Rectangle().setColor(0xFF1E1E30));
+        tfOutputSlots.background(new Rectangle().setColor(0xFF1E1E30));
         tfOutputSlots.setTextAlignment(Alignment.CenterLeft);
-        scrollable.widget(tfOutputSlots);
+        tfOutputSlots.setOnSave(() -> saveFunction[0].run());
+        scrollable.child(tfOutputSlots);
 
-        TextWidget outputSlotsHint = new TextWidget(
-            EnumChatFormatting.DARK_GRAY + t(
-                "nhaeutilities.gui.pattern_gen.hint.output_slots",
-                "Comma-separated 1-based output slots; blank keeps all outputs."));
-        outputSlotsHint.setPos(6, refY + 104 + 3);
-        scrollable.widget(outputSlotsHint);
+        scrollable.child(new TextWidget(IKey.dynamic(() -> {
+            String text = tfOutputSlots.getText();
+            if (text == null || text.trim()
+                .isEmpty()) {
+                return EnumChatFormatting.DARK_GRAY + t(
+                    "nhaeutilities.gui.pattern_gen.hint.output_slots",
+                    "Comma-separated 1-based output slots; blank keeps all outputs.");
+            }
+            String error = validateOutputSlotsFormat(text);
+            if (error != null) {
+                return EnumChatFormatting.RED + error;
+            }
+            return EnumChatFormatting.GREEN
+                + t("nhaeutilities.gui.pattern_gen.hint.output_slots.valid", "Valid selection.");
+        })).pos(6, refY + 104 + 3));
 
         refY += 120;
 
-        TextWidget labelBL = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.blacklist", "Blacklist"));
-        labelBL.setPos(6, refY + 3);
-        scrollable.widget(labelBL);
+        scrollable.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.pattern_gen.section.blacklist", "Blacklist"))
+                    .style(EnumChatFormatting.BOLD)).pos(6, refY + 3));
 
-        TextWidget labelBLIn = new TextWidget(
-            t("nhaeutilities.gui.pattern_gen.label.blacklist_input", "Blacklist input"));
-        labelBLIn.setPos(6, refY + 14 + 3);
-        scrollable.widget(labelBLIn);
+        scrollable.child(
+            new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_gen.label.blacklist_input", "Blacklist input")))
+                .pos(6, refY + 14 + 3));
 
         FilterTextFieldWidget tfBlacklistIn = new FilterTextFieldWidget();
-        tfBlacklistIn.setText(getSavedField(held, PacketSaveFields.NBT_BLACKLIST_INPUT));
+        final String initialBlacklistIn = getSavedField(freshHeld, PacketSaveFields.NBT_BLACKLIST_INPUT);
+        tfBlacklistIn.value(new StringValue.Dynamic(() -> tfBlacklistIn.getText(), v -> tfBlacklistIn.setText(v)));
+        tfBlacklistIn.setText(initialBlacklistIn);
         tfBlacklistIn.markLoadDegradePending();
-        tfBlacklistIn.setPos(inputX, refY + 14);
-        tfBlacklistIn.setSize(fieldW, 14);
+        tfBlacklistIn.enableEffectiveValueTooltip();
+        tfBlacklistIn.setOnSave(() -> saveFunction[0].run());
+        tfBlacklistIn.pos(inputX, refY + 14)
+            .size(fieldW, 14);
         tfBlacklistIn.setTextColor(0xFFFFFF);
-        tfBlacklistIn.setBackground(new Rectangle().setColor(0xFF1E1E30));
+        tfBlacklistIn.background(new Rectangle().setColor(0xFF1E1E30));
         tfBlacklistIn.setTextAlignment(Alignment.CenterLeft);
-        scrollable.widget(tfBlacklistIn);
+        scrollable.child(tfBlacklistIn);
         attachDragChoiceSelector(scrollable, tfBlacklistIn, inputX, refY + 14, fieldW);
 
-        TextWidget labelBLOut = new TextWidget(
-            t("nhaeutilities.gui.pattern_gen.label.blacklist_output", "Blacklist output"));
-        labelBLOut.setPos(6, refY + 32 + 3);
-        scrollable.widget(labelBLOut);
+        scrollable.child(
+            new TextWidget(IKey.str(t("nhaeutilities.gui.pattern_gen.label.blacklist_output", "Blacklist output")))
+                .pos(6, refY + 32 + 3));
 
         FilterTextFieldWidget tfBlacklistOut = new FilterTextFieldWidget();
-        tfBlacklistOut.setText(getSavedField(held, PacketSaveFields.NBT_BLACKLIST_OUTPUT));
+        final String initialBlacklistOut = getSavedField(freshHeld, PacketSaveFields.NBT_BLACKLIST_OUTPUT);
+        tfBlacklistOut.value(new StringValue.Dynamic(() -> tfBlacklistOut.getText(), v -> tfBlacklistOut.setText(v)));
+        tfBlacklistOut.setText(initialBlacklistOut);
         tfBlacklistOut.markLoadDegradePending();
-        tfBlacklistOut.setPos(inputX, refY + 32);
-        tfBlacklistOut.setSize(fieldW, 14);
+        tfBlacklistOut.enableEffectiveValueTooltip();
+        tfBlacklistOut.setOnSave(() -> saveFunction[0].run());
+        tfBlacklistOut.pos(inputX, refY + 32)
+            .size(fieldW, 14);
         tfBlacklistOut.setTextColor(0xFFFFFF);
-        tfBlacklistOut.setBackground(new Rectangle().setColor(0xFF1E1E30));
+        tfBlacklistOut.background(new Rectangle().setColor(0xFF1E1E30));
         tfBlacklistOut.setTextAlignment(Alignment.CenterLeft);
-        scrollable.widget(tfBlacklistOut);
+        scrollable.child(tfBlacklistOut);
         attachDragChoiceSelector(scrollable, tfBlacklistOut, inputX, refY + 32, fieldW);
 
-        TextWidget regexHint = new TextWidget(
-            EnumChatFormatting.DARK_GRAY + t(
-                "nhaeutilities.gui.pattern_gen.hint.regex",
-                "Select match type (ID/Ore/Name) with the button; brackets are optional."));
-        regexHint.setPos(6, refY + 50 + 3);
-        scrollable.widget(regexHint);
+        scrollable.child(
+            new TextWidget(
+                IKey.str(
+                    t(
+                        "nhaeutilities.gui.pattern_gen.hint.regex",
+                        "Select match type (ID/Ore/Name) with the button; brackets are optional."))
+                    .style(EnumChatFormatting.DARK_GRAY)).pos(6, refY + 50 + 3));
 
-        TextWidget blacklistHint = new TextWidget(
-            EnumChatFormatting.DARK_GRAY + t("nhaeutilities.gui.pattern_gen.hint.blacklist", "* disables the field."));
-        blacklistHint.setPos(6, refY + 60 + 3);
-        scrollable.widget(blacklistHint);
+        scrollable.child(
+            new TextWidget(
+                IKey.str(t("nhaeutilities.gui.pattern_gen.hint.blacklist", "* disables the field."))
+                    .style(EnumChatFormatting.DARK_GRAY)).pos(6, refY + 60 + 3));
 
-        TextWidget blacklistExamples = new TextWidget(
-            EnumChatFormatting.DARK_GRAY + t(
-                "nhaeutilities.gui.pattern_gen.hint.blacklist_examples",
-                "Type plain text for name/ore, or [8119] for ID match. Use brackets for multi-type rules."));
-        blacklistExamples.setPos(6, refY + 70 + 3);
-        scrollable.widget(blacklistExamples);
+        scrollable.child(
+            new TextWidget(
+                IKey.str(
+                    t(
+                        "nhaeutilities.gui.pattern_gen.hint.blacklist_examples",
+                        "Type plain text for name/ore, or [8119] for ID match. Use brackets for multi-type rules."))
+                    .style(EnumChatFormatting.DARK_GRAY)).pos(6, refY + 70 + 3));
 
-        refY += 82;
+        panel.child(scrollable);
 
-        int loadedRuleCount = ReplacementConfig.load();
+        panel.child(new TextWidget(IKey.dynamic(GuiPatternGenStatusBridge::getStatus)).pos(8, guiHeight - 12));
 
-        TextWidget labelRep = new TextWidget(
-            EnumChatFormatting.BOLD + t("nhaeutilities.gui.pattern_gen.section.replacements", "Replacement rules"));
-        labelRep.setPos(6, refY + 3);
-        scrollable.widget(labelRep);
-
-        TextWidget labelRepCount = new TextWidget(
-            t("nhaeutilities.gui.pattern_gen.replacements.count", "Loaded rules: %s", loadedRuleCount));
-        labelRepCount.setPos(6, refY + 20);
-        scrollable.widget(labelRepCount);
-
-        int btnCfgX = guiWidth - 16 - 6 - 80;
-        int btnCfgY = refY + 14;
-        ButtonWidget btnConfig = new ButtonWidget();
-        btnConfig.setSynced(false, false);
-        btnConfig.setPos(btnCfgX, btnCfgY);
-        btnConfig.setSize(80, 20);
-        btnConfig.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-
-        TextWidget btnConfigText = new TextWidget(t("nhaeutilities.gui.pattern_gen.button.open_config", "Open config"));
-        btnConfigText.setPos(btnCfgX + 16, btnCfgY + 6);
-        btnConfig.setOnClick((cd, w) -> {
-            try {
-                File file = ReplacementConfig.getConfigFile();
-                if (file != null && Desktop.isDesktopSupported()) {
-                    Desktop.getDesktop()
-                        .open(file);
-                }
-            } catch (Exception ignored) {}
-        });
-        scrollable.widget(btnConfig);
-        scrollable.widget(btnConfigText);
-
-        builder.widget(scrollable);
-
-        TextWidget statusWidget = new TextWidget("");
-        statusWidget.setStringSupplier(GuiPatternGenStatusBridge::getStatus);
-        statusWidget.setPos(8, guiHeight - 12);
-        builder.widget(statusWidget);
+        int totalContentHeight = refY + 40;
+        scrollable.getScrollArea()
+            .getScrollY()
+            .setScrollSize(totalContentHeight);
 
         int btnW = 57;
         int btnH = 20;
@@ -292,7 +334,7 @@ public class GuiPatternGen {
         int btnStartX = (guiWidth - (btnW * 3 + btnGap * 2)) / 2;
         int btnY = guiHeight - 32;
 
-        Runnable saveFunction = () -> NetworkHandler.INSTANCE.sendToServer(
+        saveFunction[0] = () -> NetworkHandler.INSTANCE.sendToServer(
             new PacketSaveFields(
                 tfRecipeMap.getText(),
                 tfOutputOre.getEffectiveValue(),
@@ -300,37 +342,34 @@ public class GuiPatternGen {
                 tfNCItem.getEffectiveValue(),
                 tfBlacklistIn.getEffectiveValue(),
                 tfBlacklistOut.getEffectiveValue(),
-                "",
                 tfOutputSlots.getText(),
                 currentTierIndex[0] - 1));
 
-        ButtonWidget btnCache = new ButtonWidget();
-        btnCache.setSynced(false, false);
-        btnCache.setPos(btnStartX, btnY);
-        btnCache.setSize(btnW, btnH);
-        btnCache.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-        TextWidget btnCacheText = new TextWidget(t("nhaeutilities.gui.pattern_gen.button.build_cache", "Cache"));
-        btnCacheText.setPos(btnStartX + 10, btnY + 6);
-        btnCache.setOnClick((cd, w) -> {
+        ButtonWidget<?> btnCache = NHTextures.createButton();
+        btnCache.pos(btnStartX, btnY)
+            .size(btnW, btnH)
+            .overlay(
+                IKey.str(t("nhaeutilities.gui.pattern_gen.button.build_cache", "Cache"))
+                    .shadow(false));
+        btnCache.onMousePressed(mb -> {
             NetworkHandler.INSTANCE.sendToServer(new PacketCreateCache());
             GuiPatternGenStatusBridge.setStatus("Cache build requested");
+            return true;
         });
-        builder.widget(btnCache);
-        builder.widget(btnCacheText);
+        panel.child(btnCache);
 
         int btnPBX = btnStartX + btnW + btnGap;
-        ButtonWidget btnPreview = new ButtonWidget();
-        btnPreview.setSynced(false, false);
-        btnPreview.setPos(btnPBX, btnY);
-        btnPreview.setSize(btnW, btnH);
-        btnPreview.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-        TextWidget btnPreviewText = new TextWidget(t("nhaeutilities.gui.pattern_gen.button.preview_count", "Preview"));
-        btnPreviewText.setPos(btnPBX + 10, btnY + 6);
-        btnPreview.setOnClick((cd, w) -> {
+        ButtonWidget<?> btnPreview = NHTextures.createButton();
+        btnPreview.pos(btnPBX, btnY)
+            .size(btnW, btnH)
+            .overlay(
+                IKey.str(t("nhaeutilities.gui.pattern_gen.button.preview_count", "Preview"))
+                    .shadow(false));
+        btnPreview.onMousePressed(mb -> {
             if (tfRecipeMap.getText()
                 .isEmpty()) {
                 GuiPatternGenStatusBridge.setStatus("Recipe map is required.");
-                return;
+                return true;
             }
             NetworkHandler.INSTANCE.sendToServer(
                 new PacketPreviewRecipeCount(
@@ -342,25 +381,24 @@ public class GuiPatternGen {
                     tfBlacklistOut.getEffectiveValue(),
                     currentTierIndex[0] - 1));
             GuiPatternGenStatusBridge.setStatus("Preview requested");
+            return true;
         });
-        builder.widget(btnPreview);
-        builder.widget(btnPreviewText);
+        panel.child(btnPreview);
 
         int btnGBX = btnStartX + (btnW + btnGap) * 2;
-        ButtonWidget btnGenerate = new ButtonWidget();
-        btnGenerate.setSynced(false, false);
-        btnGenerate.setPos(btnGBX, btnY);
-        btnGenerate.setSize(btnW, btnH);
-        btnGenerate.setBackground(com.gtnewhorizons.modularui.api.ModularUITextures.VANILLA_BUTTON_NORMAL);
-        TextWidget btnGenerateText = new TextWidget(t("nhaeutilities.gui.pattern_gen.button.generate", "Generate"));
-        btnGenerateText.setPos(btnGBX + 6, btnY + 6);
-        btnGenerate.setOnClick((cd, w) -> {
+        ButtonWidget<?> btnGenerate = NHTextures.createButton();
+        btnGenerate.pos(btnGBX, btnY)
+            .size(btnW, btnH)
+            .overlay(
+                IKey.str(t("nhaeutilities.gui.pattern_gen.button.generate", "Generate"))
+                    .shadow(false));
+        btnGenerate.onMousePressed(mb -> {
             if (tfRecipeMap.getText()
                 .isEmpty()) {
                 GuiPatternGenStatusBridge.setStatus("Recipe map is required.");
-                return;
+                return true;
             }
-            saveFunction.run();
+            saveFunction[0].run();
             NetworkHandler.INSTANCE.sendToServer(
                 new PacketGeneratePatterns(
                     tfRecipeMap.getText(),
@@ -373,32 +411,122 @@ public class GuiPatternGen {
                     tfOutputSlots.getText(),
                     currentTierIndex[0] - 1));
             GuiPatternGenStatusBridge.setStatus("Generation requested");
+            return true;
         });
-        builder.widget(btnGenerate);
-        builder.widget(btnGenerateText);
+        panel.child(btnGenerate);
 
-        buildContext.addCloseListener(saveFunction);
-        return builder.build();
+        NeiRecipeExtractionContext.instance()
+            .activate(data -> {
+                DebugLog.info(
+                    "[NHAE] NEI recipe extraction callback fired: recipeMapId=%s, recipeName=%s, circuit=%s",
+                    data.recipeMapId,
+                    data.recipeName,
+                    data.snapshot.programmingCircuit);
+                if (data.recipeMapId != null && !data.recipeMapId.isEmpty()) {
+                    tfRecipeMap.setText(data.recipeMapId);
+                }
+                fillNcItemsFromSnapshot(tfNCItem, data);
+                saveFunction[0].run();
+                GuiScreen current = Minecraft.getMinecraft().currentScreen;
+                if (current instanceof IGuiContainerOverlay overlay) {
+                    Minecraft.getMinecraft()
+                        .displayGuiScreen(overlay.getFirstScreenGeneral());
+                }
+            });
+
+        return panel;
     }
 
-    private static void attachDragChoiceSelector(Scrollable scrollable, FilterTextFieldWidget field, int fieldX,
+    private static void fillNcItemsFromSnapshot(FilterTextFieldWidget field,
+        com.github.nhaeutilities.modules.shared.nei.NeiRecipeData data) {
+        java.util.ArrayList<ItemStack> ncStacks = new java.util.ArrayList<>();
+        String circuit = data.snapshot.programmingCircuit;
+        if (circuit != null && !circuit.isEmpty()) {
+            ItemStack circuitStack = resolveItemSignature(circuit);
+            if (circuitStack != null) {
+                ncStacks.add(circuitStack);
+            }
+        }
+        String nonConsumables = data.snapshot.nonConsumables;
+        if (nonConsumables != null && nonConsumables.length() > 2) {
+            parseNonConsumableItems(nonConsumables, ncStacks);
+        }
+        if (ncStacks.isEmpty()) {
+            return;
+        }
+        if (ncStacks.size() == 1) {
+            field.acceptItem(ncStacks.get(0));
+        } else {
+            StringBuilder combined = new StringBuilder();
+            for (ItemStack stack : ncStacks) {
+                if (combined.length() > 0) {
+                    combined.append('|');
+                }
+                String itemId = ExplicitFilterDropFormatter.format(stack);
+                combined.append('[')
+                    .append(itemId)
+                    .append(']');
+            }
+            field.setText(combined.toString());
+            field.explicitBrackets = true;
+            field.clearStoredDropChoices();
+            field.safeMarkForUpdate();
+        }
+    }
+
+    private static ItemStack resolveItemSignature(String signature) {
+        if (signature == null || signature.isEmpty()) {
+            return null;
+        }
+        int atIndex = signature.lastIndexOf('@');
+        String itemName;
+        int meta = 0;
+        if (atIndex >= 0) {
+            itemName = signature.substring(0, atIndex);
+            try {
+                meta = Integer.parseInt(signature.substring(atIndex + 1));
+            } catch (NumberFormatException ignored) {}
+        } else {
+            itemName = signature;
+        }
+        Item item = (Item) Item.itemRegistry.getObject(itemName);
+        if (item == null) {
+            return null;
+        }
+        return new ItemStack(item, 1, meta);
+    }
+
+    private static void parseNonConsumableItems(String json, java.util.ArrayList<ItemStack> out) {
+        int searchFrom = 0;
+        while (true) {
+            int itemIdx = json.indexOf("\"item\":\"", searchFrom);
+            if (itemIdx < 0) break;
+            int valueStart = itemIdx + 8;
+            int valueEnd = json.indexOf('"', valueStart);
+            if (valueEnd < 0) break;
+            String signature = json.substring(valueStart, valueEnd);
+            ItemStack stack = resolveItemSignature(signature);
+            if (stack != null) {
+                out.add(stack);
+            }
+            searchFrom = valueEnd + 1;
+        }
+    }
+
+    private static void attachDragChoiceSelector(ScrollWidget<?> scrollable, FilterTextFieldWidget field, int fieldX,
         int fieldY, int fieldWidth) {
         FilterDragChoiceButtonWidget selector = new FilterDragChoiceButtonWidget(field);
-        selector.setSynced(false, false);
-        selector.setPos(fieldX + fieldWidth - DRAG_SELECTOR_W, fieldY);
-        selector.setSize(DRAG_SELECTOR_W, 14);
-        selector.setBackground(
-            () -> new IDrawable[] { new Rectangle().setColor(DRAG_SELECTOR_BG),
-                new Text(field.getCurrentCategoryLabel()).color(0xFFFFFF)
-                    .alignment(Alignment.Center) });
-        selector.addTooltip(
+        selector.pos(fieldX + fieldWidth - DRAG_SELECTOR_W, fieldY);
+        selector.size(DRAG_SELECTOR_W, 14);
+        selector.background(new Rectangle().setColor(DRAG_SELECTOR_BG));
+        selector.overlay(
+            IKey.dynamic(field::getCurrentCategoryLabel)
+                .color(0xFFFFFF)
+                .alignment(Alignment.Center));
+        selector.addTooltipLine(
             t("nhaeutilities.gui.pattern_gen.drag_choice.tooltip.line1", "Left click: next match type") + "\n"
                 + t("nhaeutilities.gui.pattern_gen.drag_choice.tooltip.line2", "Right click: previous match type"));
-        selector.setOnClick((clickData, widget) -> {
-            int direction = clickData.mouseButton == 1 ? -1 : 1;
-            field.cycleCategory(direction);
-        });
-        scrollable.widget(selector);
+        scrollable.child(selector);
     }
 
     private static String getSavedField(ItemStack stack, String key) {
@@ -425,5 +553,42 @@ public class GuiPatternGen {
 
     private static String t(String key, String fallback, Object... args) {
         return com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil.trOr(key, fallback, args);
+    }
+
+    private static String validateOutputSlotsFormat(String rawSelection) {
+        if (rawSelection == null || rawSelection.trim()
+            .isEmpty()) {
+            return null;
+        }
+        String[] tokens = rawSelection.split(",", -1);
+        Set<Integer> slots = new HashSet<Integer>();
+        for (String token : tokens) {
+            String trimmed = token.trim();
+            if (trimmed.isEmpty()) {
+                return t(
+                    "nhaeutilities.gui.pattern_gen.error.output_slots_invalid",
+                    "Invalid: use comma-separated positive integers");
+            }
+            final int slot;
+            try {
+                slot = Integer.parseInt(trimmed);
+            } catch (NumberFormatException e) {
+                return t(
+                    "nhaeutilities.gui.pattern_gen.error.output_slots_invalid",
+                    "Invalid: use comma-separated positive integers");
+            }
+            if (slot <= 0) {
+                return t(
+                    "nhaeutilities.gui.pattern_gen.error.output_slots_invalid",
+                    "Invalid: use comma-separated positive integers");
+            }
+            if (!slots.add(slot)) {
+                return t(
+                    "nhaeutilities.gui.pattern_gen.error.output_slots_duplicate",
+                    "Warning: duplicate slot %s",
+                    slot);
+            }
+        }
+        return null;
     }
 }

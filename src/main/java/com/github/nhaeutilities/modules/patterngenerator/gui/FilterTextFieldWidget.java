@@ -9,12 +9,19 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumChatFormatting;
 
+import org.jetbrains.annotations.NotNull;
+
+import com.cleanroommc.modularui.api.drawable.IKey;
+import com.cleanroommc.modularui.integration.nei.NEIDragAndDropHandler;
+import com.cleanroommc.modularui.screen.ModularScreen;
+import com.cleanroommc.modularui.screen.viewport.ModularGuiContext;
+import com.cleanroommc.modularui.widgets.textfield.TextFieldWidget;
 import com.github.nhaeutilities.modules.patterngenerator.filter.ExplicitStackMatcher;
-import com.gtnewhorizons.modularui.api.widget.IDragAndDropHandler;
-import com.gtnewhorizons.modularui.common.widget.textfield.TextFieldWidget;
+import com.github.nhaeutilities.modules.shared.DebugLog;
 
-class FilterTextFieldWidget extends TextFieldWidget implements IDragAndDropHandler {
+class FilterTextFieldWidget extends TextFieldWidget implements NEIDragAndDropHandler {
 
     private static final Pattern SPECIAL_REGEX_CHARS = Pattern.compile("[{}()\\[\\].+*?^$\\\\|]");
 
@@ -29,9 +36,11 @@ class FilterTextFieldWidget extends TextFieldWidget implements IDragAndDropHandl
     private ExplicitFilterDropFormatter.DropChoiceSource currentCategory = ExplicitFilterDropFormatter.DropChoiceSource.ITEM_ID;
     private final Map<ExplicitFilterDropFormatter.DropChoiceSource, ExplicitFilterDropFormatter.DropChoice> storedChoices = new EnumMap<ExplicitFilterDropFormatter.DropChoiceSource, ExplicitFilterDropFormatter.DropChoice>(
         ExplicitFilterDropFormatter.DropChoiceSource.class);
-    private boolean explicitBrackets;
+    boolean explicitBrackets;
     private boolean loadDegradePending;
     private boolean degradeEnabled = true;
+    private Consumer<String> statusConsumer;
+    private Runnable onSave;
 
     FilterTextFieldWidget() {
         this(ExplicitFilterDropFormatter::format, ExplicitFilterDropFormatter::buildChoices);
@@ -161,16 +170,91 @@ class FilterTextFieldWidget extends TextFieldWidget implements IDragAndDropHandl
         return this;
     }
 
+    void setStatusConsumer(Consumer<String> statusConsumer) {
+        this.statusConsumer = statusConsumer;
+    }
+
+    void setOnSave(Runnable onSave) {
+        this.onSave = onSave;
+    }
+
+    void enableEffectiveValueTooltip() {
+        tooltipBuilder(tooltip -> {
+            String text = getText().trim();
+            if (text.isEmpty() || "*".equals(text) || explicitBrackets) {
+                return;
+            }
+            String effective = getEffectiveValue();
+            if (!effective.equals(text)) {
+                tooltip.addLine(
+                    IKey.str(t("nhaeutilities.gui.pattern_gen.tooltip.effective_value", "Sends as: %s", effective))
+                        .style(EnumChatFormatting.GRAY));
+            }
+        });
+    }
+
+    private static String t(String key, String fallback, Object... args) {
+        return com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil.trOr(key, fallback, args);
+    }
+
     @Override
-    public void onPostInit() {
-        super.onPostInit();
+    public void afterInit() {
+        super.afterInit();
         if (loadDegradePending) {
             tryDegradeOrValidate();
         }
     }
 
+    /**
+     * Programmatically accept an ItemStack as if dropped from NEI.
+     * Stores DropChoices and sets text to the default match.
+     */
+    void acceptItem(ItemStack stack) {
+        if (stack == null) return;
+        ExplicitFilterDropFormatter.DropChoices choices = dropChoicesBuilder != null ? dropChoicesBuilder.apply(stack)
+            : null;
+        String formatted = choices != null ? choices.getDefaultToken() : stackFormatter.apply(stack);
+        if (formatted == null || formatted.trim()
+            .isEmpty()) {
+            return;
+        }
+        storedChoices.clear();
+        explicitBrackets = false;
+        if (choices != null && !choices.isEmpty()) {
+            for (ExplicitFilterDropFormatter.DropChoice choice : choices.getOptions()) {
+                storedChoices.put(choice.getSource(), choice);
+            }
+            ExplicitFilterDropFormatter.DropChoice defaultChoice = choices.getDefaultChoice();
+            if (defaultChoice != null) {
+                setText(defaultChoice.getRawContent());
+                currentCategory = defaultChoice.getSource();
+            } else {
+                setText(choices.getDefaultToken());
+            }
+        } else {
+            setText(formatted);
+        }
+        safeMarkForUpdate();
+        if (dropChoicesListener != null) {
+            dropChoicesListener.accept(
+                choices != null && !choices.isEmpty() ? choices : ExplicitFilterDropFormatter.singleChoice(formatted));
+        }
+    }
+
+    /** Returns true if the cursor should be restored after field text was replaced. */
+    boolean hasStoredDropChoices() {
+        return !storedChoices.isEmpty();
+    }
+
+    void clearStoredDropChoices() {
+        storedChoices.clear();
+        explicitBrackets = false;
+    }
+
     @Override
-    public boolean handleDragAndDrop(ItemStack draggedStack, int button) {
+    public boolean handleDragAndDrop(@NotNull ItemStack draggedStack, int button) {
+        DebugLog
+            .info("[NHAE] FilterTextFieldWidget.handleDragAndDrop called: stack=%s, button=%d", draggedStack, button);
         if (draggedStack == null) {
             return false;
         }
@@ -209,18 +293,23 @@ class FilterTextFieldWidget extends TextFieldWidget implements IDragAndDropHandl
     }
 
     @Override
-    public boolean onMouseScroll(int direction) {
+    public boolean onMouseScroll(ModularScreen.UpOrDown scrollDirection, int amount) {
         if (explicitBrackets || storedChoices.isEmpty()) {
             return false;
         }
+        int direction = scrollDirection.isDown() ? 1 : -1;
         cycleCategory(direction);
         return true;
     }
 
     @Override
-    public void onRemoveFocus() {
+    public void onRemoveFocus(ModularGuiContext context) {
         tryDegradeOrValidate();
-        super.onRemoveFocus();
+        markTooltipDirty();
+        if (onSave != null) {
+            onSave.run();
+        }
+        super.onRemoveFocus(context);
     }
 
     void tryDegradeOrValidate() {
@@ -236,7 +325,7 @@ class FilterTextFieldWidget extends TextFieldWidget implements IDragAndDropHandl
         if (explicitBrackets) {
             ExplicitStackMatcher.DegradeResult result = ExplicitStackMatcher.degrade(getText());
             if (!result.isValid()) {
-                GuiPatternGenStatusBridge.setStatus(result.getErrorMessage());
+                if (statusConsumer != null) statusConsumer.accept(result.getErrorMessage());
                 return;
             }
             if (!result.isExplicit()) {
@@ -254,7 +343,7 @@ class FilterTextFieldWidget extends TextFieldWidget implements IDragAndDropHandl
 
     private void applyDegradeResult(ExplicitStackMatcher.DegradeResult result) {
         if (!result.isValid()) {
-            GuiPatternGenStatusBridge.setStatus(result.getErrorMessage());
+            if (statusConsumer != null) statusConsumer.accept(result.getErrorMessage());
             return;
         }
         if (result.isExplicit()) {
@@ -270,13 +359,12 @@ class FilterTextFieldWidget extends TextFieldWidget implements IDragAndDropHandl
     }
 
     @Override
-    public void setText(String text) {
+    public void setText(@NotNull String text) {
         super.setText(text);
+        markTooltipDirty();
     }
 
-    private void safeMarkForUpdate() {
-        try {
-            markForUpdate();
-        } catch (RuntimeException ignored) {}
+    void safeMarkForUpdate() {
+        markTooltipDirty();
     }
 }

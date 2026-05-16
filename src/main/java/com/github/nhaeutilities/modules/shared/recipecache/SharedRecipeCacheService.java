@@ -8,6 +8,8 @@ import com.github.nhaeutilities.modules.patterngenerator.storage.RecipeCacheServ
 
 public final class SharedRecipeCacheService {
 
+    private static final String CACHE_NOT_READY_KEY = "nhaeutilities.msg.cache_not_ready";
+
     private SharedRecipeCacheService() {}
 
     public static List<RecipeEntry> loadRecipesEnsuringLatest(String recipeMapId) {
@@ -15,11 +17,8 @@ public final class SharedRecipeCacheService {
 
         CacheQueryResult result = RecipeCacheService.loadExactRecipeMap(normalized);
         if (!result.cacheValid) {
-            RecipeCacheService.createOrRefreshCacheNow();
-            result = RecipeCacheService.loadExactRecipeMap(normalized);
-        }
-        if (!result.cacheValid) {
-            throw new IllegalStateException("Failed to load recipe cache for " + normalized);
+            RecipeCacheService.createOrRefreshCache(null);
+            throw new IllegalStateException(CACHE_NOT_READY_KEY);
         }
         if (result.matchedMapIds.isEmpty()) {
             throw new IllegalArgumentException("Unknown recipe map: " + normalized);

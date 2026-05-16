@@ -6,15 +6,18 @@ import com.github.nhaeutilities.modules.patternrouting.core.RecipeMapAnalysisRes
 public final class GuiPatternRoutingAnalysisState {
 
     private static volatile Snapshot snapshot = Snapshot.empty();
+    private static volatile boolean pendingRefresh = false;
 
     private GuiPatternRoutingAnalysisState() {}
 
     public static void clear() {
         snapshot = Snapshot.empty();
+        pendingRefresh = false;
     }
 
     public static void setLoading(String recipeMapId) {
         snapshot = new Snapshot(normalize(recipeMapId), true, "", "", null);
+        pendingRefresh = true;
     }
 
     public static void setError(String recipeMapId, String messageKey) {
@@ -25,6 +28,7 @@ public final class GuiPatternRoutingAnalysisState {
             normalizedMessageKey,
             normalizedMessageKey.isEmpty() ? "" : I18nUtil.tr(normalizedMessageKey),
             null);
+        pendingRefresh = true;
     }
 
     public static void setResult(String recipeMapId, RecipeMapAnalysisResult result) {
@@ -33,6 +37,14 @@ public final class GuiPatternRoutingAnalysisState {
 
     public static Snapshot snapshot() {
         return snapshot;
+    }
+
+    public static boolean hasPendingRefresh() {
+        return pendingRefresh;
+    }
+
+    public static void clearPendingRefresh() {
+        pendingRefresh = false;
     }
 
     private static String normalize(String value) {

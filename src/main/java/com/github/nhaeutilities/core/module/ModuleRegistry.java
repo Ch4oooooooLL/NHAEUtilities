@@ -44,6 +44,27 @@ public class ModuleRegistry {
         }
     }
 
+    /**
+     * Calls {@link ModuleDefinition#loadConfig(Configuration)} on a single module
+     * identified by its simple class name suffix (e.g. "patternGenerator").
+     * No-op if no matching module is found.
+     */
+    public void loadConfig(Configuration configuration, String moduleName) {
+        Objects.requireNonNull(configuration, "configuration");
+        if (moduleName == null || moduleName.isEmpty()) {
+            return;
+        }
+        String suffix = moduleName.toLowerCase();
+        for (ModuleDefinition module : modules) {
+            if (module.getClass()
+                .getSimpleName()
+                .toLowerCase()
+                .contains(suffix)) {
+                module.loadConfig(configuration);
+            }
+        }
+    }
+
     public List<ModuleDefinition> getEnabledModules() {
         if (isFrozen()) {
             return bootstrapModules;

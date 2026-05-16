@@ -3,6 +3,9 @@ package com.github.nhaeutilities.modules.patterngenerator.network;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.play.server.S2FPacketSetSlot;
+
+import com.github.nhaeutilities.modules.shared.DebugLog;
 
 import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
@@ -21,7 +24,6 @@ public class PacketSaveFields implements IMessage {
     public static final String NBT_NC_ITEM = "ncItem";
     public static final String NBT_BLACKLIST_INPUT = "blacklistInput";
     public static final String NBT_BLACKLIST_OUTPUT = "blacklistOutput";
-    public static final String NBT_REPLACEMENTS = "replacements";
     public static final String NBT_OUTPUT_SLOTS = "outputSlots";
     public static final String NBT_TARGET_TIER = "targetTier";
 
@@ -31,21 +33,19 @@ public class PacketSaveFields implements IMessage {
     private String ncItem;
     private String blacklistInput;
     private String blacklistOutput;
-    private String replacements;
     private String outputSlots;
     private int targetTier;
 
     public PacketSaveFields() {}
 
     public PacketSaveFields(String recipeMap, String outputOre, String inputOre, String ncItem, String blacklistInput,
-        String blacklistOutput, String replacements, String outputSlots, int targetTier) {
+        String blacklistOutput, String outputSlots, int targetTier) {
         this.recipeMap = recipeMap;
         this.outputOre = outputOre;
         this.inputOre = inputOre;
         this.ncItem = ncItem;
         this.blacklistInput = blacklistInput;
         this.blacklistOutput = blacklistOutput;
-        this.replacements = replacements;
         this.outputSlots = outputSlots;
         this.targetTier = targetTier;
     }
@@ -58,7 +58,6 @@ public class PacketSaveFields implements IMessage {
         ncItem = ByteBufUtils.readUTF8String(buf);
         blacklistInput = ByteBufUtils.readUTF8String(buf);
         blacklistOutput = ByteBufUtils.readUTF8String(buf);
-        replacements = ByteBufUtils.readUTF8String(buf);
         outputSlots = ByteBufUtils.readUTF8String(buf);
         targetTier = buf.readInt();
     }
@@ -71,7 +70,6 @@ public class PacketSaveFields implements IMessage {
         ByteBufUtils.writeUTF8String(buf, ncItem != null ? ncItem : "");
         ByteBufUtils.writeUTF8String(buf, blacklistInput != null ? blacklistInput : "");
         ByteBufUtils.writeUTF8String(buf, blacklistOutput != null ? blacklistOutput : "");
-        ByteBufUtils.writeUTF8String(buf, replacements != null ? replacements : "");
         ByteBufUtils.writeUTF8String(buf, outputSlots != null ? outputSlots : "");
         buf.writeInt(targetTier);
     }
@@ -85,8 +83,24 @@ public class PacketSaveFields implements IMessage {
                 return null;
             }
 
+            DebugLog.info(
+                "[NHAE] PacketSaveFields.Handler: received save packet from player=%s, recipeMap=%s, outputOre=%s, inputOre=%s, ncItem=%s, outputSlots=%s, tier=%d",
+                player.getCommandSenderName(),
+                message.recipeMap,
+                message.outputOre,
+                message.inputOre,
+                message.ncItem,
+                message.outputSlots,
+                message.targetTier);
             ItemStack held = player.getCurrentEquippedItem();
-            writeFieldsIfPatternGenerator(held, message);
+            if (writeFieldsIfPatternGenerator(held, message)) {
+                player.playerNetServerHandler.sendPacket(new S2FPacketSetSlot(-2, player.inventory.currentItem, held));
+                DebugLog.info("[NHAE] PacketSaveFields.Handler: saved fields and sent S2FPacketSetSlot");
+            } else {
+                DebugLog.info(
+                    "[NHAE] PacketSaveFields.Handler: writeFieldsIfPatternGenerator returned false, held=%s",
+                    held);
+            }
             return null;
         }
     }
@@ -108,7 +122,6 @@ public class PacketSaveFields implements IMessage {
         tag.setString(NBT_NC_ITEM, message.ncItem != null ? message.ncItem : "");
         tag.setString(NBT_BLACKLIST_INPUT, message.blacklistInput != null ? message.blacklistInput : "");
         tag.setString(NBT_BLACKLIST_OUTPUT, message.blacklistOutput != null ? message.blacklistOutput : "");
-        tag.setString(NBT_REPLACEMENTS, message.replacements != null ? message.replacements : "");
         tag.setString(NBT_OUTPUT_SLOTS, message.outputSlots != null ? message.outputSlots : "");
         tag.setInteger(NBT_TARGET_TIER, message.targetTier);
         return true;

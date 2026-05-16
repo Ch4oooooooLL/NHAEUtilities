@@ -10,11 +10,13 @@ import java.util.UUID;
 import net.minecraft.client.renderer.texture.IIconRegister;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.inventory.IInventory;
 import net.minecraft.inventory.ISidedInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.network.play.server.S2FPacketSetSlot;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
@@ -24,9 +26,12 @@ import net.minecraft.world.World;
 
 import org.lwjgl.input.Keyboard;
 
-import com.github.nhaeutilities.NHAEUtilities;
+import com.github.nhaeutilities.modules.patterngenerator.gui.GuiPatternGen;
+import com.github.nhaeutilities.modules.patterngenerator.gui.GuiPatternStorage;
 import com.github.nhaeutilities.modules.patterngenerator.storage.PatternStorage;
 import com.github.nhaeutilities.modules.patterngenerator.util.I18nUtil;
+import com.github.nhaeutilities.modules.shared.DebugLog;
+import com.github.nhaeutilities.modules.shared.animation.ScreenHelper;
 
 import appeng.api.features.INetworkEncodable;
 import appeng.api.features.IWirelessTermHandler;
@@ -76,21 +81,19 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
 
     @Override
     public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
-        if (player.isSneaking()) {
-            MovingObjectPosition hit = getMovingObjectPositionFromPlayer(world, player, false);
-            if (hit != null && hit.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK) {
-                return stack;
-            }
+        MovingObjectPosition hit = getMovingObjectPositionFromPlayer(world, player, false);
+        boolean isBlock = hit != null && hit.typeOfHit == MovingObjectPosition.MovingObjectType.BLOCK;
+
+        if (player.isSneaking() && isBlock) {
+            return stack;
         }
 
-        if (!world.isRemote) {
-            int guiId = player.isSneaking() ? GUI_ID_STORAGE : GUI_ID;
-            cpw.mods.fml.common.FMLLog.info(
-                "[NHAEUtilities] SERVER SIDE: Requesting GUI %d for player %s",
-                guiId,
-                player.getCommandSenderName());
-            player
-                .openGui(NHAEUtilities.instance, guiId, world, (int) player.posX, (int) player.posY, (int) player.posZ);
+        if (world.isRemote && !isBlock) {
+            if (player.isSneaking()) {
+                GuiPatternStorage.open(player);
+            } else {
+                ScreenHelper.open(GuiPatternGen.createWindow(player, stack));
+            }
         }
         return stack;
     }
@@ -105,6 +108,8 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
             return false;
         }
 
+        DebugLog
+            .info("[NHAE] onItemUseFirst called: player=%s, pos=(%d,%d,%d)", player.getCommandSenderName(), x, y, z);
         TileEntity te = world.getTileEntity(x, y, z);
         if (te == null) {
             player.addChatMessage(msg(EnumChatFormatting.RED, "nhaeutilities.msg.item.block_not_detectable"));
@@ -115,6 +120,9 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
             IGregTechTileEntity gte = (IGregTechTileEntity) te;
             IMetaTileEntity mte = gte.getMetaTileEntity();
             RecipeMap<?> recipeMap = resolveRecipeMap(mte);
+            DebugLog.info(
+                "[NHAE] onItemUseFirst: GT tile detected, recipeMap=%s",
+                recipeMap != null ? recipeMap.unlocalizedName : "null");
             if (recipeMap != null) {
                 saveField(stack, NBT_RECIPE_MAP, recipeMap.unlocalizedName);
                 player.addChatMessage(
@@ -122,6 +130,13 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
                         EnumChatFormatting.GREEN,
                         "nhaeutilities.msg.item.detected_recipe_map",
                         recipeMap.unlocalizedName));
+                if (player instanceof EntityPlayerMP) {
+                    EntityPlayerMP mp = (EntityPlayerMP) player;
+                    mp.playerNetServerHandler.sendPacket(new S2FPacketSetSlot(-2, mp.inventory.currentItem, stack));
+                    DebugLog.info(
+                        "[NHAE] onItemUseFirst: sent S2FPacketSetSlot for recipeMap=%s",
+                        recipeMap.unlocalizedName);
+                }
                 return true;
             }
         }
@@ -184,6 +199,11 @@ public class ItemPatternGenerator extends Item implements INetworkEncodable, IWi
             player.addChatMessage(msg(EnumChatFormatting.GREEN, "nhaeutilities.msg.item.exported", transferred));
         }
 
+        return true;
+    }
+
+    @Override
+    public boolean doesSneakBypassUse(World world, int x, int y, int z, EntityPlayer player) {
         return true;
     }
 

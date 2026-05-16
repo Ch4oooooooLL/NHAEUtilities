@@ -18,7 +18,7 @@ import cpw.mods.fml.common.event.FMLServerStartingEvent;
     modid = NHAEUtilities.MODID,
     name = NHAEUtilities.MODNAME,
     version = Tags.VERSION,
-    dependencies = "required-after:gregtech;required-after:appliedenergistics2;required-after:NotEnoughItems",
+    dependencies = "required-after:modularui2;required-after:gregtech;required-after:appliedenergistics2;required-after:NotEnoughItems",
     guiFactory = "com.github.nhaeutilities.client.gui.GuiFactory")
 public class NHAEUtilities {
 
@@ -61,6 +61,7 @@ public class NHAEUtilities {
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         TutorialBookHandler.init();
+        proxy.registerClientEventHandlers();
         proxy.init(event, moduleRegistry, this);
     }
 
